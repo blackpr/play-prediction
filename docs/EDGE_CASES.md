@@ -609,6 +609,215 @@ Markets past their `closes_at` but still ACTIVE show:
 
 ---
 
+### 6.2.2 Post-Event Betting Exploitation (Critical Edge Case)
+
+**Scenario:** A manual-close market stays open after the event ends. Users who know the result place bets before admin closes the market.
+
+**Example:**
+1. Soccer match ends at 3:34 PM (Man United wins 2-1)
+2. Admin is busy, doesn't close market until 3:50 PM
+3. User sees result on TV at 3:35 PM, buys YES shares at 65¢
+4. Market resolves YES → User profits unfairly
+
+**Risk:** 
+- Users exploit delayed closure to bet on known outcomes
+- Honest users who bet before the event are disadvantaged
+- Platform loses credibility and potentially money
+
+**Solution: Event End Timestamp + Trade Voiding**
+
+When resolving a manual-close market, admin specifies when the event **actually ended**. The system automatically voids all trades placed after that time.
+
+**Resolution Flow (Updated):**
+
+```typescript
+interface ResolveMarketParams {
+  marketId: string;
+  resolution: 'YES' | 'NO';
+  evidence: string;
+  eventEndedAt: Date;  // NEW: When the event actually ended
+}
+```
+
+**Step 1: Admin Resolves with Event End Time**
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Resolve Market: "Will Man United win vs Liverpool?"         │
+├─────────────────────────────────────────────────────────────┤
+│ Outcome:  ○ YES  ● NO  ○ Cancel                             │
+│                                                             │
+│ Evidence: "Final score: Liverpool 2 - Man United 1"         │
+│                                                             │
+│ ⏰ Event Ended At: [2024-12-15] [15:34] (required)          │
+│                                                             │
+│ ⚠️ 3 trades placed AFTER this time will be voided:          │
+│    - user_abc: BUY YES 500 pts @ 3:35 PM                   │
+│    - user_xyz: BUY YES 200 pts @ 3:41 PM                   │
+│    - user_def: BUY NO 100 pts @ 3:48 PM                    │
+│                                                             │
+│ [Preview Voided Trades]  [Resolve & Void]                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Step 2: System Voids Post-Event Trades**
+
+```typescript
+// Resolution with trade voiding
+async function resolveMarketWithVoiding(params: ResolveMarketParams) {
+  return await db.transaction(async (tx) => {
+    // 1. Find trades placed AFTER event ended
+    const postEventTrades = await tx.query.tradeLedger.findMany({
+      where: and(
+        eq(tradeLedger.marketId, params.marketId),
+        gt(tradeLedger.createdAt, params.eventEndedAt),
+        inArray(tradeLedger.action, ['BUY', 'SELL'])
+      ),
+    });
+
+    // 2. Void each post-event trade
+    for (const trade of postEventTrades) {
+      await voidTrade(tx, trade, 'VOIDED_POST_EVENT');
+    }
+
+    // 3. Proceed with normal resolution for remaining trades
+    await resolveMarket(tx, params);
+
+    // 4. Notify affected users
+    for (const trade of postEventTrades) {
+      await queueService.add('notifications', {
+        type: 'user:trade-voided',
+        data: {
+          userId: trade.userId,
+          marketId: params.marketId,
+          tradeId: trade.id,
+          reason: 'Trade placed after event ended',
+          refundAmount: trade.amountIn,
+        },
+      });
+    }
+
+    return {
+      resolution: params.resolution,
+      voidedTrades: postEventTrades.length,
+      totalRefunded: postEventTrades.reduce((sum, t) => sum + t.amountIn, 0n),
+    };
+  });
+}
+```
+
+**Step 3: Void Trade Logic**
+
+```typescript
+// Void a trade and refund the user
+async function voidTrade(
+  tx: Transaction,
+  trade: TradeLedgerEntry,
+  reason: string
+) {
+  // 1. Reverse portfolio changes
+  if (trade.action === 'BUY') {
+    // Remove shares that were bought
+    await tx.update(portfolios)
+      .set({
+        yesQty: sql`yes_qty - ${trade.side === 'YES' ? trade.amountOut : 0n}`,
+        noQty: sql`no_qty - ${trade.side === 'NO' ? trade.amountOut : 0n}`,
+        yesCostBasis: sql`yes_cost_basis - ${trade.side === 'YES' ? trade.amountIn : 0n}`,
+        noCostBasis: sql`no_cost_basis - ${trade.side === 'NO' ? trade.amountIn : 0n}`,
+      })
+      .where(and(
+        eq(portfolios.userId, trade.userId),
+        eq(portfolios.marketId, trade.marketId)
+      ));
+
+    // Refund points to user
+    await tx.update(users)
+      .set({ balance: sql`balance + ${trade.amountIn}` })
+      .where(eq(users.id, trade.userId));
+  }
+  // Similar logic for SELL trades...
+
+  // 2. Log the voiding
+  await tx.insert(tradeLedger).values({
+    userId: trade.userId,
+    marketId: trade.marketId,
+    action: 'VOID',
+    side: trade.side,
+    amountIn: trade.amountOut,  // Reverse: what they got
+    amountOut: trade.amountIn,  // Reverse: what they paid (refund)
+    sharesBefore: trade.sharesAfter,
+    sharesAfter: trade.sharesBefore,
+    feePaid: 0n,
+    originalTradeId: trade.id,  // Reference to voided trade
+    voidReason: reason,
+  });
+}
+```
+
+**Database Schema Addition:**
+
+```sql
+-- Add to trade_ledger for voiding support
+ALTER TABLE trade_ledger ADD COLUMN original_trade_id UUID REFERENCES trade_ledger(id);
+ALTER TABLE trade_ledger ADD COLUMN void_reason VARCHAR(100);
+
+-- Add to markets for event end tracking
+ALTER TABLE markets ADD COLUMN event_ended_at TIMESTAMPTZ;
+
+-- Update action enum
+ALTER TABLE trade_ledger DROP CONSTRAINT ledger_action_valid;
+ALTER TABLE trade_ledger ADD CONSTRAINT ledger_action_valid CHECK (
+  action IN ('BUY', 'SELL', 'MINT', 'MERGE', 'NET_SELL', 'GENESIS_MINT', 
+             'RESOLUTION_PAYOUT', 'REFUND', 'DEPOSIT', 'WITHDRAW', 'VOID')
+);
+```
+
+**User Notification:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⚠️ Trade Voided                                              │
+├─────────────────────────────────────────────────────────────┤
+│ Your trade on "Will Man United win?" has been voided.       │
+│                                                             │
+│ Reason: Trade placed after the event ended                  │
+│ Original trade: BUY YES @ 3:35 PM                          │
+│ Event ended: 3:34 PM                                        │
+│                                                             │
+│ Refund: 500 Points returned to your balance                 │
+│                                                             │
+│ This is standard practice to ensure fair markets.           │
+│ Trades placed after an event concludes cannot be honored.   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Prevention Measures:**
+
+| Measure | Description |
+|---------|-------------|
+| **UI Warning** | Show "Event may have ended" banner for markets past `closes_at` |
+| **Rate Limit** | Reduce trade frequency for markets past `closes_at` |
+| **Higher Fees** | Optional: Charge higher fees for trades past `closes_at` |
+| **Delay Execution** | Add 30-second delay for trades past `closes_at` (gives admin time) |
+| **Admin Alerts** | Urgent notifications when trades occur on overdue markets |
+
+**UI Warning for Markets Past closes_at:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⚽ Will Manchester United win?                              │
+│                                                             │
+│ ⚠️ SCHEDULED END TIME HAS PASSED                            │
+│ This event may have already concluded.                      │
+│ Trades placed after the event ends will be voided.          │
+│                                                             │
+│ [YES: 65¢]  [NO: 35¢]                                       │
+│                                                             │
+│ Last updated: 3:32 PM | Scheduled end: 3:30 PM             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ### 6.3 Orphaned Positions After Market Deletion
 
 **Scenario:** Admin deletes market with active positions.

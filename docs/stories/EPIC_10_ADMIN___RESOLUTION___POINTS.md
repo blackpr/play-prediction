@@ -14,7 +14,8 @@
 ```json
 {
   "resolution": "YES",
-  "evidence": "BTC reached $102,450 at 14:32 UTC on Dec 15"
+  "evidence": "BTC reached $102,450 at 14:32 UTC on Dec 15",
+  "eventEndedAt": "2024-12-15T14:32:00Z"
 }
 ```
 
@@ -24,19 +25,114 @@
 - [ ] Set status = RESOLVED
 - [ ] Set resolution = YES or NO
 - [ ] Set resolvedAt timestamp
+- [ ] Set eventEndedAt timestamp (required for manual-close markets)
+- [ ] **Void post-event trades** (see RESOLVE-1a)
 - [ ] Process all winning positions:
   - Get all portfolios for market
   - Credit winners: 1 Point per winning share
   - Log RESOLUTION_PAYOUT per user
 - [ ] Clear pool (set to 0/0)
-- [ ] Return payout summary
+- [ ] Return payout summary including voided trades count
 
 **Payout Logic:**
 - YES wins: Users with YES shares get 1 Point per share
 - NO wins: Users with NO shares get 1 Point per share
 - Losers get nothing
+- **Voided trades**: Users get full refund, excluded from resolution
 
-**References:** API_SPECIFICATION.md Section 4.6.5, ENGINE_LOGIC.md Section 9
+**References:** API_SPECIFICATION.md Section 4.6.5, ENGINE_LOGIC.md Section 9, EDGE_CASES.md Section 6.2.2
+
+---
+
+### RESOLVE-1a: Implement Post-Event Trade Voiding
+
+**As an** admin  
+**I want** trades placed after an event ends to be automatically voided  
+**So that** users cannot exploit delayed market closure
+
+**Depends On:** RESOLVE-1
+
+**Acceptance Criteria:**
+- [ ] Add `event_ended_at` column to markets table
+- [ ] Add `original_trade_id` and `void_reason` columns to trade_ledger
+- [ ] Add `VOID` action type to trade_ledger
+- [ ] When resolving a manual-close market:
+  - [ ] Require `eventEndedAt` parameter
+  - [ ] Find all trades placed AFTER `eventEndedAt`
+  - [ ] For each post-event trade:
+    - [ ] Reverse portfolio changes (remove shares)
+    - [ ] Refund points to user
+    - [ ] Log VOID action to trade_ledger
+  - [ ] Exclude voided trades from resolution payout
+- [ ] Notify affected users via job queue
+- [ ] Return count of voided trades in response
+
+**Void Trade Logic:**
+```typescript
+async function voidTrade(tx, trade, reason) {
+  // 1. Reverse portfolio (remove shares bought, restore shares sold)
+  // 2. Refund/deduct points from user balance
+  // 3. Log VOID action with reference to original trade
+  // 4. Queue user notification
+}
+```
+
+**Response includes:**
+```json
+{
+  "success": true,
+  "data": {
+    "resolution": "YES",
+    "totalWinners": 45,
+    "totalPayout": "15000000",
+    "voidedTrades": {
+      "count": 3,
+      "totalRefunded": "800000",
+      "affectedUsers": 2
+    }
+  }
+}
+```
+
+**References:** EDGE_CASES.md Section 6.2.2
+
+---
+
+### RESOLVE-1b: Add Event End Time to Resolution UI
+
+**As an** admin  
+**I want** to specify when the event actually ended  
+**So that** post-event trades are correctly voided
+
+**Location:** Resolution modal/page
+
+**Acceptance Criteria:**
+- [ ] Add "Event Ended At" datetime picker (required for manual-close markets)
+- [ ] Default to current time, allow backdating
+- [ ] Show preview of trades that will be voided:
+  - List trades placed after event_ended_at
+  - Show user, action, amount, timestamp for each
+  - Show total refund amount
+- [ ] Confirmation dialog warns: "X trades will be voided and refunded"
+- [ ] For `auto` close markets, eventEndedAt defaults to closes_at
+
+**UI Preview:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⏰ Event Ended At: [2024-12-15] [15:34]                      │
+│                                                             │
+│ ⚠️ 3 trades will be voided (placed after event ended):      │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ User          Action    Amount     Time                 │ │
+│ │ john@...      BUY YES   500 pts    3:35 PM             │ │
+│ │ jane@...      BUY YES   200 pts    3:41 PM             │ │
+│ │ bob@...       BUY NO    100 pts    3:48 PM             │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ Total to refund: 800 Points                                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**References:** EDGE_CASES.md Section 6.2.2
 
 ---
 

@@ -55,6 +55,7 @@ export const TradeAction = {
   REFUND: 'REFUND',
   DEPOSIT: 'DEPOSIT',
   WITHDRAW: 'WITHDRAW',
+  VOID: 'VOID', // For voiding post-event trades
 } as const;
 
 export const Side = {
@@ -95,6 +96,9 @@ export const markets = pgTable('markets', {
   category: varchar('category', { length: 100 }),
   closesAt: timestamp('closes_at', { withTimezone: true }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  // When the event actually ended (for voiding post-event trades)
+  // See EDGE_CASES.md Section 6.2.2 for details
+  eventEndedAt: timestamp('event_ended_at', { withTimezone: true }),
   // Close behavior configuration - determines how market transitions when closes_at passes
   // See ADR_001_MARKET_CLOSE_BEHAVIOR.md for details
   closeBehavior: varchar('close_behavior', { length: 20 }).notNull().default('auto'),
@@ -178,16 +182,25 @@ export const tradeLedger = pgTable('trade_ledger', {
   poolNoAfter: bigint('pool_no_after', { mode: 'bigint' }),
   priceAtExecution: bigint('price_at_execution', { mode: 'bigint' }),
   idempotencyKey: varchar('idempotency_key', { length: 255 }),
+  // For VOID action: reference to the original trade being voided
+  originalTradeId: uuid('original_trade_id'),
+  // Reason for voiding (e.g., 'VOIDED_POST_EVENT', 'ADMIN_VOID')
+  voidReason: varchar('void_reason', { length: 100 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => {
   return {
-    userIdIdx: index('idx_ledger_user').on(table.userId, table.createdAt), // DESC implied or handled by query? Drizzle index helper doesn't support DESC explicitly in basic API, usually done in raw sql or updated API. Assuming standard index for now or raw sql if needed.
+    userIdIdx: index('idx_ledger_user').on(table.userId, table.createdAt),
     marketIdIdx: index('idx_ledger_market').on(table.marketId, table.createdAt),
     idempotencyIdx: index('idx_ledger_idempotency').on(table.idempotencyKey).where(sql`${table.idempotencyKey} IS NOT NULL`),
     actionIdx: index('idx_ledger_action').on(table.action, table.createdAt),
-    actionCheck: check('ledger_action_valid', sql`${table.action} IN ('BUY', 'SELL', 'MINT', 'MERGE', 'NET_SELL', 'GENESIS_MINT', 'RESOLUTION_PAYOUT', 'REFUND', 'DEPOSIT', 'WITHDRAW')`),
+    actionCheck: check('ledger_action_valid', sql`${table.action} IN ('BUY', 'SELL', 'MINT', 'MERGE', 'NET_SELL', 'GENESIS_MINT', 'RESOLUTION_PAYOUT', 'REFUND', 'DEPOSIT', 'WITHDRAW', 'VOID')`),
     sideCheck: check('ledger_side_valid', sql`${table.side} IS NULL OR ${table.side} IN ('YES', 'NO')`),
     amountsCheck: check('ledger_amounts_non_negative', sql`${table.amountIn} >= 0 AND ${table.amountOut} >= 0 AND ${table.feePaid} >= 0`),
+    // Void reason required only for VOID actions
+    voidReasonCheck: check('ledger_void_reason_check', sql`
+      (${table.action} = 'VOID' AND ${table.voidReason} IS NOT NULL AND ${table.originalTradeId} IS NOT NULL)
+      OR (${table.action} != 'VOID' AND ${table.voidReason} IS NULL AND ${table.originalTradeId} IS NULL)
+    `),
   }
 });
 
