@@ -84,8 +84,8 @@
   - `liquidity_pools` - CPMM pool state per market
   - `portfolios` - User positions with cost basis
   - `trade_ledger` - Immutable audit trail
-  - `refresh_tokens` - JWT refresh tokens
   - `point_grants` - Audit trail for point grants
+  > **Note:** Refresh tokens are managed by Supabase Auth internally - no custom table needed.
 - [x] Define all constraints:
   - Non-negative balance/shares checks
   - Valid status/role enums

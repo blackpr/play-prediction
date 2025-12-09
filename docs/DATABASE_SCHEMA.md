@@ -328,26 +328,9 @@ COMMENT ON COLUMN trade_ledger.action IS 'Type of transaction';
 COMMENT ON COLUMN trade_ledger.idempotency_key IS 'Client-provided key for safe retries';
 ```
 
-### 3.6 `refresh_tokens` Table
+### 3.6 `point_grants` Table
 
-Stores JWT refresh tokens for session management.
-
-```sql
-CREATE TABLE refresh_tokens (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash      VARCHAR(255) NOT NULL UNIQUE,
-    expires_at      TIMESTAMPTZ NOT NULL,
-    revoked_at      TIMESTAMPTZ,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT refresh_tokens_not_expired CHECK (expires_at > created_at)
-);
-
-COMMENT ON TABLE refresh_tokens IS 'JWT refresh tokens for authentication';
-```
-
-### 3.7 `point_grants` Table
+> **Note:** Refresh tokens are managed entirely by Supabase Auth (in the `auth` schema). No custom `refresh_tokens` table is needed—Supabase handles token rotation, revocation, and session management automatically via `@supabase/ssr`.
 
 Audit trail for all point grants (registration bonuses and admin grants).
 
@@ -523,14 +506,7 @@ export const tradeLedger = pgTable('trade_ledger', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const refreshTokens = pgTable('refresh_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  revokedAt: timestamp('revoked_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+// Note: Refresh tokens are managed by Supabase Auth (auth schema) - no custom table needed
 
 export const PointGrantType = {
   REGISTRATION_BONUS: 'REGISTRATION_BONUS',
@@ -559,7 +535,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   trades: many(tradeLedger),
   createdMarkets: many(markets),
-  refreshTokens: many(refreshTokens),
   pointGrants: many(pointGrants),
 }));
 
@@ -605,13 +580,6 @@ export const tradeLedgerRelations = relations(tradeLedger, ({ one }) => ({
   }),
 }));
 
-export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
-  user: one(users, {
-    fields: [refreshTokens.userId],
-    references: [users.id],
-  }),
-}));
-
 export const pointGrantsRelations = relations(pointGrants, ({ one }) => ({
   user: one(users, {
     fields: [pointGrants.userId],
@@ -641,9 +609,6 @@ export type NewPortfolio = typeof portfolios.$inferInsert;
 
 export type TradeLedgerEntry = typeof tradeLedger.$inferSelect;
 export type NewTradeLedgerEntry = typeof tradeLedger.$inferInsert;
-
-export type RefreshToken = typeof refreshTokens.$inferSelect;
-export type NewRefreshToken = typeof refreshTokens.$inferInsert;
 
 export type PointGrant = typeof pointGrants.$inferSelect;
 export type NewPointGrant = typeof pointGrants.$inferInsert;
@@ -759,10 +724,7 @@ CREATE INDEX idx_ledger_idempotency ON trade_ledger(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 CREATE INDEX idx_ledger_action ON trade_ledger(action, created_at DESC);
 
--- Refresh Tokens: Token validation
-CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at) 
-    WHERE revoked_at IS NULL;
+-- Note: Refresh tokens are managed by Supabase Auth (auth schema)
 ```
 
 ### 5.2 Index Strategy
@@ -908,17 +870,7 @@ CREATE TABLE trade_ledger (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create refresh_tokens table
-CREATE TABLE refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) NOT NULL UNIQUE,
-    expires_at TIMESTAMPTZ NOT NULL,
-    revoked_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT refresh_tokens_not_expired CHECK (expires_at > created_at)
-);
+-- Note: Refresh tokens are managed by Supabase Auth (auth schema) - no custom table needed
 
 -- Create point_grants table (Virtual Points System audit trail)
 CREATE TABLE point_grants (
@@ -952,8 +904,6 @@ CREATE INDEX idx_ledger_user ON trade_ledger(user_id, created_at DESC);
 CREATE INDEX idx_ledger_market ON trade_ledger(market_id, created_at DESC);
 CREATE INDEX idx_ledger_idempotency ON trade_ledger(idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX idx_ledger_action ON trade_ledger(action, created_at DESC);
-CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at) WHERE revoked_at IS NULL;
 CREATE INDEX idx_point_grants_user ON point_grants(user_id, created_at DESC);
 CREATE INDEX idx_point_grants_type ON point_grants(grant_type);
 

@@ -926,37 +926,7 @@ close_behavior = 'manual':
 
 ---
 
-### SCHEDULER-6: Implement Cleanup Job for Expired Tokens
-
-**As a** platform operator  
-**I want** expired refresh tokens cleaned up automatically  
-**So that** the database doesn't grow indefinitely
-
-**Job Name:** `system:cleanup-tokens`  
-**Queue:** `maintenance`  
-**Schedule:** Daily at 3:00 AM UTC (`0 3 * * *`)
-
-**Acceptance Criteria:**
-- [ ] Implement handler in `src/infrastructure/jobs/handlers/maintenance.ts`
-- [ ] Delete refresh_tokens WHERE `expires_at < NOW() - INTERVAL '7 days'`
-- [ ] Log number of tokens deleted
-- [ ] Metrics: `refresh_tokens_cleaned_total` counter
-
-**Implementation:**
-```typescript
-// src/infrastructure/jobs/handlers/maintenance.ts
-'system:cleanup-tokens': async (job: Job) => {
-  const result = await db.delete(refreshTokens)
-    .where(lt(refreshTokens.expiresAt, subDays(new Date(), 7)));
-  
-  logger.info('Cleaned up expired tokens', { count: result.rowCount });
-  return { deleted: result.rowCount };
-},
-```
-
----
-
-### SCHEDULER-7: Register All Repeatable Jobs on Startup
+### SCHEDULER-6: Register All Repeatable Jobs on Startup
 
 **As a** platform operator  
 **I want** all scheduled jobs registered automatically when the worker starts  
@@ -972,7 +942,6 @@ close_behavior = 'manual':
     { queue: 'market-ops', name: 'market:check-expired', pattern: '* * * * *' },
     { queue: 'market-ops', name: 'market:activate-scheduled', pattern: '* * * * *' },
     { queue: 'notifications', name: 'admin:alert-pending-resolution', pattern: '0 * * * *' },
-    { queue: 'maintenance', name: 'system:cleanup-tokens', pattern: '0 3 * * *' },
   ];
   ```
 - [ ] Idempotent registration (don't duplicate if already exists)

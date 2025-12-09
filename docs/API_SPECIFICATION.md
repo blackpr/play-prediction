@@ -1385,7 +1385,6 @@ Get detailed user information.
 | `UNAUTHORIZED` | No valid token provided |
 | `TOKEN_EXPIRED` | Access token has expired |
 | `INVALID_TOKEN` | Token is malformed |
-| `INVALID_REFRESH_TOKEN` | Refresh token invalid |
 | `TOKEN_REVOKED` | Token has been revoked |
 
 #### Authorization Errors (403)

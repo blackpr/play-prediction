@@ -204,20 +204,7 @@ export const tradeLedger = pgTable('trade_ledger', {
   }
 });
 
-export const refreshTokens = pgTable('refresh_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  revokedAt: timestamp('revoked_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => {
-  return {
-    userIdIdx: index('idx_refresh_tokens_user').on(table.userId),
-    expiresIdx: index('idx_refresh_tokens_expires').on(table.expiresAt).where(sql`${table.revokedAt} IS NULL`),
-    expiryCheck: check('refresh_tokens_not_expired', sql`${table.expiresAt} > ${table.createdAt}`),
-  }
-});
+// Note: Refresh tokens are managed by Supabase Auth (auth schema) - no custom table needed
 
 export const PointGrantType = {
   REGISTRATION_BONUS: 'REGISTRATION_BONUS',
@@ -253,7 +240,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   trades: many(tradeLedger),
   createdMarkets: many(markets),
-  refreshTokens: many(refreshTokens),
   pointGrants: many(pointGrants),
 }));
 
@@ -299,13 +285,6 @@ export const tradeLedgerRelations = relations(tradeLedger, ({ one }) => ({
   }),
 }));
 
-export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
-  user: one(users, {
-    fields: [refreshTokens.userId],
-    references: [users.id],
-  }),
-}));
-
 export const pointGrantsRelations = relations(pointGrants, ({ one }) => ({
   user: one(users, {
     fields: [pointGrants.userId],
@@ -335,9 +314,6 @@ export type NewPortfolio = typeof portfolios.$inferInsert;
 
 export type TradeLedgerEntry = typeof tradeLedger.$inferSelect;
 export type NewTradeLedgerEntry = typeof tradeLedger.$inferInsert;
-
-export type RefreshToken = typeof refreshTokens.$inferSelect;
-export type NewRefreshToken = typeof refreshTokens.$inferInsert;
 
 export type PointGrant = typeof pointGrants.$inferSelect;
 export type NewPointGrant = typeof pointGrants.$inferInsert;

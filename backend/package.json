@@ -11,8 +11,10 @@
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
     "test:integration": "supabase start && vitest run --config vitest.integration.config.ts && supabase stop",
-    "generate": "drizzle-kit generate:pg",
-    "migrate": "drizzle-kit push:pg"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@fastify/cookie": "^9.3.1",
