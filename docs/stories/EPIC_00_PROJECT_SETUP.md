@@ -335,9 +335,9 @@ npx drizzle-kit studio
 **Local Development URLs:**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:4000
-- Supabase API: http://localhost:54321
-- Supabase Studio: http://localhost:54323
-- Inbucket (email testing): http://localhost:54324
+- Supabase API: http://localhost:55321
+- Supabase Studio: http://localhost:55323
+- Inbucket (email testing): http://localhost:55324
 
 **References:** FRONTEND_ARCHITECTURE.md Section 8
 
