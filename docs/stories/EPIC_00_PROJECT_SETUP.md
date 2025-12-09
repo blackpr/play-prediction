@@ -19,7 +19,7 @@
   - zod for validation
   - tsx for development
   - vitest for testing
-  - bullmq, ioredis (for background job processing - see JOBS-1)
+  - bullmq ^5.65.1, ioredis ^5.8.2 (for background job processing - see JOBS-1)
 - [x] Set up folder structure per BACKEND_ARCHITECTURE.md:
   ```
   src/

@@ -424,8 +424,8 @@ await queueService.addRepeatable('analytics', {
 
 ```json
 {
-  "bullmq": "^5.x",
-  "ioredis": "^5.x"
+  "bullmq": "^5.65.1",
+  "ioredis": "^5.8.2"
 }
 ```
 
