@@ -547,6 +547,72 @@ container.registerFactory('userRepository', () => new PostgresUserRepository(con
 
 ---
 
+## Background Job Infrastructure (BullMQ + Redis)
+
+> **Architecture Decision:** Use BullMQ + Redis as the generic, reusable job queue infrastructure for all background processing. This is foundational infrastructure reused by market scheduling, notifications, analytics, and future features.
+
+### JOBS-1: Set Up Redis Connection & BullMQ Infrastructure
+
+**As a** backend developer  
+**I want** a generic job queue infrastructure  
+**So that** we can run background tasks reliably and reuse it across features
+
+**Acceptance Criteria:**
+- [ ] Add dependencies: `bullmq`, `ioredis`
+- [ ] Create Redis connection: `src/infrastructure/redis/connection.ts`
+- [ ] Create queue factory: `src/infrastructure/jobs/queue-factory.ts`
+- [ ] Create worker factory: `src/infrastructure/jobs/worker-factory.ts`
+- [ ] Create QueueService: `src/infrastructure/jobs/queue-service.ts`
+- [ ] Add environment variables: `REDIS_URL`, `WORKER_CONCURRENCY`
+- [ ] Handle Redis connection errors gracefully
+
+**References:** SYSTEM_DESIGN.md Section 5.5
+
+---
+
+### JOBS-2: Create Worker Process Entry Point
+
+**As a** backend developer  
+**I want** a separate worker process  
+**So that** background jobs don't affect API performance
+
+**Acceptance Criteria:**
+- [ ] Create worker entry point: `src/worker.ts`
+- [ ] Register all job handlers on startup
+- [ ] Graceful shutdown handling
+- [ ] Add npm scripts: `worker`, `worker:dev`
+- [ ] Log job start, completion, and failures
+
+---
+
+### JOBS-3: Add Job Queue to Development Environment
+
+**As a** developer  
+**I want** Redis running locally  
+**So that** I can test background jobs during development
+
+**Acceptance Criteria:**
+- [ ] Add Redis to local development (Docker or Supabase)
+- [ ] Update dev scripts to start Redis
+- [ ] Create CLI commands: `job:trigger`, `job:stats`, `job:clear`
+- [ ] Document job testing in README
+
+---
+
+### JOBS-4: Implement Job Monitoring & Observability
+
+**As a** platform operator  
+**I want** visibility into job queue health  
+**So that** I can detect and fix issues quickly
+
+**Acceptance Criteria:**
+- [ ] Expose queue metrics (processed, failed, waiting)
+- [ ] Health check endpoint: `GET /health/worker`
+- [ ] Log job failures with context
+- [ ] Alert on failure rate > 5% or queue depth > 1000
+
+---
+
 ## Epic 1: Authentication
 
 **Goal:** Full auth flow - user can register, login, logout.
@@ -2769,6 +2835,115 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
+## Market Scheduler Worker
+
+> **Architecture Decision:** Markets have a `closes_at` timestamp, but runtime checks alone are insufficient. A background worker is required to automatically transition market status and alert admins.
+
+### SCHEDULER-1: Implement Market Scheduler Infrastructure
+
+**As a** platform operator  
+**I want** a background scheduler/worker system  
+**So that** market lifecycle events happen automatically
+
+**Acceptance Criteria:**
+- [ ] Choose scheduler technology (node-cron, BullMQ+Redis, pg_cron, or Supabase Edge Functions)
+- [ ] Implement job idempotency
+- [ ] Add job execution logging
+- [ ] Handle job failures with retries
+- [ ] Create health check endpoint for worker process
+
+**References:** SYSTEM_DESIGN.md Section 5.5, EDGE_CASES.md Section 6.2
+
+---
+
+### SCHEDULER-2: Implement Auto-Close Markets Job
+
+**As a** platform operator  
+**I want** markets to auto-close when `closes_at` passes  
+**So that** users cannot trade on expired markets
+
+**Job:** `checkExpiredMarkets` (every 1 minute)
+
+**Acceptance Criteria:**
+- [ ] Query markets WHERE `status = 'ACTIVE' AND closes_at < NOW()`
+- [ ] Transition expired markets: `ACTIVE` → `PAUSED`
+- [ ] Log state transition in audit trail
+- [ ] Emit WebSocket event: `market:closed`
+- [ ] Notify admins about newly closed markets
+- [ ] Job must be idempotent
+
+---
+
+### SCHEDULER-3: Implement Pending Resolution Alerts
+
+**As an** admin  
+**I want** alerts about markets awaiting resolution  
+**So that** user funds aren't locked indefinitely
+
+**Job:** `alertPendingResolution` (every 1 hour)
+
+**Acceptance Criteria:**
+- [ ] Query paused markets closed > 24 hours ago
+- [ ] Send escalated notifications (24h, 48h levels)
+- [ ] Dashboard widget showing pending resolutions
+
+---
+
+### SCHEDULER-4: Implement Admin Dashboard - Pending Resolutions Widget
+
+**As an** admin  
+**I want** a dashboard widget for pending resolutions  
+**So that** I can quickly see what needs attention
+
+**Acceptance Criteria:**
+- [ ] Widget sorted by urgency (oldest first)
+- [ ] Show market title, time since closed, holder count, value locked
+- [ ] Color coding: Green (<24h), Yellow (24-48h), Red (>48h)
+- [ ] One-click access to resolution form
+
+---
+
+### SCHEDULER-5: Implement Scheduled Market Activation
+
+**As an** admin  
+**I want** to schedule markets to activate automatically  
+**So that** I can prepare markets in advance
+
+**Acceptance Criteria:**
+- [ ] Add `activates_at` column to markets table
+- [ ] Scheduler job activates markets when `activates_at < NOW()`
+- [ ] Admin can override and manually activate earlier
+- [ ] UI shows countdown to activation
+
+---
+
+### SCHEDULER-6: Implement Cleanup Job for Expired Tokens
+
+**As a** platform operator  
+**I want** expired tokens cleaned up automatically  
+**So that** the database doesn't grow indefinitely
+
+**Job:** `cleanupExpiredTokens` (daily 3 AM UTC)
+
+**Acceptance Criteria:**
+- [ ] Delete refresh_tokens WHERE `expires_at < NOW() - INTERVAL '7 days'`
+- [ ] Log number of tokens deleted
+
+---
+
+### SCHEDULER-7: Add Worker to Development Environment
+
+**As a** developer  
+**I want** the scheduler to run in development  
+**So that** I can test scheduled jobs locally
+
+**Acceptance Criteria:**
+- [ ] Update `npm run dev:backend` to include scheduler
+- [ ] Add environment variable `ENABLE_SCHEDULER=true/false`
+- [ ] Add CLI commands to manually trigger jobs for testing
+
+---
+
 ## Epic 11: Real-Time Updates (WebSocket)
 
 **Goal:** Live price updates and trade notifications.
@@ -3068,7 +3243,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 | Epic | Stories | Description |
 |------|---------|-------------|
-| 0 | 14 | Project Setup (infrastructure, Supabase CLI, testing, CI/CD, DI container) |
+| 0 | 18 | Project Setup (infrastructure, Supabase CLI, testing, CI/CD, DI container, **BullMQ job queue**) |
 | 1 | 12 | Authentication (login, register, session, password reset, email templates) |
 | 2 | 14 | User Profile & Balance (UI components, accessibility, error handling) |
 | 3 | 8 | Markets Listing (search, filter, categories) |
@@ -3078,10 +3253,10 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 | 7 | 4 | Mint & Merge (netting protocol) |
 | 8 | 7 | Portfolio (positions, P&L, history, empty states) |
 | 9 | 9 | Admin - Market Management (CRUD, skewed genesis, images) |
-| 10 | 16 | Admin - Resolution, Points, Users, Audit (resolve, cancel, grant, users, audit log, categories) |
+| 10 | 23 | Admin - Resolution, Points, Users, Audit, **Scheduler Worker** (resolve, cancel, grant, users, audit log, categories, auto-close markets) |
 | 11 | 11 | WebSocket (connection, channels, reconnect, updates) |
 | 12 | 1 | Webhooks (Future) |
-| **Total** | **122** | |
+| **Total** | **133** | |
 
 ---
 
@@ -3089,9 +3264,10 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ### Phase 1: Foundation (MVP Core)
 1. Epic 0 (SETUP-1 through SETUP-6) - Project setup with Supabase CLI
-2. Epic 1 (AUTH-1 through AUTH-4) - Backend auth
-3. Epic 5 (TRADE-1 through TRADE-7) - Trading engine
-4. Epic 3 (MARKET-1, MARKET-2) - Markets API
+2. Epic 0 (JOBS-1 through JOBS-4) - **BullMQ + Redis job queue infrastructure**
+3. Epic 1 (AUTH-1 through AUTH-4) - Backend auth
+4. Epic 5 (TRADE-1 through TRADE-7) - Trading engine
+5. Epic 3 (MARKET-1, MARKET-2) - Markets API
 
 ### Phase 2: Basic UI
 1. Epic 0 (SETUP-7 through SETUP-13) - Infrastructure, testing & CI/CD
@@ -3108,6 +3284,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 ### Phase 4: Admin & Resolution
 1. Epic 9 (ADMIN-1 through ADMIN-9) - Admin market management
 2. Epic 10 (RESOLVE-1 through RESOLVE-5, ADMIN-14 through ADMIN-24) - Resolution, points, user management, audit
+3. Epic 10 (SCHEDULER-1 through SCHEDULER-7) - **Market Scheduler Worker** (auto-close markets, pending resolution alerts)
 
 ### Phase 5: Real-Time & Polish
 1. Epic 11 (WS-1 through WS-8) - WebSocket real-time updates
@@ -3121,4 +3298,4 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-*Document Version: 1.3 | Total Stories: 122 | Last Reviewed: December 9, 2025*
+*Document Version: 1.5 | Total Stories: 133 | Last Reviewed: December 9, 2025*

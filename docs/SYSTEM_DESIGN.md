@@ -324,6 +324,120 @@ Provides real-time price quotes:
 - **Execution Price:** Actual price including slippage for a given trade size
 - **Max Buy Calculator:** Maximum shares purchasable with a given balance
 
+### 5.5 Background Job System (BullMQ + Redis)
+
+> **Infrastructure Stories:** See EPIC_00 - JOBS-1 through JOBS-3  
+> **Market Scheduler Stories:** See EPIC_10 - SCHEDULER-1 through SCHEDULER-7
+
+A **generic, reusable job queue infrastructure** for all background processing needs. Built with BullMQ + Redis to handle scheduled tasks, async processing, and event-driven workflows.
+
+#### Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Job Queue** | BullMQ 5.x | Reliable job processing with retries, delays, priorities |
+| **Message Broker** | Redis 7+ | Fast in-memory storage for job queues |
+| **Worker Process** | Separate Node.js process | Processes jobs independently from API server |
+
+#### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         API Server (Fastify)                         │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────────────┐ │
+│  │  REST Routes   │  │  WebSocket     │  │  QueueService          │ │
+│  │                │  │                │  │  (job producer)        │ │
+│  └────────────────┘  └────────────────┘  └───────────┬────────────┘ │
+└──────────────────────────────────────────────────────┼──────────────┘
+                                                       │
+                                                       ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Redis (BullMQ Queues)                        │
+│  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐           │
+│  │ market-ops     │ │ notifications  │ │ maintenance    │  ...more  │
+│  └────────────────┘ └────────────────┘ └────────────────┘           │
+└──────────────────────────────────────────────────────┬──────────────┘
+                                                       │
+                                                       ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                      Worker Process (Separate)                        │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  JobProcessor (generic handler registration)                    │ │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐            │ │
+│  │  │ MarketJobs   │ │ NotifyJobs   │ │ SystemJobs   │  ...more   │ │
+│  │  └──────────────┘ └──────────────┘ └──────────────┘            │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+#### Queue Registry (Extensible)
+
+| Queue | Purpose | Current Jobs | Future Examples |
+|-------|---------|--------------|-----------------|
+| `market-ops` | Market lifecycle automation | `check-expired`, `activate-scheduled` | `auto-resolve-oracle`, `archive-old-markets` |
+| `notifications` | User & admin notifications | `alert-pending-resolution` | `trade-confirmation-email`, `weekly-digest`, `push-notifications` |
+| `maintenance` | System housekeeping | `cleanup-tokens` | `backup-snapshots`, `prune-ledger`, `recalculate-stats` |
+| `analytics` | Data processing | — | `calculate-leaderboard`, `aggregate-volume`, `generate-reports` |
+| `integrations` | External services | — | `webhook-delivery`, `oracle-fetch`, `social-share` |
+
+#### Key BullMQ Features
+
+- **Repeatable Jobs:** Cron-like scheduling (`every 1 minute`, `daily at 3am`)
+- **Delayed Jobs:** Schedule for specific future time
+- **Job Retries:** Automatic retry with exponential backoff
+- **Job Prioritization:** Critical jobs processed first
+- **Concurrency Control:** Parallel processing with configurable limits
+- **Job Events:** Real-time status tracking and monitoring
+- **Rate Limiting:** Prevent overwhelming external services
+- **Job Dependencies:** Chain jobs that depend on others
+
+#### Adding New Jobs (Developer Guide)
+
+```typescript
+// 1. Define job type in shared/jobs/types.ts
+export interface CalculateLeaderboardJob {
+  type: 'analytics:calculate-leaderboard';
+  data: { period: 'daily' | 'weekly' | 'allTime' };
+}
+
+// 2. Register handler in worker/handlers/analytics.ts
+export const analyticsHandlers = {
+  'analytics:calculate-leaderboard': async (job) => {
+    // Implementation
+  },
+};
+
+// 3. Add to queue from anywhere in the app
+await queueService.add('analytics', {
+  type: 'analytics:calculate-leaderboard',
+  data: { period: 'weekly' },
+});
+
+// 4. Or schedule as repeatable
+await queueService.addRepeatable('analytics', {
+  type: 'analytics:calculate-leaderboard',
+  data: { period: 'daily' },
+}, { pattern: '0 0 * * *' }); // Daily at midnight
+```
+
+#### Dependencies
+
+```json
+{
+  "bullmq": "^5.x",
+  "ioredis": "^5.x"
+}
+```
+
+#### Environment Variables
+
+```bash
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=optional_password
+WORKER_CONCURRENCY=10
+ENABLE_WORKER=true
+```
+
 ---
 
 ## 6. Security Model

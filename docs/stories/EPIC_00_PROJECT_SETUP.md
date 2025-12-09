@@ -19,6 +19,7 @@
   - zod for validation
   - tsx for development
   - vitest for testing
+  - bullmq, ioredis (for background job processing - see JOBS-1)
 - [x] Set up folder structure per BACKEND_ARCHITECTURE.md:
   ```
   src/
@@ -53,6 +54,9 @@
   - SUPABASE_ANON_KEY (from `supabase status`)
   - SUPABASE_SERVICE_ROLE_KEY (from `supabase status`)
   - DATABASE_URL (local: postgresql://postgres:postgres@127.0.0.1:55326/postgres)
+  - REDIS_URL (local: redis://localhost:6379)
+  - WORKER_CONCURRENCY (default: 10)
+  - ENABLE_WORKER (default: true)
 - [x] Create .env.local for local development with CLI-generated keys
 - [x] Document Supabase Studio access (http://127.0.0.1:55323)
 - [x] Configure connection pooling settings for production
@@ -314,9 +318,10 @@ npx drizzle-kit studio
 ```json
 {
   "scripts": {
-    "dev": "concurrently \"npm run dev:db\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "concurrently \"npm run dev:db\" \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:frontend\"",
     "dev:db": "supabase start",
     "dev:backend": "npm run dev --workspace=backend",
+    "dev:worker": "npm run worker:dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "db:generate": "npm run db:generate --workspace=backend",
     "db:migrate": "npm run db:migrate --workspace=backend",
@@ -584,5 +589,198 @@ container.registerFactory('userRepository', () => new PostgresUserRepository(con
 ```
 
 **References:** BACKEND_ARCHITECTURE.md Section 8
+
+---
+
+## Background Job Infrastructure (BullMQ + Redis)
+
+> **Architecture Decision:** Use BullMQ + Redis as the generic, reusable job queue infrastructure for all background processing. This is foundational infrastructure that will be used by market scheduling, notifications, analytics, and future features.
+
+### JOBS-1: Set Up Redis Connection & BullMQ Infrastructure
+
+**As a** backend developer  
+**I want** a generic job queue infrastructure  
+**So that** we can run background tasks reliably and reuse it across features
+
+**Acceptance Criteria:**
+- [ ] Add dependencies: `bullmq`, `ioredis`
+- [ ] Create Redis connection utility: `src/infrastructure/redis/connection.ts`
+- [ ] Create queue factory: `src/infrastructure/jobs/queue-factory.ts`
+- [ ] Create worker factory: `src/infrastructure/jobs/worker-factory.ts`
+- [ ] Create QueueService for adding jobs: `src/infrastructure/jobs/queue-service.ts`
+- [ ] Add environment variables:
+  ```bash
+  REDIS_URL=redis://localhost:6379
+  REDIS_PASSWORD=
+  WORKER_CONCURRENCY=10
+  ENABLE_WORKER=true
+  ```
+- [ ] Create connection health check
+- [ ] Handle Redis connection errors gracefully
+
+**Folder Structure:**
+```
+src/infrastructure/
+├── redis/
+│   └── connection.ts        # Redis client singleton
+└── jobs/
+    ├── queue-factory.ts     # Creates named queues
+    ├── worker-factory.ts    # Creates workers with handlers
+    ├── queue-service.ts     # High-level API for adding jobs
+    ├── types.ts             # Job type definitions
+    └── handlers/            # Job handler implementations
+        ├── index.ts         # Handler registry
+        ├── market.ts        # Market-related jobs
+        ├── notifications.ts # Notification jobs
+        └── maintenance.ts   # System maintenance jobs
+```
+
+**QueueService Interface:**
+```typescript
+interface QueueService {
+  // Add a single job
+  add<T>(queue: string, job: T, options?: JobOptions): Promise<Job>;
+  
+  // Add a repeatable job (cron-style)
+  addRepeatable<T>(queue: string, job: T, repeat: RepeatOptions): Promise<Job>;
+  
+  // Remove a repeatable job
+  removeRepeatable(queue: string, jobName: string): Promise<void>;
+  
+  // Get queue stats
+  getStats(queue: string): Promise<QueueStats>;
+}
+```
+
+**References:** SYSTEM_DESIGN.md Section 5.5
+
+---
+
+### JOBS-2: Create Worker Process Entry Point
+
+**As a** backend developer  
+**I want** a separate worker process  
+**So that** background jobs don't affect API performance
+
+**Acceptance Criteria:**
+- [ ] Create worker entry point: `src/worker.ts`
+- [ ] Register all job handlers on startup
+- [ ] Graceful shutdown handling (finish current jobs)
+- [ ] Add npm script: `"worker": "tsx src/worker.ts"`
+- [ ] Add npm script: `"worker:dev": "tsx watch src/worker.ts"`
+- [ ] Log job start, completion, and failures
+- [ ] Emit metrics for job processing times
+- [ ] Health check endpoint for worker process
+
+**Worker Entry Point:**
+```typescript
+// src/worker.ts
+import { createWorkers } from './infrastructure/jobs/worker-factory';
+import { marketHandlers } from './infrastructure/jobs/handlers/market';
+import { notificationHandlers } from './infrastructure/jobs/handlers/notifications';
+import { maintenanceHandlers } from './infrastructure/jobs/handlers/maintenance';
+
+const workers = createWorkers({
+  'market-ops': marketHandlers,
+  'notifications': notificationHandlers,
+  'maintenance': maintenanceHandlers,
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  await Promise.all(workers.map(w => w.close()));
+  process.exit(0);
+});
+```
+
+**Development Scripts (package.json):**
+```json
+{
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\"",
+    "dev:api": "tsx watch src/main.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "worker": "tsx src/worker.ts",
+    "worker:prod": "node dist/worker.js"
+  }
+}
+```
+
+---
+
+### JOBS-3: Add Job Queue to Development Environment
+
+**As a** developer  
+**I want** Redis and the worker running locally  
+**So that** I can test background jobs during development
+
+**Acceptance Criteria:**
+- [ ] Add Redis to local development (Docker or Supabase self-hosted)
+- [ ] Update `supabase/config.toml` or create `docker-compose.yml` for Redis
+- [ ] Update root `package.json` dev script to start Redis
+- [ ] Create CLI commands for job management:
+  ```bash
+  npm run job:trigger <queue> <jobType>  # Manually trigger a job
+  npm run job:stats                       # Show queue statistics
+  npm run job:clear <queue>              # Clear failed jobs
+  ```
+- [ ] Add BullMQ Board (optional) for visual queue management
+- [ ] Document job testing workflow in README
+
+**Docker Compose (if not using Supabase Redis):**
+```yaml
+# docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+```
+
+**Development URLs:**
+- Redis: `redis://localhost:6379`
+- BullMQ Board (optional): `http://localhost:3001/admin/queues`
+
+---
+
+### JOBS-4: Implement Job Monitoring & Observability
+
+**As a** platform operator  
+**I want** visibility into job queue health  
+**So that** I can detect and fix issues quickly
+
+**Acceptance Criteria:**
+- [ ] Expose queue metrics:
+  - `jobs_processed_total` (counter, by queue and status)
+  - `jobs_processing_duration_seconds` (histogram)
+  - `jobs_waiting_count` (gauge, per queue)
+  - `jobs_failed_total` (counter)
+- [ ] Add health check endpoint: `GET /health/worker`
+- [ ] Log job failures with full context
+- [ ] Alert on:
+  - Job failure rate > 5%
+  - Queue depth > 1000 jobs
+  - Job processing time > 5 minutes
+- [ ] Optional: BullMQ Board integration for admin UI
+
+**Health Check Response:**
+```json
+{
+  "status": "healthy",
+  "queues": {
+    "market-ops": { "waiting": 0, "active": 1, "failed": 0 },
+    "notifications": { "waiting": 5, "active": 2, "failed": 0 },
+    "maintenance": { "waiting": 0, "active": 0, "failed": 0 }
+  },
+  "redis": { "status": "connected", "latency": 2 }
+}
+```
+
+**References:** SYSTEM_DESIGN.md Section 8
 
 ---

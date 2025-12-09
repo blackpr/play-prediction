@@ -530,7 +530,21 @@ if (market.closesAt && market.closesAt < new Date()) {
 }
 ```
 
-**Note:** Closing time is a soft deadline. Admin must explicitly resolve.
+**Current Behavior (Soft Deadline):**
+- Runtime check blocks new trades when `closesAt` has passed
+- Market status remains `ACTIVE` until admin explicitly resolves/pauses
+- Users see "Market closed for trading" but status may still show ACTIVE
+
+**Required: Market Scheduler Worker** (See EPIC_10 - SCHEDULER stories)
+
+A background worker is required to:
+1. Auto-transition `ACTIVE` → `PAUSED` when `closesAt` passes
+2. Notify admins about markets needing resolution
+3. Alert on delayed resolutions (>24h, >48h escalations)
+
+Until the scheduler is implemented:
+- Admins must manually monitor `closesAt` times
+- Consider running a manual check: `SELECT * FROM markets WHERE status = 'ACTIVE' AND closes_at < NOW();`
 
 ---
 
@@ -617,9 +631,20 @@ if (holders.length === 0) {
 **Risk:** User funds locked, poor experience.
 
 **Mitigation:**
-1. **Monitoring:** Alert if market past `closesAt` by 24h
-2. **User-initiated resolution:** (Future) Allow users to trigger with proof
-3. **Auto-extend:** If no resolution, market auto-extends
+1. **Background Scheduler (Required):** See EPIC_10 - SCHEDULER-3
+   - Auto-alert admins at 24h, 48h escalation levels
+   - Dashboard widget showing markets awaiting resolution
+   - Email/Slack notifications for critical delays
+2. **Dashboard Visibility:** Prominent widget showing pending resolutions with urgency indicators
+3. **User-initiated resolution:** (Future) Allow users to trigger resolution with proof
+4. **Auto-extend:** If no resolution, market auto-extends (requires admin approval)
+
+**Alert Escalation:**
+| Time Since Close | Alert Level | Action |
+|-----------------|-------------|--------|
+| 0-24 hours | Info | Dashboard indicator |
+| 24-48 hours | Warning | Email to admins |
+| 48+ hours | Critical | SMS/Slack + red dashboard warning |
 
 ---
 

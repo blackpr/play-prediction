@@ -415,3 +415,324 @@
 **References:** EDGE_CASES.md Section 7.4
 
 ---
+
+## Market Scheduler Jobs
+
+> **Prerequisite:** EPIC_00 - JOBS-1 through JOBS-4 (BullMQ + Redis infrastructure)  
+> **Architecture Decision:** Markets have a `closes_at` timestamp. The generic job queue infrastructure handles automatic market lifecycle transitions.
+
+### SCHEDULER-1: Register Market Lifecycle Jobs
+
+**As a** platform operator  
+**I want** market lifecycle jobs registered on application startup  
+**So that** markets are automatically managed without manual intervention
+
+**Depends On:** EPIC_00 - JOBS-1, JOBS-2
+
+**Acceptance Criteria:**
+- [ ] Create job handlers: `src/infrastructure/jobs/handlers/market.ts`
+- [ ] Register repeatable jobs on worker startup:
+  - `market:check-expired` - every 1 minute
+  - `market:activate-scheduled` - every 1 minute
+- [ ] Jobs must be idempotent (re-running produces same result)
+- [ ] Add to worker handler registry
+
+**Job Handler Skeleton:**
+```typescript
+// src/infrastructure/jobs/handlers/market.ts
+import { Job } from 'bullmq';
+
+export const marketHandlers = {
+  'market:check-expired': async (job: Job) => {
+    // Implementation in SCHEDULER-2
+  },
+  'market:activate-scheduled': async (job: Job) => {
+    // Implementation in SCHEDULER-5
+  },
+};
+```
+
+**References:** SYSTEM_DESIGN.md Section 5.5
+
+---
+
+### SCHEDULER-2: Implement Auto-Close Markets Job
+
+**As a** platform operator  
+**I want** markets to automatically transition when `closes_at` passes  
+**So that** users cannot trade on expired markets and admins are notified
+
+**Job Name:** `market:check-expired`  
+**Queue:** `market-ops`  
+**Schedule:** Every 1 minute (repeatable)
+
+**Acceptance Criteria:**
+- [ ] Implement handler in `src/infrastructure/jobs/handlers/market.ts`
+- [ ] Query markets WHERE `status = 'ACTIVE' AND closes_at < NOW()`
+- [ ] For each expired market:
+  - [ ] Transition status from `ACTIVE` → `PAUSED`
+  - [ ] Log state transition in audit trail
+  - [ ] Emit WebSocket event: `market:closed`
+  - [ ] Queue notification job: `admin:market-closed-notification`
+- [ ] Job must be idempotent (re-running doesn't duplicate transitions)
+- [ ] Metrics: `markets_auto_closed_total` counter
+- [ ] Configure retry: 3 attempts with exponential backoff
+
+**Implementation:**
+```typescript
+// src/infrastructure/jobs/handlers/market.ts
+'market:check-expired': async (job: Job) => {
+  const expiredMarkets = await db.query.markets.findMany({
+    where: and(
+      eq(markets.status, 'ACTIVE'),
+      isNotNull(markets.closesAt),
+      lt(markets.closesAt, new Date())
+    ),
+  });
+
+  for (const market of expiredMarkets) {
+    await db.transaction(async (tx) => {
+      await tx.update(markets)
+        .set({ status: 'PAUSED', updatedAt: new Date() })
+        .where(eq(markets.id, market.id));
+      
+      // Log to audit trail
+      // Emit WebSocket event
+    });
+  }
+
+  return { processed: expiredMarkets.length };
+},
+```
+
+**State Transition:**
+```
+ACTIVE + closes_at < NOW() → PAUSED (awaiting resolution)
+```
+
+**References:** EDGE_CASES.md Section 6.2, SYSTEM_DESIGN.md Section 4
+
+---
+
+### SCHEDULER-3: Implement Pending Resolution Alerts
+
+**As an** admin  
+**I want** to be notified about markets awaiting resolution  
+**So that** I don't forget to resolve them and users don't have funds locked
+
+**Job Name:** `admin:alert-pending-resolution`  
+**Queue:** `notifications`  
+**Schedule:** Every 1 hour (repeatable)
+
+**Acceptance Criteria:**
+- [ ] Implement handler in `src/infrastructure/jobs/handlers/notifications.ts`
+- [ ] Query markets WHERE `status = 'PAUSED' AND closes_at < NOW()`
+- [ ] Group markets by urgency level
+- [ ] For markets pending > 24 hours:
+  - [ ] Queue email notification job
+  - [ ] Include market details, holder count, total value locked
+- [ ] Track notification history (use Redis or DB) to avoid spam
+- [ ] Dashboard API endpoint for pending resolutions
+
+**Alert Levels:**
+| Time Since Close | Alert Level | Action |
+|-----------------|-------------|--------|
+| 0-24 hours | Info | Show in dashboard only |
+| 24-48 hours | Warning | Queue `admin:send-email` job |
+| 48+ hours | Critical | Queue `admin:send-urgent-alert` (Slack/SMS) |
+
+**Implementation:**
+```typescript
+// src/infrastructure/jobs/handlers/notifications.ts
+'admin:alert-pending-resolution': async (job: Job) => {
+  const pendingMarkets = await db.query.markets.findMany({
+    where: and(
+      eq(markets.status, 'PAUSED'),
+      isNotNull(markets.closesAt),
+      lt(markets.closesAt, new Date())
+    ),
+  });
+
+  const grouped = groupByUrgency(pendingMarkets);
+  
+  if (grouped.critical.length > 0) {
+    await queueService.add('notifications', {
+      type: 'admin:send-urgent-alert',
+      data: { markets: grouped.critical },
+    });
+  }
+  
+  // ... handle warning and info levels
+},
+```
+
+**References:** EDGE_CASES.md Section 7.4
+
+---
+
+### SCHEDULER-4: Implement Admin Dashboard - Pending Resolutions Widget
+
+**As an** admin  
+**I want** a dashboard widget showing markets needing resolution  
+**So that** I can quickly see what needs attention
+
+**Location:** Admin Dashboard (`/admin`)
+
+**Acceptance Criteria:**
+- [ ] Widget showing markets awaiting resolution
+- [ ] Sorted by urgency (oldest first)
+- [ ] Show:
+  - Market title
+  - Time since closed (e.g., "Closed 2 hours ago")
+  - Number of holders
+  - Total value locked (sum of positions)
+- [ ] Color coding by urgency:
+  - Green: < 24h
+  - Yellow: 24-48h
+  - Red: > 48h
+- [ ] One-click access to resolution form
+- [ ] Auto-refresh every 60 seconds
+
+**Widget Example:**
+```
+┌─────────────────────────────────────────────────┐
+│ ⚠️ Markets Pending Resolution (3)               │
+├─────────────────────────────────────────────────┤
+│ 🔴 "Will BTC hit $100k?"                        │
+│    Closed 52 hours ago | 234 holders | $15,000  │
+│    [Resolve] [Cancel]                           │
+├─────────────────────────────────────────────────┤
+│ 🟡 "Will it snow in NYC?"                       │
+│    Closed 26 hours ago | 89 holders | $4,500    │
+│    [Resolve] [Cancel]                           │
+├─────────────────────────────────────────────────┤
+│ 🟢 "Will Lakers win tonight?"                   │
+│    Closed 3 hours ago | 456 holders | $28,000   │
+│    [Resolve] [Cancel]                           │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+### SCHEDULER-5: Implement Scheduled Market Activation
+
+**As an** admin  
+**I want** to schedule markets to activate automatically  
+**So that** I can prepare markets in advance
+
+**Job Name:** `market:activate-scheduled`  
+**Queue:** `market-ops`  
+**Schedule:** Every 1 minute (repeatable)
+
+**Enhancement to:** `POST /v1/admin/markets`
+
+**Request Addition:**
+```json
+{
+  "activatesAt": "2024-12-15T09:00:00Z"
+}
+```
+
+**Acceptance Criteria:**
+- [ ] Add migration: `activates_at` column to markets table (nullable TIMESTAMPTZ)
+- [ ] Markets with `activates_at` remain in DRAFT until that time
+- [ ] Implement handler in `src/infrastructure/jobs/handlers/market.ts`
+- [ ] Query markets WHERE `status = 'DRAFT' AND activates_at < NOW()`
+- [ ] Transition `DRAFT` → `ACTIVE` and emit WebSocket event
+- [ ] Admin can override and manually activate earlier
+- [ ] UI shows countdown to activation
+
+**Implementation:**
+```typescript
+'market:activate-scheduled': async (job: Job) => {
+  const scheduledMarkets = await db.query.markets.findMany({
+    where: and(
+      eq(markets.status, 'DRAFT'),
+      isNotNull(markets.activatesAt),
+      lt(markets.activatesAt, new Date())
+    ),
+  });
+
+  for (const market of scheduledMarkets) {
+    await activateMarket(market.id);
+    // Emit WebSocket: market:activated
+  }
+  
+  return { activated: scheduledMarkets.length };
+},
+```
+
+---
+
+### SCHEDULER-6: Implement Cleanup Job for Expired Tokens
+
+**As a** platform operator  
+**I want** expired refresh tokens cleaned up automatically  
+**So that** the database doesn't grow indefinitely
+
+**Job Name:** `system:cleanup-tokens`  
+**Queue:** `maintenance`  
+**Schedule:** Daily at 3:00 AM UTC (`0 3 * * *`)
+
+**Acceptance Criteria:**
+- [ ] Implement handler in `src/infrastructure/jobs/handlers/maintenance.ts`
+- [ ] Delete refresh_tokens WHERE `expires_at < NOW() - INTERVAL '7 days'`
+- [ ] Log number of tokens deleted
+- [ ] Metrics: `refresh_tokens_cleaned_total` counter
+
+**Implementation:**
+```typescript
+// src/infrastructure/jobs/handlers/maintenance.ts
+'system:cleanup-tokens': async (job: Job) => {
+  const result = await db.delete(refreshTokens)
+    .where(lt(refreshTokens.expiresAt, subDays(new Date(), 7)));
+  
+  logger.info('Cleaned up expired tokens', { count: result.rowCount });
+  return { deleted: result.rowCount };
+},
+```
+
+---
+
+### SCHEDULER-7: Register All Repeatable Jobs on Startup
+
+**As a** platform operator  
+**I want** all scheduled jobs registered automatically when the worker starts  
+**So that** the system is self-configuring
+
+**Depends On:** EPIC_00 - JOBS-2
+
+**Acceptance Criteria:**
+- [ ] Create job registration module: `src/infrastructure/jobs/register-jobs.ts`
+- [ ] Register all repeatable jobs on worker startup:
+  ```typescript
+  const repeatableJobs = [
+    { queue: 'market-ops', name: 'market:check-expired', pattern: '* * * * *' },
+    { queue: 'market-ops', name: 'market:activate-scheduled', pattern: '* * * * *' },
+    { queue: 'notifications', name: 'admin:alert-pending-resolution', pattern: '0 * * * *' },
+    { queue: 'maintenance', name: 'system:cleanup-tokens', pattern: '0 3 * * *' },
+  ];
+  ```
+- [ ] Idempotent registration (don't duplicate if already exists)
+- [ ] Log registered jobs on startup
+- [ ] CLI command to list registered jobs: `npm run job:list`
+
+**Worker Startup:**
+```typescript
+// src/worker.ts
+import { registerRepeatableJobs } from './infrastructure/jobs/register-jobs';
+
+async function main() {
+  await registerRepeatableJobs();
+  
+  const workers = createWorkers({
+    'market-ops': marketHandlers,
+    'notifications': notificationHandlers,
+    'maintenance': maintenanceHandlers,
+  });
+  
+  logger.info('Worker started', { queues: Object.keys(workers) });
+}
+```
+
+---

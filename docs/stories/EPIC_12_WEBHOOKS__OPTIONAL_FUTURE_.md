@@ -109,7 +109,7 @@
 
 ### Phase 4: Admin & Resolution
 1. Epic 9 (ADMIN-1 through ADMIN-9) - Admin market management
-2. Epic 10 (RESOLVE-1 through RESOLVE-5, ADMIN-14 through ADMIN-24) - Resolution, points, user management, audit
+2. Epic 10 (RESOLVE-1 through RESOLVE-5, ADMIN-14 through ADMIN-24, SCHEDULER-1 through SCHEDULER-7) - Resolution, points, user management, audit, scheduler worker
 
 ### Phase 5: Real-Time & Polish
 1. Epic 11 (WS-1 through WS-8) - WebSocket real-time updates
