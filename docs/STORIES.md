@@ -1,13 +1,13 @@
 # Play Prediction - User Stories & Implementation Tasks
 
-**Version:** 1.2  
-**Last Updated:** December 2025
+**Version:** 1.3  
+**Last Updated:** December 9, 2025
 
 This document contains detailed user stories organized by Epic. Each story references the relevant specification documents and includes acceptance criteria.
 
 > **Completeness Check:** This document has been reviewed against all specification documents (SYSTEM_DESIGN.md, API_SPECIFICATION.md, DATABASE_SCHEMA.md, ENGINE_LOGIC.md, FRONTEND_ARCHITECTURE.md, FRONTEND_COMPONENTS.md, FRONTEND_STATE.md, WEBSOCKET_PROTOCOL.md, BACKEND_ARCHITECTURE.md, EDGE_CASES.md) to ensure comprehensive coverage.
 >
-> **Review Date:** December 9, 2025 - Verified complete coverage including authentication flows, trading engine, admin management, real-time updates, and edge case handling.
+> **Review Date:** December 9, 2025 - Verified complete coverage including authentication flows, trading engine, admin management, real-time updates, and edge case handling. Added SETUP-14 (DI Container) and AUTH-12 (Email Templates) based on architecture review. See `REVIEW_NOTES.md` for detailed analysis.
 
 ---
 
@@ -510,6 +510,42 @@ jobs:
 
 ---
 
+### SETUP-14: Implement Dependency Injection Container
+
+**As a** backend developer  
+**I want** a dependency injection container  
+**So that** I can manage dependencies cleanly and swap implementations
+
+**Acceptance Criteria:**
+- [ ] Create `src/shared/container.ts` with Container class
+- [ ] Support singleton and factory registrations
+- [ ] Create composition root in `src/main.ts`
+- [ ] Register all repositories, services, and use cases
+- [ ] Document the pattern for adding new dependencies
+- [ ] Enable easy mocking for unit tests
+
+**Implementation:**
+```typescript
+// Simple DI Container
+class Container {
+  private singletons = new Map<string, unknown>();
+  private factories = new Map<string, () => unknown>();
+  
+  registerSingleton<T>(key: string, instance: T): void;
+  registerFactory<T>(key: string, factory: () => T): void;
+  resolve<T>(key: string): T;
+}
+
+// Usage in composition root
+const container = new Container();
+container.registerSingleton('db', drizzleClient);
+container.registerFactory('userRepository', () => new PostgresUserRepository(container.resolve('db')));
+```
+
+**References:** BACKEND_ARCHITECTURE.md Section 8
+
+---
+
 ## Epic 1: Authentication
 
 **Goal:** Full auth flow - user can register, login, logout.
@@ -812,6 +848,36 @@ export const Route = createFileRoute('/portfolio/')({
 - [ ] On WebSocket: Handle SESSION_EXPIRED close code (4000)
 
 **References:** WEBSOCKET_PROTOCOL.md Section 7.2, EDGE_CASES.md Section 5.0
+
+---
+
+### AUTH-12: Configure Email Templates
+
+**As a** developer  
+**I want** branded email templates for Supabase Auth  
+**So that** users receive professional-looking emails
+
+**Acceptance Criteria:**
+- [ ] Configure Supabase email templates in project settings
+- [ ] Design welcome/verification email template
+- [ ] Design password reset email template
+- [ ] Test email delivery with Inbucket locally
+- [ ] Verify email links work correctly
+- [ ] Include branding (logo, colors)
+- [ ] Mobile-responsive email layout
+
+**Email Templates to Configure:**
+1. **Confirm Signup** - Sent after registration
+2. **Reset Password** - Sent on forgot password
+3. **Magic Link** - If implementing passwordless auth
+4. **Email Change** - When user updates email
+
+**Local Testing with Inbucket:**
+- Access: http://localhost:54324
+- View all emails sent during local development
+- Test email content and links
+
+**References:** EDGE_CASES.md Section 5.2, Supabase Auth Email Templates
 
 ---
 
@@ -3001,8 +3067,8 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 | Epic | Stories | Description |
 |------|---------|-------------|
-| 0 | 13 | Project Setup (infrastructure, Supabase CLI, testing, CI/CD) |
-| 1 | 11 | Authentication (login, register, session, password reset) |
+| 0 | 14 | Project Setup (infrastructure, Supabase CLI, testing, CI/CD, DI container) |
+| 1 | 12 | Authentication (login, register, session, password reset, email templates) |
 | 2 | 14 | User Profile & Balance (UI components, accessibility, error handling) |
 | 3 | 8 | Markets Listing (search, filter, categories) |
 | 4 | 9 | Market Detail (chart, metadata, time intervals, recent trades) |
@@ -3014,7 +3080,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 | 10 | 16 | Admin - Resolution, Points, Users, Audit (resolve, cancel, grant, users, audit log, categories) |
 | 11 | 11 | WebSocket (connection, channels, reconnect, updates) |
 | 12 | 1 | Webhooks (Future) |
-| **Total** | **120** | |
+| **Total** | **122** | |
 
 ---
 
@@ -3054,4 +3120,4 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-*Document Version: 1.2 | Total Stories: 116 | Last Reviewed: December 9, 2025*
+*Document Version: 1.3 | Total Stories: 122 | Last Reviewed: December 9, 2025*
