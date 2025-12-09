@@ -74,7 +74,7 @@
 **So that** all tables are properly defined with version-controlled migrations
 
 **Acceptance Criteria:**
-- [ ] Create Drizzle schema file with all tables:
+- [x] Create Drizzle schema file with all tables:
   - `users` - User profiles with balance (extends Supabase auth.users)
   - `markets` - Binary prediction markets
   - `liquidity_pools` - CPMM pool state per market
@@ -82,19 +82,19 @@
   - `trade_ledger` - Immutable audit trail
   - `refresh_tokens` - JWT refresh tokens
   - `point_grants` - Audit trail for point grants
-- [ ] Define all constraints:
+- [x] Define all constraints:
   - Non-negative balance/shares checks
   - Valid status/role enums
   - Resolution consistency constraints
-- [ ] Create all indexes per DATABASE_SCHEMA.md Section 5
-- [ ] Define Drizzle relations
-- [ ] Export inferred TypeScript types
-- [ ] Create migrations using drizzle-kit:
+- [x] Create all indexes per DATABASE_SCHEMA.md Section 5
+- [x] Define Drizzle relations
+- [x] Export inferred TypeScript types
+- [x] Create migrations using drizzle-kit:
   - `npx drizzle-kit generate` - generate SQL migrations from schema changes
   - Place migrations in `backend/drizzle/` directory (configured in drizzle.config.ts)
   - `npx drizzle-kit migrate` - apply pending migrations to database
   - `npx drizzle-kit push` - push schema changes directly (dev only)
-- [ ] Create seed data script: `backend/src/infrastructure/database/seed.ts`
+- [x] Create seed data script: `backend/src/infrastructure/database/seed.ts`
 
 **Migration Workflow:**
 ```bash
