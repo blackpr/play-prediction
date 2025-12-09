@@ -41,27 +41,27 @@
 **So that** I can develop locally without affecting production
 
 **Acceptance Criteria:**
-- [ ] Install Supabase CLI globally (`npm i -g supabase`)
-- [ ] Initialize Supabase in project root: `supabase init`
-- [ ] Create `supabase/config.toml` with project configuration
-- [ ] Set up local development environment:
+- [x] Install Supabase CLI globally (`npm i -g supabase`) or use `npx`
+- [x] Initialize Supabase in project root: `supabase init`
+- [x] Create `supabase/config.toml` with project configuration
+- [x] Set up local development environment:
   - `supabase start` - starts local PostgreSQL, Auth, Storage, Studio
   - `supabase stop` - stops local services
   - `supabase status` - shows local service URLs and keys
-- [ ] Create .env.example with all required variables:
-  - SUPABASE_URL (local: http://localhost:54321)
+- [x] Create .env.example with all required variables:
+  - SUPABASE_URL (local: http://127.0.0.1:55321)
   - SUPABASE_ANON_KEY (from `supabase status`)
   - SUPABASE_SERVICE_ROLE_KEY (from `supabase status`)
-  - DATABASE_URL (local: postgresql://postgres:postgres@localhost:54322/postgres)
-- [ ] Create .env.local for local development with CLI-generated keys
-- [ ] Document Supabase Studio access (http://localhost:54323)
-- [ ] Configure connection pooling settings for production
+  - DATABASE_URL (local: postgresql://postgres:postgres@127.0.0.1:55326/postgres)
+- [x] Create .env.local for local development with CLI-generated keys
+- [x] Document Supabase Studio access (http://127.0.0.1:55323)
+- [x] Configure connection pooling settings for production
 
 **Local Services (via `supabase start`):**
-- PostgreSQL: localhost:54322
-- API: localhost:54321
-- Studio: localhost:54323
-- Inbucket (email): localhost:54324
+- PostgreSQL: 127.0.0.1:55326
+- API: 127.0.0.1:55321
+- Studio: 127.0.0.1:55323
+- Inbucket (email): 127.0.0.1:55324
 
 **References:** SYSTEM_DESIGN.md Section 2.2, DATABASE_SCHEMA.md Section 4.2-4.4
 
