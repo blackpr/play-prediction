@@ -1,9 +1,13 @@
 # Play Prediction - User Stories & Implementation Tasks
 
-**Version:** 1.0  
+**Version:** 1.2  
 **Last Updated:** December 2025
 
 This document contains detailed user stories organized by Epic. Each story references the relevant specification documents and includes acceptance criteria.
+
+> **Completeness Check:** This document has been reviewed against all specification documents (SYSTEM_DESIGN.md, API_SPECIFICATION.md, DATABASE_SCHEMA.md, ENGINE_LOGIC.md, FRONTEND_ARCHITECTURE.md, FRONTEND_COMPONENTS.md, FRONTEND_STATE.md, WEBSOCKET_PROTOCOL.md, BACKEND_ARCHITECTURE.md, EDGE_CASES.md) to ensure comprehensive coverage.
+>
+> **Review Date:** December 9, 2025 - Verified complete coverage including authentication flows, trading engine, admin management, real-time updates, and edge case handling.
 
 ---
 
@@ -43,21 +47,34 @@ This document contains detailed user stories organized by Epic. Each story refer
 
 ---
 
-### SETUP-2: Configure Supabase Project
+### SETUP-2: Configure Supabase Project with CLI
 
 **As a** developer  
-**I want** Supabase configured for authentication and database  
-**So that** I can use managed PostgreSQL and auth services
+**I want** Supabase configured with CLI for local development  
+**So that** I can develop locally without affecting production
 
 **Acceptance Criteria:**
-- [ ] Document required Supabase project settings
+- [ ] Install Supabase CLI globally (`npm i -g supabase`)
+- [ ] Initialize Supabase in project root: `supabase init`
+- [ ] Create `supabase/config.toml` with project configuration
+- [ ] Set up local development environment:
+  - `supabase start` - starts local PostgreSQL, Auth, Storage, Studio
+  - `supabase stop` - stops local services
+  - `supabase status` - shows local service URLs and keys
 - [ ] Create .env.example with all required variables:
-  - SUPABASE_URL
-  - SUPABASE_ANON_KEY
-  - SUPABASE_SERVICE_ROLE_KEY
-  - DATABASE_URL
-- [ ] Configure connection pooling settings
-- [ ] Set up environment variable validation with Zod
+  - SUPABASE_URL (local: http://localhost:54321)
+  - SUPABASE_ANON_KEY (from `supabase status`)
+  - SUPABASE_SERVICE_ROLE_KEY (from `supabase status`)
+  - DATABASE_URL (local: postgresql://postgres:postgres@localhost:54322/postgres)
+- [ ] Create .env.local for local development with CLI-generated keys
+- [ ] Document Supabase Studio access (http://localhost:54323)
+- [ ] Configure connection pooling settings for production
+
+**Local Services (via `supabase start`):**
+- PostgreSQL: localhost:54322
+- API: localhost:54321
+- Studio: localhost:54323
+- Inbucket (email): localhost:54324
 
 **References:** SYSTEM_DESIGN.md Section 2.2, DATABASE_SCHEMA.md Section 4.2-4.4
 
@@ -66,8 +83,8 @@ This document contains detailed user stories organized by Epic. Each story refer
 ### SETUP-3: Create Database Schema & Migrations
 
 **As a** developer  
-**I want** complete database schema with Drizzle ORM  
-**So that** all tables are properly defined with constraints
+**I want** complete database schema with Drizzle ORM and Supabase migrations  
+**So that** all tables are properly defined with version-controlled migrations
 
 **Acceptance Criteria:**
 - [ ] Create Drizzle schema file with all tables:
@@ -85,7 +102,29 @@ This document contains detailed user stories organized by Epic. Each story refer
 - [ ] Create all indexes per DATABASE_SCHEMA.md Section 5
 - [ ] Define Drizzle relations
 - [ ] Export inferred TypeScript types
-- [ ] Create initial migration SQL
+- [ ] Create migrations using Supabase CLI:
+  - `supabase migration new <name>` - create new migration
+  - Place SQL in `supabase/migrations/` directory
+  - `supabase db reset` - reset local DB and run all migrations
+  - `supabase db push` - push migrations to remote (staging/prod)
+- [ ] Create seed data script: `supabase/seed.sql`
+
+**Migration Workflow:**
+```bash
+# Create new migration
+supabase migration new create_markets_table
+
+# Edit supabase/migrations/<timestamp>_create_markets_table.sql
+
+# Apply to local database
+supabase db reset
+
+# Generate Drizzle types from DB
+npx drizzle-kit introspect
+
+# Push to remote when ready
+supabase db push
+```
 
 **Tables Detail (from DATABASE_SCHEMA.md):**
 
@@ -227,10 +266,247 @@ This document contains detailed user stories organized by Epic. Each story refer
 - [ ] Configure frontend dev server on port 3000
 - [ ] Set up Vite proxy for /api -> localhost:4000
 - [ ] Set up Vite proxy for /ws -> ws://localhost:4000
-- [ ] Create README.md with setup instructions
+- [ ] Create comprehensive README.md with setup instructions
 - [ ] Document required environment variables
+- [ ] Create `dev` script that starts all services
+
+**Development Scripts (root package.json):**
+```json
+{
+  "scripts": {
+    "dev": "concurrently \"npm run dev:db\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:db": "supabase start",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase migration new",
+    "db:studio": "open http://localhost:54323",
+    "stop": "supabase stop"
+  }
+}
+```
+
+**Local Development URLs:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:4000
+- Supabase API: http://localhost:54321
+- Supabase Studio: http://localhost:54323
+- Inbucket (email testing): http://localhost:54324
 
 **References:** FRONTEND_ARCHITECTURE.md Section 8
+
+---
+
+### SETUP-7: Configure Backend Error Handling
+
+**As a** backend developer  
+**I want** centralized error handling  
+**So that** errors are handled consistently
+
+**Acceptance Criteria:**
+- [ ] Create error handler middleware
+- [ ] Map domain errors to HTTP status codes
+- [ ] Return consistent error response format
+- [ ] Log errors appropriately (don't log expected errors)
+- [ ] Handle Zod validation errors
+- [ ] Handle unknown errors gracefully
+
+**Error Response Format:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message",
+    "details": {}
+  },
+  "meta": {
+    "requestId": "req_abc123"
+  }
+}
+```
+
+**References:** API_SPECIFICATION.md Section 5
+
+---
+
+### SETUP-8: Configure Rate Limiting
+
+**As a** backend developer  
+**I want** rate limiting on API endpoints  
+**So that** the system is protected from abuse
+
+**Acceptance Criteria:**
+- [ ] Install @fastify/rate-limit or similar
+- [ ] Configure limits per endpoint type:
+  - Public: 100 req/min per IP
+  - Authenticated: 60 req/min per user
+  - Trading: 30 req/min per user
+  - Admin: 120 req/min per user
+- [ ] Return rate limit headers (X-RateLimit-*)
+- [ ] Return 429 with Retry-After header when exceeded
+
+**References:** API_SPECIFICATION.md Section 6
+
+---
+
+### SETUP-9: Configure Structured Logging
+
+**As a** backend developer  
+**I want** structured JSON logging  
+**So that** logs are searchable and analyzable
+
+**Acceptance Criteria:**
+- [ ] Use Pino logger (Fastify default)
+- [ ] Log level based on environment
+- [ ] Include requestId in all logs
+- [ ] Include userId when authenticated
+- [ ] Never log sensitive data (passwords, tokens)
+- [ ] Log trade executions with amounts
+
+**Log Format:**
+```json
+{
+  "level": "info",
+  "time": "2024-12-09T10:30:00Z",
+  "requestId": "req_abc123",
+  "userId": "user_xyz",
+  "msg": "Trade executed",
+  "marketId": "mkt_123",
+  "action": "BUY"
+}
+```
+
+**References:** SYSTEM_DESIGN.md Section 8.3
+
+---
+
+### SETUP-10: Implement Health Check Endpoint
+
+**As a** DevOps engineer  
+**I want** a health check endpoint  
+**So that** I can monitor system health
+
+**Endpoint:** `GET /health`
+
+**Acceptance Criteria:**
+- [ ] Public endpoint (no auth required)
+- [ ] Check database connectivity
+- [ ] Check Supabase auth connectivity
+- [ ] Return overall status
+- [ ] Return component statuses
+- [ ] Fast response (<100ms)
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-12-09T10:30:00Z",
+  "components": {
+    "database": { "status": "healthy", "latency": 5 },
+    "auth": { "status": "healthy", "latency": 10 }
+  }
+}
+```
+
+---
+
+### SETUP-11: Configure Test Infrastructure
+
+**As a** developer  
+**I want** test infrastructure configured  
+**So that** I can write and run tests
+
+**Acceptance Criteria:**
+- [ ] Configure Vitest for backend
+- [ ] Use local Supabase for integration tests (`supabase start`)
+- [ ] Create test utilities for common patterns:
+  - `createTestUser()` - creates user with Supabase auth
+  - `createTestMarket()` - creates market with liquidity
+  - `cleanupTestData()` - removes test data after each test
+- [ ] Configure code coverage reporting
+- [ ] Add test scripts to package.json
+- [ ] Create example unit test (domain logic)
+- [ ] Create example integration test (with local Supabase)
+- [ ] Set up GitHub Actions to run tests with Supabase CLI
+
+**Scripts:**
+```json
+{
+  "test": "vitest",
+  "test:coverage": "vitest --coverage",
+  "test:ui": "vitest --ui",
+  "test:integration": "supabase start && vitest run --config vitest.integration.config.ts && supabase stop"
+}
+```
+
+**Test Environment:**
+- Unit tests: Mock Supabase client, test domain logic in isolation
+- Integration tests: Use local Supabase via CLI, real database operations
+- E2E tests: Full stack with local services
+
+**References:** BACKEND_ARCHITECTURE.md Section 9
+
+---
+
+### SETUP-12: Implement Circuit Breakers
+
+**As a** system administrator  
+**I want** circuit breakers on critical operations  
+**So that** the system fails safely under stress
+
+**Acceptance Criteria:**
+- [ ] k-invariant monitor: Alert and reject if k decreases
+- [ ] Rapid price movement detector: Alert if >30% in 5 minutes
+- [ ] High error rate detector: Alert if >5% errors for 5 minutes
+- [ ] Database connection monitor: Reject requests if pool exhausted
+- [ ] Log all circuit breaker triggers
+- [ ] Admin notification on trigger
+
+**References:** EDGE_CASES.md Section 10
+
+---
+
+### SETUP-13: Configure CI/CD with Supabase CLI
+
+**As a** developer  
+**I want** automated CI/CD pipeline  
+**So that** code is tested and deployed consistently
+
+**Acceptance Criteria:**
+- [ ] Create `.github/workflows/test.yml` for PR checks:
+  - Install Supabase CLI
+  - Run `supabase start` for integration tests
+  - Run unit tests
+  - Run integration tests
+  - Check TypeScript compilation
+  - Run linting
+- [ ] Create `.github/workflows/deploy.yml` for deployments:
+  - Deploy backend to hosting platform
+  - Run `supabase db push` to apply migrations
+  - Deploy frontend to CDN
+- [ ] Configure Supabase project linking:
+  - `supabase link --project-ref <project-id>`
+  - Store `SUPABASE_ACCESS_TOKEN` in GitHub secrets
+- [ ] Set up staging and production environments
+
+**GitHub Actions Example:**
+```yaml
+name: Test
+on: [pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start
+      - run: npm ci
+      - run: npm test
+      - run: supabase stop
+```
 
 ---
 
@@ -469,6 +745,76 @@ export const Route = createFileRoute('/portfolio/')({
 
 ---
 
+### AUTH-9: Implement OAuth Callback Endpoint
+
+**As a** backend developer  
+**I want** OAuth callback handling  
+**So that** email verification and OAuth work
+
+**Endpoint:** `GET /v1/auth/callback`
+
+**Query Params:**
+- `token_hash` - from email link
+- `type` - email or signup
+
+**Acceptance Criteria:**
+- [ ] Verify OTP with Supabase
+- [ ] Redirect to frontend on success
+- [ ] Handle errors gracefully
+
+**References:** API_SPECIFICATION.md Section 4.1.4
+
+---
+
+### AUTH-10: Implement Password Reset Flow
+
+**As a** user  
+**I want** to reset my password if I forget it  
+**So that** I can regain access to my account
+
+**Endpoints:**
+- `POST /v1/auth/forgot-password` - Request reset email
+- `POST /v1/auth/reset-password` - Set new password with token
+
+**Acceptance Criteria:**
+- [ ] Forgot Password: Call `supabase.auth.resetPasswordForEmail()`
+- [ ] Send reset email with secure token link
+- [ ] Reset Password: Validate token and update password
+- [ ] Invalidate all existing sessions after password change
+- [ ] Return appropriate error messages
+- [ ] Rate limit: Max 3 reset requests per email per hour
+
+**Frontend:**
+- [ ] Create `/forgot-password` route
+- [ ] Email input form with validation
+- [ ] Success message: "Check your email for reset link"
+- [ ] Create `/reset-password` route (with token in URL)
+- [ ] New password + confirm password inputs
+- [ ] Password strength requirements display
+- [ ] Success message + redirect to login
+
+**References:** EDGE_CASES.md Section 5
+
+---
+
+### AUTH-11: Handle Session Expiration
+
+**As a** user  
+**I want** graceful handling when my session expires  
+**So that** I don't lose my work and can re-authenticate
+
+**Acceptance Criteria:**
+- [ ] Detect 401 responses from API
+- [ ] Show session expiry modal/notification
+- [ ] Preserve current URL for redirect after re-login
+- [ ] Clear stale cache data
+- [ ] Redirect to login with return URL
+- [ ] On WebSocket: Handle SESSION_EXPIRED close code (4000)
+
+**References:** WEBSOCKET_PROTOCOL.md Section 7.2, EDGE_CASES.md Section 5.0
+
+---
+
 ## Epic 2: User Profile & Balance
 
 **Goal:** User can see their profile and point balance.
@@ -560,6 +906,170 @@ export const Route = createFileRoute('/portfolio/')({
 - [ ] Show type badge (Registration, Admin Grant, etc.)
 - [ ] Show amount and running balance
 - [ ] Pagination
+
+---
+
+### USER-6: Create Landing Page
+
+**As a** visitor  
+**I want** an engaging landing page  
+**So that** I understand what the platform does
+
+**Route:** `/`
+
+**Acceptance Criteria:**
+- [ ] Create route at `src/routes/index.tsx`
+- [ ] Hero section with tagline and CTA
+- [ ] Featured/trending markets section
+- [ ] How it works section (3 steps)
+- [ ] Call to action for registration
+- [ ] Responsive design
+- [ ] Animated elements (subtle)
+
+**Sections:**
+1. Hero: "Predict the Future. Trade Your Knowledge."
+2. Featured Markets: Top 3 active markets
+3. How It Works: Register → Browse → Trade
+4. CTA: Get Started button
+
+---
+
+### USER-7: Create Footer Component
+
+**As a** user  
+**I want** a footer on all pages  
+**So that** I can access important links
+
+**Acceptance Criteria:**
+- [ ] Create `src/components/layout/Footer.tsx`
+- [ ] Logo and tagline
+- [ ] Navigation links
+- [ ] Social links (placeholder)
+- [ ] Copyright notice
+- [ ] Responsive layout (stacked on mobile)
+
+---
+
+### USER-8: Create Toast Notification System
+
+**As a** user  
+**I want** toast notifications  
+**So that** I get feedback on my actions
+
+**Acceptance Criteria:**
+- [ ] Create `src/components/ui/Toast.tsx`
+- [ ] Create toast context/provider
+- [ ] Support variants: success, error, warning, info
+- [ ] Auto-dismiss after 5 seconds
+- [ ] Manual dismiss button
+- [ ] Stack multiple toasts
+- [ ] Position: bottom-right
+
+**Usage:**
+```typescript
+const toast = useToast()
+toast.success('Trade executed successfully!')
+toast.error('Insufficient balance')
+```
+
+---
+
+### USER-9: Create Loading Skeleton Components
+
+**As a** user  
+**I want** loading skeletons  
+**So that** I see placeholder content while data loads
+
+**Acceptance Criteria:**
+- [ ] Create `src/components/ui/Skeleton.tsx`
+- [ ] Create `src/components/market/MarketCardSkeleton.tsx`
+- [ ] Create `src/components/portfolio/PositionCardSkeleton.tsx`
+- [ ] Pulse animation
+- [ ] Match dimensions of real components
+
+---
+
+### USER-10: Create 404 Not Found Page
+
+**As a** user  
+**I want** a friendly 404 page  
+**So that** I'm not confused when I hit a broken link
+
+**Route:** Catch-all route
+
+**Acceptance Criteria:**
+- [ ] Clear "Page Not Found" message
+- [ ] Link back to home
+- [ ] Link to markets
+- [ ] Consistent with site design
+
+---
+
+### USER-11: Create Mobile Navigation
+
+**As a** mobile user  
+**I want** a mobile-friendly navigation  
+**So that** I can navigate on small screens
+
+**Acceptance Criteria:**
+- [ ] Hamburger menu icon on mobile
+- [ ] Slide-out drawer or dropdown menu
+- [ ] All navigation links accessible
+- [ ] Balance displayed in mobile nav
+- [ ] Close on navigation
+- [ ] Close on outside click
+
+---
+
+### USER-12: Create Error Boundary Component
+
+**As a** user  
+**I want** graceful error handling  
+**So that** the app doesn't crash completely on errors
+
+**Acceptance Criteria:**
+- [ ] Create `src/components/ErrorBoundary.tsx`
+- [ ] Catch JavaScript errors in component tree
+- [ ] Display friendly error message
+- [ ] Provide "Try Again" / "Go Home" buttons
+- [ ] Log errors to monitoring service (optional)
+- [ ] Preserve navigation ability
+- [ ] Different styles for different error types
+
+**References:** FRONTEND_STATE.md Section 8
+
+---
+
+### USER-13: Implement Accessibility (a11y) Standards
+
+**As a** user with accessibility needs  
+**I want** the application to be fully accessible  
+**So that** I can use it with assistive technologies
+
+**Acceptance Criteria:**
+- [ ] All interactive elements keyboard navigable
+- [ ] Proper focus management on modals
+- [ ] ARIA labels on all buttons and inputs
+- [ ] Color contrast meets WCAG AA standards
+- [ ] Screen reader announcements for dynamic content
+- [ ] Skip to main content link
+- [ ] Form error announcements
+- [ ] Trade confirmation announced to screen readers
+
+---
+
+### USER-14: Create Network Status Indicator
+
+**As a** user  
+**I want** to know when I'm offline or have connectivity issues  
+**So that** I understand why actions might fail
+
+**Acceptance Criteria:**
+- [ ] Detect online/offline status
+- [ ] Show banner when offline
+- [ ] Queue actions while offline (optional)
+- [ ] Show reconnection status
+- [ ] Different indicator from WebSocket status
 
 ---
 
@@ -702,6 +1212,40 @@ export const Route = createFileRoute('/portfolio/')({
 
 ---
 
+### MARKET-7: Add Market Search
+
+**As a** user  
+**I want** to search markets by title  
+**So that** I can find specific markets quickly
+
+**Acceptance Criteria:**
+- [ ] Search input in markets page header
+- [ ] Debounce search input (300ms)
+- [ ] Update URL search params with query
+- [ ] Search server-side (not client filter)
+- [ ] Clear search button
+- [ ] Show "No results" message when empty
+
+---
+
+### MARKET-8: Add Category Filter
+
+**As a** user  
+**I want** to filter markets by category  
+**So that** I can browse specific topics
+
+**Acceptance Criteria:**
+- [ ] Category chips/pills below search
+- [ ] "All" option to clear filter
+- [ ] Combine with status filter
+- [ ] Update URL search params
+- [ ] Categories fetched from backend or defined in config
+
+**Default Categories:**
+- Sports, Politics, Crypto, Technology, Entertainment, Weather, Other
+
+---
+
 ## Epic 4: Market Detail
 
 **Goal:** Single market view with all details and price chart.
@@ -822,6 +1366,37 @@ export const Route = createFileRoute('/portfolio/')({
 - [ ] Display trade count
 - [ ] Display resolution criteria from description
 - [ ] Display category badge
+
+---
+
+### DETAIL-7: Add Price Chart Time Interval Selector
+
+**As a** user  
+**I want** to select different time intervals for the price chart  
+**So that** I can analyze short-term and long-term trends
+
+**Acceptance Criteria:**
+- [ ] Interval buttons: 1H, 24H, 7D, 30D, All
+- [ ] Update chart data when interval changes
+- [ ] Remember user preference (localStorage)
+- [ ] Loading state while fetching new data
+- [ ] Disable intervals with insufficient data
+
+**References:** API_SPECIFICATION.md Section 4.3.3
+
+---
+
+### DETAIL-8: Show Market Creator Info
+
+**As a** user  
+**I want** to see who created the market  
+**So that** I can assess the market's credibility
+
+**Acceptance Criteria:**
+- [ ] Display creator's display name or "Admin"
+- [ ] Show creation date
+- [ ] Admin badge if created by admin
+- [ ] Link to view creator's other markets (optional)
 
 ---
 
@@ -1175,6 +1750,56 @@ WHERE id = ? AND version_id = ?
 
 ---
 
+### TRADEUI-8: Show Price Impact Warning
+
+**As a** user  
+**I want** to be warned about high price impact  
+**So that** I don't accidentally make unfavorable trades
+
+**Acceptance Criteria:**
+- [ ] Calculate price impact from quote
+- [ ] Show warning when impact > 1%
+- [ ] Show strong warning when impact > 5%
+- [ ] Block or require confirmation when impact > 10%
+- [ ] Explain price impact in tooltip
+- [ ] Suggest smaller trade size
+
+**References:** ENGINE_LOGIC.md Section 5, EDGE_CASES.md Section 3.2
+
+---
+
+### TRADEUI-9: Add Slippage Tolerance Settings
+
+**As a** user  
+**I want** to configure my slippage tolerance  
+**So that** I can control trade execution parameters
+
+**Acceptance Criteria:**
+- [ ] Slippage tolerance setting (0.5%, 1%, 2%, custom)
+- [ ] Store preference in localStorage
+- [ ] Use setting to calculate minSharesOut/minAmountOut
+- [ ] Show estimated slippage in trade preview
+- [ ] Warning if slippage setting is very high
+
+**References:** API_SPECIFICATION.md Section 4.4.1
+
+---
+
+### TRADEUI-10: Add Trade Confirmation Modal
+
+**As a** user  
+**I want** to confirm large trades before execution  
+**So that** I don't accidentally make significant trades
+
+**Acceptance Criteria:**
+- [ ] Show confirmation modal for trades > threshold (e.g., 100 Points)
+- [ ] Display full trade details
+- [ ] Show price impact and fees
+- [ ] Require explicit confirmation
+- [ ] Optional "Don't show again" checkbox for session
+
+---
+
 ## Epic 7: Mint & Merge
 
 **Goal:** Advanced trading - create and destroy share pairs.
@@ -1427,6 +2052,21 @@ User holds 100 NO shares, wants to buy YES with $50:
 
 ---
 
+### PORT-7: Create Empty State Components
+
+**As a** user  
+**I want** helpful empty states  
+**So that** I know what to do when I have no data
+
+**Acceptance Criteria:**
+- [ ] Empty portfolio: "You don't have any positions yet"
+- [ ] Empty trade history: "No trades yet"
+- [ ] CTA button linking to markets page
+- [ ] Illustration/icon for visual appeal
+- [ ] Different message for filtered empty results
+
+---
+
 ## Epic 9: Admin - Market Management
 
 **Goal:** Admins can create and manage markets.
@@ -1524,7 +2164,32 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-### ADMIN-5: Create Market Creation Form
+### ADMIN-5: Create Admin Dashboard Content
+
+**As an** admin  
+**I want** a dashboard with key metrics  
+**So that** I can monitor platform health
+
+**Route:** `/admin` (dashboard section)
+
+**Acceptance Criteria:**
+- [ ] Total users count
+- [ ] Active markets count
+- [ ] 24h trading volume
+- [ ] Recent trades list (last 10)
+- [ ] Markets pending resolution
+- [ ] Quick action buttons (Create Market, Grant Points)
+- [ ] Auto-refresh data every 60 seconds
+
+**Metrics Cards:**
+```
+[ Total Users: 1,234 ]  [ Active Markets: 12 ]
+[ 24h Volume: $15,000 ] [ Pending Resolution: 3 ]
+```
+
+---
+
+### ADMIN-6: Create Market Creation Form
 
 **As an** admin  
 **I want** a form to create markets  
@@ -1542,7 +2207,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-### ADMIN-6: Create Markets Management Table
+### ADMIN-7: Create Markets Management Table
 
 **As an** admin  
 **I want** a markets table  
@@ -1555,6 +2220,49 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 - [ ] Filter by status
 - [ ] Search by title
 - [ ] Pagination
+
+---
+
+### ADMIN-8: Implement Skewed Genesis Option
+
+**As an** admin  
+**I want** to create markets with non-50/50 starting probabilities  
+**So that** I can seed markets closer to expected outcomes
+
+**Endpoint:** `POST /v1/admin/markets` (additional parameter)
+
+**Request Addition:**
+```json
+{
+  "initialYesPrice": 0.75
+}
+```
+
+**Acceptance Criteria:**
+- [ ] Accept optional `initialYesPrice` parameter (0.01-0.99)
+- [ ] Calculate appropriate YES/NO quantities for target price
+- [ ] Validate price is within allowed range
+- [ ] Display initial probability in creation form
+- [ ] Preview shows expected starting prices
+
+**References:** ENGINE_LOGIC.md Section 8 (genesisMarketSkewed)
+
+---
+
+### ADMIN-9: Implement Market Image Upload
+
+**As an** admin  
+**I want** to upload images for markets  
+**So that** markets have visual appeal
+
+**Acceptance Criteria:**
+- [ ] Image upload component in market creation form
+- [ ] Accept JPEG, PNG, WebP formats
+- [ ] Max file size: 5MB
+- [ ] Image preview before upload
+- [ ] Store in Supabase Storage
+- [ ] Generate and store public URL
+- [ ] Image optimization/resize (optional)
 
 ---
 
@@ -1693,7 +2401,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-### ADMIN-7: Implement GET /admin/users
+### ADMIN-14: Implement GET /admin/users
 
 **As an** admin  
 **I want** to list all users  
@@ -1715,7 +2423,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-### ADMIN-8: Implement GET /admin/users/:id
+### ADMIN-15: Implement GET /admin/users/:id
 
 **As an** admin  
 **I want** to view user details  
@@ -1732,7 +2440,7 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-### ADMIN-9: Create Users Management Table
+### ADMIN-16: Create Users Management Table
 
 **As an** admin  
 **I want** a users management view  
@@ -1748,24 +2456,231 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
-### AUTH-9: Implement OAuth Callback Endpoint
+### ADMIN-17: Implement Market Edit Endpoint
 
-**As a** backend developer  
-**I want** OAuth callback handling  
-**So that** email verification and OAuth work
+**As an** admin  
+**I want** to edit market details  
+**So that** I can fix typos or update information before activation
 
-**Endpoint:** `GET /v1/auth/callback`
+**Endpoint:** `PATCH /v1/admin/markets/:id`
 
-**Query Params:**
-- `token_hash` - from email link
-- `type` - email or signup
+**Request:**
+```json
+{
+  "title": "Updated title",
+  "description": "Updated description",
+  "category": "New Category",
+  "imageUrl": "https://new-url.com/image.jpg",
+  "closesAt": "2024-12-15T23:59:59Z"
+}
+```
 
 **Acceptance Criteria:**
-- [ ] Verify OTP with Supabase
-- [ ] Redirect to frontend on success
-- [ ] Handle errors gracefully
+- [ ] Require admin role
+- [ ] Only allow editing DRAFT markets
+- [ ] Validate all fields
+- [ ] Cannot change market ID
+- [ ] Log edit action
+- [ ] Return updated market
 
-**References:** API_SPECIFICATION.md Section 4.1.4
+**Errors:**
+- MARKET_NOT_FOUND (404)
+- MARKET_NOT_EDITABLE (400) - if not DRAFT status
+
+---
+
+### ADMIN-18: Create Market Edit Form
+
+**As an** admin  
+**I want** a form to edit existing markets  
+**So that** I can correct information before going live
+
+**Acceptance Criteria:**
+- [ ] Pre-populate form with existing market data
+- [ ] Only available for DRAFT markets
+- [ ] Same validation as creation form
+- [ ] Show diff/changes before submit
+- [ ] Success feedback after save
+
+---
+
+### ADMIN-19: Implement Admin Stats Endpoint
+
+**As an** admin  
+**I want** platform statistics  
+**So that** I can view them on the dashboard
+
+**Endpoint:** `GET /v1/admin/stats`
+
+**Acceptance Criteria:**
+- [ ] Require admin role
+- [ ] Return aggregated statistics:
+  - Total users count
+  - Active users (traded in last 7 days)
+  - Active markets count
+  - Pending resolution count
+  - 24h trading volume
+  - Total trading volume
+- [ ] Cache results for 1 minute
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "users": {
+      "total": 1234,
+      "activeLastWeek": 456
+    },
+    "markets": {
+      "total": 50,
+      "active": 12,
+      "pendingResolution": 3,
+      "resolved": 30,
+      "cancelled": 5
+    },
+    "volume": {
+      "total": "50000000000",
+      "last24h": "1500000000"
+    }
+  }
+}
+```
+
+---
+
+### ADMIN-20: Implement GET /admin/markets Endpoint
+
+**As an** admin  
+**I want** to list all markets with admin details  
+**So that** I can manage them effectively
+
+**Endpoint:** `GET /v1/admin/markets`
+
+**Query Params:**
+- `status` - filter by any status including DRAFT
+- `page`, `pageSize`
+- `search` - search by title
+
+**Acceptance Criteria:**
+- [ ] Require admin role
+- [ ] Include DRAFT markets (not visible to public)
+- [ ] Include creation info (who created, when)
+- [ ] Include holder count per market
+- [ ] Include total volume per market
+- [ ] Paginated response
+
+**Response includes per market:**
+```json
+{
+  "id": "mkt_abc",
+  "title": "...",
+  "status": "DRAFT",
+  "createdBy": { "id": "...", "email": "admin@..." },
+  "holdersCount": 45,
+  "totalVolume": "5000000",
+  "pool": { "yesQty": "...", "noQty": "..." }
+}
+```
+
+---
+
+### ADMIN-21: Implement Admin Audit Log
+
+**As an** admin  
+**I want** to view an audit log of all admin actions  
+**So that** I can track changes and ensure accountability
+
+**Endpoint:** `GET /v1/admin/audit-log`
+
+**Query Params:**
+- `adminId` - filter by admin user
+- `action` - filter by action type
+- `startDate`, `endDate`
+- `page`, `pageSize`
+
+**Actions to Log:**
+- Market created
+- Market activated/paused/resumed
+- Market resolved/cancelled
+- Points granted
+- User role changed
+- Market edited
+
+**Acceptance Criteria:**
+- [ ] Log all admin actions with timestamp
+- [ ] Include admin user who performed action
+- [ ] Include affected entity (market/user ID)
+- [ ] Include before/after values where applicable
+- [ ] Paginated, filterable response
+- [ ] Immutable audit trail
+
+**References:** EDGE_CASES.md Section 5.5
+
+---
+
+### ADMIN-22: Create Audit Log Viewer
+
+**As an** admin  
+**I want** a UI to browse the audit log  
+**So that** I can review admin activity
+
+**Acceptance Criteria:**
+- [ ] Table with audit entries
+- [ ] Columns: Timestamp, Admin, Action, Target, Details
+- [ ] Filter by date range
+- [ ] Filter by admin user
+- [ ] Filter by action type
+- [ ] Export to CSV option
+- [ ] Pagination
+
+---
+
+### ADMIN-23: Implement Categories Management
+
+**As an** admin  
+**I want** to manage market categories  
+**So that** I can organize markets effectively
+
+**Endpoints:**
+- `GET /v1/admin/categories` - List all categories
+- `POST /v1/admin/categories` - Create category
+- `PATCH /v1/admin/categories/:id` - Update category
+- `DELETE /v1/admin/categories/:id` - Soft delete category
+
+**Acceptance Criteria:**
+- [ ] Require admin role for all operations
+- [ ] Categories have: id, name, slug, description, sortOrder, isActive
+- [ ] Cannot delete category with active markets
+- [ ] UI for category CRUD operations
+
+---
+
+### ADMIN-24: Implement Market Close Time Extension
+
+**As an** admin  
+**I want** to extend a market's close time  
+**So that** I can handle delayed event outcomes
+
+**Endpoint:** `PATCH /v1/admin/markets/:id/extend`
+
+**Request:**
+```json
+{
+  "newClosesAt": "2024-12-20T23:59:59Z",
+  "reason": "Event delayed due to weather"
+}
+```
+
+**Acceptance Criteria:**
+- [ ] Require admin role
+- [ ] Market must be ACTIVE
+- [ ] New time must be in the future
+- [ ] New time must be after current closesAt
+- [ ] Notify market subscribers via WebSocket
+- [ ] Log extension in audit trail
+
+**References:** EDGE_CASES.md Section 7.4
 
 ---
 
@@ -1930,6 +2845,21 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 ---
 
+### WS-8: Show Connection Status Indicator
+
+**As a** user  
+**I want** to see my connection status  
+**So that** I know if real-time data is working
+
+**Acceptance Criteria:**
+- [ ] Connection status indicator in header
+- [ ] States: Connected (green), Connecting (yellow), Disconnected (red)
+- [ ] Tooltip with status details
+- [ ] Reconnection attempt indicator
+- [ ] Manual reconnect button when disconnected
+
+---
+
 ## Epic 12: Webhooks (Optional/Future)
 
 **Goal:** External integrations can receive event notifications.
@@ -2002,21 +2932,57 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 
 | Epic | Stories | Description |
 |------|---------|-------------|
-| 0 | 6 | Project Setup |
-| 1 | 9 | Authentication |
-| 2 | 5 | User Profile & Balance |
-| 3 | 6 | Markets Listing |
-| 4 | 6 | Market Detail |
-| 5 | 7 | Trading Engine |
-| 6 | 7 | Trading UI |
-| 7 | 4 | Mint & Merge |
-| 8 | 6 | Portfolio |
-| 9 | 9 | Admin Markets |
-| 10 | 5 | Resolution & Points |
-| 11 | 7 | WebSocket |
+| 0 | 13 | Project Setup (infrastructure, Supabase CLI, testing, CI/CD) |
+| 1 | 11 | Authentication (login, register, session, password reset) |
+| 2 | 14 | User Profile & Balance (UI components, accessibility, error handling) |
+| 3 | 8 | Markets Listing (search, filter, categories) |
+| 4 | 8 | Market Detail (chart, metadata, time intervals) |
+| 5 | 7 | Trading Engine (CPMM, fees, validation) |
+| 6 | 10 | Trading UI (form, slippage, price impact, confirmation) |
+| 7 | 4 | Mint & Merge (netting protocol) |
+| 8 | 7 | Portfolio (positions, P&L, history, empty states) |
+| 9 | 9 | Admin - Market Management (CRUD, skewed genesis, images) |
+| 10 | 16 | Admin - Resolution, Points, Users, Audit (resolve, cancel, grant, users, audit log, categories) |
+| 11 | 8 | WebSocket (connection, channels, reconnect) |
 | 12 | 1 | Webhooks (Future) |
-| **Total** | **78** | |
+| **Total** | **116** | |
 
 ---
 
-*Document Version: 1.0 | Total Stories: 78*
+## Implementation Priority
+
+### Phase 1: Foundation (MVP Core)
+1. Epic 0 (SETUP-1 through SETUP-6) - Project setup with Supabase CLI
+2. Epic 1 (AUTH-1 through AUTH-4) - Backend auth
+3. Epic 5 (TRADE-1 through TRADE-7) - Trading engine
+4. Epic 3 (MARKET-1, MARKET-2) - Markets API
+
+### Phase 2: Basic UI
+1. Epic 0 (SETUP-7 through SETUP-13) - Infrastructure, testing & CI/CD
+2. Epic 1 (AUTH-5 through AUTH-9) - Frontend auth
+3. Epic 3 (MARKET-3 through MARKET-8) - Markets UI
+4. Epic 2 (USER-1 through USER-5) - User profile
+
+### Phase 3: Trading Flow
+1. Epic 4 (DETAIL-1 through DETAIL-8) - Market detail page
+2. Epic 6 (TRADEUI-1 through TRADEUI-7) - Core trading UI
+3. Epic 7 (MINT-1 through MINT-4) - Mint & merge
+4. Epic 8 (PORT-1 through PORT-7) - Portfolio
+
+### Phase 4: Admin & Resolution
+1. Epic 9 (ADMIN-1 through ADMIN-9) - Admin market management
+2. Epic 10 (RESOLVE-1 through RESOLVE-5, ADMIN-14 through ADMIN-24) - Resolution, points, user management, audit
+
+### Phase 5: Real-Time & Polish
+1. Epic 11 (WS-1 through WS-8) - WebSocket real-time updates
+2. Epic 6 (TRADEUI-8 through TRADEUI-10) - Price impact, slippage, confirmations
+3. Epic 2 (USER-6 through USER-14) - UI polish, accessibility, error handling
+4. Epic 1 (AUTH-10, AUTH-11) - Password reset, session handling
+
+### Phase 6: Advanced Features (Optional)
+1. Epic 12 - Webhooks
+2. Admin advanced: Categories management (ADMIN-23), audit log viewer (ADMIN-22)
+
+---
+
+*Document Version: 1.2 | Total Stories: 116 | Last Reviewed: December 9, 2025*
