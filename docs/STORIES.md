@@ -22,9 +22,9 @@ This document contains detailed user stories organized by Epic. Each story refer
 **So that** I can build the API with TypeScript, Fastify, and Drizzle ORM
 
 **Acceptance Criteria:**
-- [ ] Create `backend/` directory with package.json
-- [ ] Configure TypeScript with strict mode (tsconfig.json)
-- [ ] Install dependencies:
+- [x] Create `backend/` directory with package.json
+- [x] Configure TypeScript with strict mode (tsconfig.json)
+- [x] Install dependencies:
   - fastify ^4.28.1
   - @fastify/cookie, @fastify/cors, @fastify/websocket
   - drizzle-orm, postgres
@@ -32,7 +32,7 @@ This document contains detailed user stories organized by Epic. Each story refer
   - zod for validation
   - tsx for development
   - vitest for testing
-- [ ] Set up folder structure per BACKEND_ARCHITECTURE.md:
+- [x] Set up folder structure per BACKEND_ARCHITECTURE.md:
   ```
   src/
   ├── domain/           # Pure business logic
@@ -41,7 +41,7 @@ This document contains detailed user stories organized by Epic. Each story refer
   ├── presentation/     # Fastify routes
   └── shared/           # Config, logger, utils
   ```
-- [ ] Create drizzle.config.ts
+- [x] Create drizzle.config.ts
 
 **References:** BACKEND_ARCHITECTURE.md Section 2
 
