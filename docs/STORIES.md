@@ -83,7 +83,7 @@ This document contains detailed user stories organized by Epic. Each story refer
 ### SETUP-3: Create Database Schema & Migrations
 
 **As a** developer  
-**I want** complete database schema with Drizzle ORM and Supabase migrations  
+**I want** complete database schema with Drizzle ORM and drizzle-kit migrations  
 **So that** all tables are properly defined with version-controlled migrations
 
 **Acceptance Criteria:**
@@ -102,28 +102,28 @@ This document contains detailed user stories organized by Epic. Each story refer
 - [ ] Create all indexes per DATABASE_SCHEMA.md Section 5
 - [ ] Define Drizzle relations
 - [ ] Export inferred TypeScript types
-- [ ] Create migrations using Supabase CLI:
-  - `supabase migration new <name>` - create new migration
-  - Place SQL in `supabase/migrations/` directory
-  - `supabase db reset` - reset local DB and run all migrations
-  - `supabase db push` - push migrations to remote (staging/prod)
-- [ ] Create seed data script: `supabase/seed.sql`
+- [ ] Create migrations using drizzle-kit:
+  - `npx drizzle-kit generate` - generate SQL migrations from schema changes
+  - Place migrations in `backend/drizzle/` directory (configured in drizzle.config.ts)
+  - `npx drizzle-kit migrate` - apply pending migrations to database
+  - `npx drizzle-kit push` - push schema changes directly (dev only)
+- [ ] Create seed data script: `backend/src/infrastructure/database/seed.ts`
 
 **Migration Workflow:**
 ```bash
-# Create new migration
-supabase migration new create_markets_table
+# After modifying Drizzle schema, generate migration
+npx drizzle-kit generate
 
-# Edit supabase/migrations/<timestamp>_create_markets_table.sql
+# Review generated SQL in backend/drizzle/<timestamp>_*.sql
 
-# Apply to local database
-supabase db reset
+# Apply migrations to local database
+npx drizzle-kit migrate
 
-# Generate Drizzle types from DB
-npx drizzle-kit introspect
+# Or push directly during development (bypasses migration files)
+npx drizzle-kit push
 
-# Push to remote when ready
-supabase db push
+# View database in Drizzle Studio
+npx drizzle-kit studio
 ```
 
 **Tables Detail (from DATABASE_SCHEMA.md):**
@@ -278,9 +278,10 @@ supabase db push
     "dev:db": "supabase start",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "db:reset": "supabase db reset",
-    "db:migrate": "supabase migration new",
-    "db:studio": "open http://localhost:54323",
+    "db:generate": "npm run db:generate --workspace=backend",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:push": "npm run db:push --workspace=backend",
+    "db:studio": "npm run db:studio --workspace=backend",
     "stop": "supabase stop"
   }
 }
@@ -483,7 +484,7 @@ supabase db push
   - Run linting
 - [ ] Create `.github/workflows/deploy.yml` for deployments:
   - Deploy backend to hosting platform
-  - Run `supabase db push` to apply migrations
+  - Run `npx drizzle-kit migrate` to apply migrations
   - Deploy frontend to CDN
 - [ ] Configure Supabase project linking:
   - `supabase link --project-ref <project-id>`
