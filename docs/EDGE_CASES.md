@@ -525,26 +525,87 @@ await tx.insert(liquidityPools).values({
 
 **Mitigation:**
 ```typescript
-if (market.closesAt && market.closesAt < new Date()) {
-  throw new Error('MARKET_CLOSED: Past closing time');
+// Behavior depends on close_behavior setting
+if (market.closeBehavior === 'auto') {
+  // Auto-close markets: block immediately
+  if (market.closesAt && market.closesAt < new Date()) {
+    throw new Error('MARKET_CLOSED: Past closing time');
+  }
+} else if (market.closeBehavior === 'auto_with_buffer') {
+  // Buffer markets: block after buffer expires
+  const bufferEnd = new Date(market.closesAt.getTime() + market.bufferMinutes * 60000);
+  if (bufferEnd < new Date()) {
+    throw new Error('MARKET_CLOSED: Buffer period expired');
+  }
 }
+// 'manual' close_behavior: no automatic blocking (admin closes)
 ```
 
-**Current Behavior (Soft Deadline):**
-- Runtime check blocks new trades when `closesAt` has passed
-- Market status remains `ACTIVE` until admin explicitly resolves/pauses
-- Users see "Market closed for trading" but status may still show ACTIVE
+**Market Close Behavior System** (See SYSTEM_DESIGN.md Section 5.5):
+
+Markets have a `close_behavior` field that determines how they transition:
+
+| `close_behavior` | Behavior When `closes_at` Passes | Use Case |
+|-----------------|----------------------------------|----------|
+| `'auto'` | Immediately transition to PAUSED | Crypto prices, weather, exact-time events |
+| `'manual'` | No auto-transition; admin closes | Soccer (added time), elections, awards |
+| `'auto_with_buffer'` | Transition after `buffer_minutes` | Basketball (30 min OT buffer), football |
+
+**Why Manual Close for Sports?**
+
+Events like soccer have variable end times:
+- Regular time: 90 minutes
+- Added time: 1-15+ minutes (referee's discretion)
+- Extra time: 30 minutes (in knockout matches)
+- Penalty shootout: Variable
+
+A market for "Will Team A win?" cannot auto-close at minute 90 because:
+- The winning goal might come in added time (minute 94)
+- Auto-closing would lock users out of trading during the decisive moment
+- Users would be frustrated and the market would be inaccurate
 
 **Required: Market Scheduler Worker** (See EPIC_10 - SCHEDULER stories)
 
-A background worker is required to:
-1. Auto-transition `ACTIVE` → `PAUSED` when `closesAt` passes
-2. Notify admins about markets needing resolution
-3. Alert on delayed resolutions (>24h, >48h escalations)
+A background worker handles close behavior:
+1. For `auto` markets: Transition `ACTIVE` → `PAUSED` immediately when `closesAt` passes
+2. For `auto_with_buffer` markets: Transition after buffer period expires
+3. For `manual` markets: Queue admin reminder notifications
+4. Alert on delayed resolutions (>24h, >48h escalations)
 
-Until the scheduler is implemented:
-- Admins must manually monitor `closesAt` times
-- Consider running a manual check: `SELECT * FROM markets WHERE status = 'ACTIVE' AND closes_at < NOW();`
+---
+
+### 6.2.1 Manual Close Market - Admin Workflow
+
+**Scenario:** Admin creates a soccer market with `close_behavior: 'manual'`.
+
+**Expected Flow:**
+1. Market `closes_at` passes (scheduled 90-minute mark)
+2. Trading continues (market stays ACTIVE)
+3. Admin watches the event
+4. When event truly ends (after added time/extra time):
+   - Admin clicks "Pause Trading" → Market becomes PAUSED
+   - Admin resolves with YES/NO outcome
+
+**Admin Dashboard Indicators:**
+
+Markets past their `closes_at` but still ACTIVE show:
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⚠️ Manual Close Markets - Action Required                    │
+├─────────────────────────────────────────────────────────────┤
+│ 🔵 "Will Man United win vs Liverpool?"                       │
+│    closes_at: 2:30 PM (32 minutes ago)                      │
+│    close_behavior: manual                                   │
+│    Trading: STILL ACTIVE                                    │
+│    [Pause Trading] [Resolve YES] [Resolve NO]               │
+├─────────────────────────────────────────────────────────────┤
+│ 🔵 "Lakers vs Celtics - Lakers win?"                        │
+│    closes_at: 10:30 PM (18 minutes ago)                     │
+│    close_behavior: auto_with_buffer (buffer: 30 min)        │
+│    Trading: ACTIVE (buffer: 12 min remaining)               │
+│    [Pause Early] [Wait for Buffer]                          │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 

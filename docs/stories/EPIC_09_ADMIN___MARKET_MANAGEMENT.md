@@ -33,20 +33,47 @@
   "category": "Weather",
   "imageUrl": "https://...",
   "closesAt": "2024-12-10T23:59:59Z",
-  "seedLiquidity": "10000000"
+  "seedLiquidity": "10000000",
+  "closeBehavior": "auto",
+  "bufferMinutes": null
 }
 ```
+
+**Close Behavior Options:**
+
+| Value | Use Case | Example |
+|-------|----------|---------|
+| `"auto"` | Events with exact end times | Crypto price at specific time, weather |
+| `"manual"` | Events with variable end times | Soccer (added time), elections |
+| `"auto_with_buffer"` | Events with predictable extensions | Basketball (30 min for OT) |
 
 **Acceptance Criteria:**
 - [ ] Require admin role
 - [ ] Validate minimum seed liquidity
+- [ ] Validate `closeBehavior` is one of: `auto`, `manual`, `auto_with_buffer`
+- [ ] If `closeBehavior = 'auto_with_buffer'`, require `bufferMinutes > 0`
+- [ ] If `closeBehavior != 'auto_with_buffer'`, reject `bufferMinutes`
+- [ ] Inherit default `closeBehavior` from category if not specified
 - [ ] Create market record (status: DRAFT)
 - [ ] Create liquidity_pool with 50/50 split
 - [ ] Grant seed shares to treasury account
 - [ ] Log GENESIS_MINT to trade_ledger
 - [ ] Return created market
 
-**References:** API_SPECIFICATION.md Section 4.6.1, ENGINE_LOGIC.md Section 8
+**Category Close Behavior Defaults:**
+
+| Category | Default `closeBehavior` | Default `bufferMinutes` |
+|----------|------------------------|------------------------|
+| Sports - Soccer | `manual` | — |
+| Sports - Basketball | `auto_with_buffer` | 30 |
+| Sports - Football | `auto_with_buffer` | 45 |
+| Sports - Other | `auto_with_buffer` | 15 |
+| Crypto | `auto` | — |
+| Weather | `auto` | — |
+| Politics | `manual` | — |
+| Entertainment | `manual` | — |
+
+**References:** API_SPECIFICATION.md Section 4.6.1, ENGINE_LOGIC.md Section 8, SYSTEM_DESIGN.md Section 5.5
 
 ---
 
@@ -129,12 +156,44 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **Acceptance Criteria:**
 - [ ] Title input (required)
 - [ ] Description textarea (required)
-- [ ] Category select
+- [ ] Category select (affects default close behavior)
 - [ ] Image URL input
 - [ ] Closes at date picker
 - [ ] Seed liquidity input
+- [ ] **Close Behavior Section:**
+  - [ ] Close behavior radio buttons: Auto / Manual / Auto with Buffer
+  - [ ] Show helper text explaining each option:
+    - Auto: "Market will automatically pause for trading when close time passes"
+    - Manual: "Trading continues until admin manually closes (use for sports with added time)"
+    - Auto with Buffer: "Market pauses after close time + buffer period"
+  - [ ] Buffer minutes input (only visible when "Auto with Buffer" selected)
+  - [ ] Auto-populate defaults based on selected category
+  - [ ] Show warning for sports categories if "Auto" is selected
 - [ ] Preview before submit
 - [ ] Success/error feedback
+
+**Close Behavior UI:**
+```
+┌─────────────────────────────────────────────────────────┐
+│ Close Behavior                                          │
+│                                                         │
+│ ○ Auto Close                                            │
+│   Market pauses immediately when close time passes.     │
+│   Best for: crypto prices, weather predictions          │
+│                                                         │
+│ ● Manual Close (recommended for Sports - Soccer)        │
+│   Trading continues until admin manually closes.        │
+│   Best for: sports with added time, elections           │
+│                                                         │
+│ ○ Auto Close with Buffer                                │
+│   Market pauses [30] minutes after close time.          │
+│   Best for: basketball (overtime), football             │
+│                                                         │
+│ ⚠️ Soccer matches can have 1-15+ minutes of added time. │
+│    Consider using "Manual Close" to avoid closing       │
+│    during the final minutes of play.                    │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 

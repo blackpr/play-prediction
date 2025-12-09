@@ -324,7 +324,109 @@ Provides real-time price quotes:
 - **Execution Price:** Actual price including slippage for a given trade size
 - **Max Buy Calculator:** Maximum shares purchasable with a given balance
 
-### 5.5 Background Job System (BullMQ + Redis)
+### 5.5 Market Close Behavior System
+
+> **Architecture Decision:** Markets with variable end times (sports with added time, overtime, etc.) require special handling for closing. Not all markets should auto-close at `closes_at`.
+
+#### The Problem
+
+Events with unpredictable end times pose a challenge:
+
+| Event Type | Example | End Time Predictability | Risk of Auto-Close |
+|------------|---------|------------------------|-------------------|
+| **Sports (Soccer)** | "Will Team A win?" | Low - added time (1-15+ mins) | ⚠️ Could close during winning goal |
+| **Sports (Basketball)** | "Will Lakers cover spread?" | Medium - overtime possible | ⚠️ Could close before OT result |
+| **Sports (Football)** | "Will Brady throw 3+ TDs?" | Medium - overtime, injuries | ⚠️ Could close during final drive |
+| **Crypto Price** | "BTC > $100k at 5PM UTC?" | High - exact time | ✅ Safe to auto-close |
+| **Weather** | "Will it rain today?" | High - defined by calendar day | ✅ Safe to auto-close |
+| **Elections** | "Will Candidate X win?" | Low - counting delays | ⚠️ Could close during key results |
+
+#### Solution: Close Behavior Configuration
+
+Each market has a `close_behavior` field that determines how it transitions when `closes_at` passes:
+
+```typescript
+type CloseBehavior = 
+  | 'auto'           // Auto-transition to PAUSED when closes_at passes
+  | 'manual'         // No auto-transition; admin must close manually
+  | 'auto_with_buffer'; // Auto-transition after closes_at + buffer_minutes
+```
+
+#### Close Behavior Matrix
+
+| `close_behavior` | When `closes_at` passes | Trading Status | Admin Action Required |
+|-----------------|------------------------|----------------|----------------------|
+| `'auto'` | Immediately → PAUSED | Blocked | None (auto-closed) |
+| `'manual'` | No change (stays ACTIVE) | Still allowed | Must manually pause/resolve |
+| `'auto_with_buffer'` | After `buffer_minutes` → PAUSED | Allowed during buffer | None after buffer expires |
+
+#### Category Defaults
+
+Categories can define default close behavior, which markets inherit:
+
+| Category | Default `close_behavior` | Default `buffer_minutes` | Rationale |
+|----------|-------------------------|-------------------------|-----------|
+| Sports - Soccer | `manual` | — | Added time highly variable (1-15+ mins) |
+| Sports - Basketball | `auto_with_buffer` | 30 | Overtime possible but predictable |
+| Sports - Football | `auto_with_buffer` | 45 | OT + potential delays |
+| Sports - Other | `auto_with_buffer` | 15 | Conservative default |
+| Crypto | `auto` | 0 | Exact timestamps |
+| Weather | `auto` | 0 | End-of-day is clear |
+| Politics | `manual` | — | Results can take hours/days |
+| Entertainment | `manual` | — | Award shows unpredictable |
+
+#### Implementation Flow
+
+```
+Market created with:
+- closes_at: "2024-12-15T21:00:00Z" (90 min match)
+- close_behavior: "manual" (soccer category default)
+- buffer_minutes: null
+
+Scheduler job runs every minute:
+┌─────────────────────────────────────────────────────────┐
+│ market:check-expired job                                │
+├─────────────────────────────────────────────────────────┤
+│ 1. Query markets WHERE status = 'ACTIVE'                │
+│    AND closes_at < NOW()                                │
+│                                                         │
+│ 2. For each market:                                     │
+│    IF close_behavior = 'auto':                          │
+│       → Transition to PAUSED                            │
+│                                                         │
+│    IF close_behavior = 'auto_with_buffer':              │
+│       IF closes_at + buffer_minutes < NOW():            │
+│          → Transition to PAUSED                         │
+│       ELSE:                                             │
+│          → Skip (still in buffer period)                │
+│                                                         │
+│    IF close_behavior = 'manual':                        │
+│       → Skip (admin must close)                         │
+│       → Queue reminder notification if > 1 hour past    │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### UI Indicators
+
+When a market uses `manual` close behavior and `closes_at` has passed:
+
+```
+┌────────────────────────────────────────────────────────┐
+│ ⚽ Will Manchester United win?                          │
+│                                                        │
+│ ⏰ Scheduled close time passed                          │
+│ Trading remains OPEN until event concludes              │
+│                                                        │
+│ [YES: 65¢]  [NO: 35¢]                                  │
+│                                                        │
+│ ⚠️ This market will be closed manually by admin        │
+│    after the event concludes (including extra time).   │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 5.6 Background Job System (BullMQ + Redis)
 
 > **Infrastructure Stories:** See EPIC_00 - JOBS-1 through JOBS-3  
 > **Market Scheduler Stories:** See EPIC_10 - SCHEDULER-1 through SCHEDULER-7

@@ -419,7 +419,58 @@
 ## Market Scheduler Jobs
 
 > **Prerequisite:** EPIC_00 - JOBS-1 through JOBS-4 (BullMQ + Redis infrastructure)  
-> **Architecture Decision:** Markets have a `closes_at` timestamp. The generic job queue infrastructure handles automatic market lifecycle transitions.
+> **Architecture Decision:** Markets have a `closes_at` timestamp AND a `close_behavior` field. Not all markets auto-close—sports with variable end times (soccer with added time, basketball with overtime) require manual or buffered closing.
+
+### SCHEDULER-0: Add Close Behavior Fields to Markets Table
+
+**As a** backend developer  
+**I want** markets to have configurable close behavior  
+**So that** sports events with variable end times don't auto-close prematurely
+
+**Depends On:** SETUP-3
+
+**Acceptance Criteria:**
+- [ ] Add Drizzle schema migration for new fields:
+  ```typescript
+  // In markets table schema
+  closeBehavior: varchar('close_behavior', { length: 20 })
+    .notNull()
+    .default('auto'), // 'auto' | 'manual' | 'auto_with_buffer'
+  bufferMinutes: integer('buffer_minutes'), // Only used when close_behavior = 'auto_with_buffer'
+  ```
+- [ ] Generate migration: `npx drizzle-kit generate`
+- [ ] Apply migration: `npx drizzle-kit migrate`
+- [ ] Update TypeScript types
+
+**Close Behavior Options:**
+
+| Value | Behavior | Use Case |
+|-------|----------|----------|
+| `'auto'` | Auto-transition to PAUSED when `closes_at` passes | Crypto prices, weather, exact-time events |
+| `'manual'` | No auto-transition; admin must close | Soccer (added time), elections, awards |
+| `'auto_with_buffer'` | Transition `buffer_minutes` after `closes_at` | Basketball (OT buffer), football |
+
+**Database Schema Change:**
+```sql
+ALTER TABLE markets 
+ADD COLUMN close_behavior VARCHAR(20) NOT NULL DEFAULT 'auto',
+ADD COLUMN buffer_minutes INTEGER;
+
+-- Add check constraint
+ALTER TABLE markets ADD CONSTRAINT markets_close_behavior_check 
+CHECK (close_behavior IN ('auto', 'manual', 'auto_with_buffer'));
+
+-- Buffer only valid with auto_with_buffer
+ALTER TABLE markets ADD CONSTRAINT markets_buffer_check
+CHECK (
+  (close_behavior = 'auto_with_buffer' AND buffer_minutes IS NOT NULL AND buffer_minutes > 0)
+  OR (close_behavior != 'auto_with_buffer' AND buffer_minutes IS NULL)
+);
+```
+
+**References:** SYSTEM_DESIGN.md Section 5.5
+
+---
 
 ### SCHEDULER-1: Register Market Lifecycle Jobs
 
@@ -427,13 +478,14 @@
 **I want** market lifecycle jobs registered on application startup  
 **So that** markets are automatically managed without manual intervention
 
-**Depends On:** EPIC_00 - JOBS-1, JOBS-2
+**Depends On:** EPIC_00 - JOBS-1, JOBS-2, SCHEDULER-0
 
 **Acceptance Criteria:**
 - [ ] Create job handlers: `src/infrastructure/jobs/handlers/market.ts`
 - [ ] Register repeatable jobs on worker startup:
   - `market:check-expired` - every 1 minute
   - `market:activate-scheduled` - every 1 minute
+  - `market:remind-manual-close` - every 15 minutes
 - [ ] Jobs must be idempotent (re-running produces same result)
 - [ ] Add to worker handler registry
 
@@ -449,18 +501,21 @@ export const marketHandlers = {
   'market:activate-scheduled': async (job: Job) => {
     // Implementation in SCHEDULER-5
   },
+  'market:remind-manual-close': async (job: Job) => {
+    // Implementation in SCHEDULER-2a
+  },
 };
 ```
 
-**References:** SYSTEM_DESIGN.md Section 5.5
+**References:** SYSTEM_DESIGN.md Section 5.6
 
 ---
 
-### SCHEDULER-2: Implement Auto-Close Markets Job
+### SCHEDULER-2: Implement Auto-Close Markets Job (Close Behavior Aware)
 
 **As a** platform operator  
-**I want** markets to automatically transition when `closes_at` passes  
-**So that** users cannot trade on expired markets and admins are notified
+**I want** markets to respect their `close_behavior` setting when `closes_at` passes  
+**So that** sports events with variable end times don't auto-close prematurely
 
 **Job Name:** `market:check-expired`  
 **Queue:** `market-ops`  
@@ -468,49 +523,160 @@ export const marketHandlers = {
 
 **Acceptance Criteria:**
 - [ ] Implement handler in `src/infrastructure/jobs/handlers/market.ts`
-- [ ] Query markets WHERE `status = 'ACTIVE' AND closes_at < NOW()`
-- [ ] For each expired market:
-  - [ ] Transition status from `ACTIVE` → `PAUSED`
-  - [ ] Log state transition in audit trail
-  - [ ] Emit WebSocket event: `market:closed`
-  - [ ] Queue notification job: `admin:market-closed-notification`
+- [ ] Handle each `close_behavior` type differently:
+
+**For `close_behavior = 'auto'`:**
+- [ ] Query: `status = 'ACTIVE' AND closes_at < NOW() AND close_behavior = 'auto'`
+- [ ] Immediately transition `ACTIVE` → `PAUSED`
+- [ ] Emit WebSocket event: `market:closed`
+
+**For `close_behavior = 'auto_with_buffer'`:**
+- [ ] Query: `status = 'ACTIVE' AND (closes_at + buffer_minutes) < NOW() AND close_behavior = 'auto_with_buffer'`
+- [ ] Transition `ACTIVE` → `PAUSED` only after buffer expires
+- [ ] Emit WebSocket event: `market:closed`
+
+**For `close_behavior = 'manual'`:**
+- [ ] Do NOT auto-transition (handled by SCHEDULER-2a)
+- [ ] Skip these markets in auto-close logic
+
+- [ ] Log state transitions in audit trail
 - [ ] Job must be idempotent (re-running doesn't duplicate transitions)
-- [ ] Metrics: `markets_auto_closed_total` counter
+- [ ] Metrics: `markets_auto_closed_total` counter (with `close_behavior` label)
 - [ ] Configure retry: 3 attempts with exponential backoff
 
 **Implementation:**
 ```typescript
 // src/infrastructure/jobs/handlers/market.ts
 'market:check-expired': async (job: Job) => {
-  const expiredMarkets = await db.query.markets.findMany({
+  const now = new Date();
+  
+  // 1. Handle 'auto' markets - close immediately
+  const autoMarkets = await db.query.markets.findMany({
     where: and(
       eq(markets.status, 'ACTIVE'),
+      eq(markets.closeBehavior, 'auto'),
       isNotNull(markets.closesAt),
-      lt(markets.closesAt, new Date())
+      lt(markets.closesAt, now)
     ),
   });
 
-  for (const market of expiredMarkets) {
+  // 2. Handle 'auto_with_buffer' markets - close after buffer
+  const bufferedMarkets = await db.query.markets.findMany({
+    where: and(
+      eq(markets.status, 'ACTIVE'),
+      eq(markets.closeBehavior, 'auto_with_buffer'),
+      isNotNull(markets.closesAt),
+      // closes_at + buffer_minutes < now
+      sql`${markets.closesAt} + (${markets.bufferMinutes} * INTERVAL '1 minute') < ${now}`
+    ),
+  });
+
+  const marketsToClose = [...autoMarkets, ...bufferedMarkets];
+
+  for (const market of marketsToClose) {
     await db.transaction(async (tx) => {
       await tx.update(markets)
         .set({ status: 'PAUSED', updatedAt: new Date() })
         .where(eq(markets.id, market.id));
       
       // Log to audit trail
-      // Emit WebSocket event
+      // Emit WebSocket event: market:closed
     });
   }
 
-  return { processed: expiredMarkets.length };
+  // 3. 'manual' markets are NOT processed here (see SCHEDULER-2a)
+
+  return { 
+    processed: marketsToClose.length,
+    auto: autoMarkets.length,
+    buffered: bufferedMarkets.length,
+  };
 },
 ```
 
-**State Transition:**
+**State Transitions:**
 ```
-ACTIVE + closes_at < NOW() → PAUSED (awaiting resolution)
+close_behavior = 'auto':
+  ACTIVE + closes_at < NOW() → PAUSED
+
+close_behavior = 'auto_with_buffer':
+  ACTIVE + (closes_at + buffer_minutes) < NOW() → PAUSED
+
+close_behavior = 'manual':
+  No auto-transition (admin must act)
 ```
 
-**References:** EDGE_CASES.md Section 6.2, SYSTEM_DESIGN.md Section 4
+**References:** EDGE_CASES.md Section 6.2, SYSTEM_DESIGN.md Section 5.5
+
+---
+
+### SCHEDULER-2a: Implement Manual Close Reminder Job
+
+**As an** admin  
+**I want** to be reminded about manual-close markets that are past their scheduled time  
+**So that** I don't forget to close them after the event ends
+
+**Job Name:** `market:remind-manual-close`  
+**Queue:** `notifications`  
+**Schedule:** Every 15 minutes (repeatable)
+
+**Acceptance Criteria:**
+- [ ] Implement handler in `src/infrastructure/jobs/handlers/notifications.ts`
+- [ ] Query: `status = 'ACTIVE' AND close_behavior = 'manual' AND closes_at < NOW()`
+- [ ] Group by how long past `closes_at`:
+  - 0-30 min past: No notification (event likely still ongoing)
+  - 30-60 min past: Dashboard indicator only
+  - 1-2 hours past: Queue dashboard alert
+  - 2+ hours past: Queue email/Slack notification
+- [ ] Track notification history to avoid spam
+- [ ] Include market details: title, closes_at, holder count, trading volume
+
+**Implementation:**
+```typescript
+'market:remind-manual-close': async (job: Job) => {
+  const now = new Date();
+  
+  const manualMarkets = await db.query.markets.findMany({
+    where: and(
+      eq(markets.status, 'ACTIVE'),
+      eq(markets.closeBehavior, 'manual'),
+      isNotNull(markets.closesAt),
+      lt(markets.closesAt, now)
+    ),
+  });
+
+  for (const market of manualMarkets) {
+    const minutesPast = (now.getTime() - market.closesAt.getTime()) / 60000;
+    
+    if (minutesPast > 120) {
+      // 2+ hours: Send urgent notification
+      await queueService.add('notifications', {
+        type: 'admin:manual-close-urgent',
+        data: { marketId: market.id, minutesPast },
+      });
+    } else if (minutesPast > 60) {
+      // 1-2 hours: Dashboard alert
+      await queueService.add('notifications', {
+        type: 'admin:manual-close-warning',
+        data: { marketId: market.id, minutesPast },
+      });
+    }
+    // 0-60 min: Event likely still ongoing, no action
+  }
+
+  return { checked: manualMarkets.length };
+},
+```
+
+**Notification Escalation for Manual Markets:**
+| Time Since `closes_at` | Alert Level | Action |
+|----------------------|-------------|--------|
+| 0-30 minutes | None | Event likely ongoing (added time, etc.) |
+| 30-60 minutes | Info | Dashboard indicator |
+| 1-2 hours | Warning | Dashboard alert + badge |
+| 2+ hours | Urgent | Email/Slack notification |
+
+**References:** SYSTEM_DESIGN.md Section 5.5
 
 ---
 

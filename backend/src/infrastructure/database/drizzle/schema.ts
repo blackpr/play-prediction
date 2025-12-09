@@ -1,9 +1,9 @@
-import { 
-  pgTable, 
-  uuid, 
-  varchar, 
-  text, 
-  bigint, 
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  bigint,
   integer,
   boolean,
   timestamp,
@@ -30,6 +30,12 @@ export const MarketStatus = {
   PAUSED: 'PAUSED',
   RESOLVED: 'RESOLVED',
   CANCELLED: 'CANCELLED',
+} as const;
+
+export const CloseBehavior = {
+  AUTO: 'auto',                    // Auto-close when closes_at passes
+  MANUAL: 'manual',                // Admin must close manually (sports with added time)
+  AUTO_WITH_BUFFER: 'auto_with_buffer', // Auto-close after buffer period
 } as const;
 
 export const Resolution = {
@@ -89,6 +95,10 @@ export const markets = pgTable('markets', {
   category: varchar('category', { length: 100 }),
   closesAt: timestamp('closes_at', { withTimezone: true }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  // Close behavior configuration - determines how market transitions when closes_at passes
+  // See ADR_001_MARKET_CLOSE_BEHAVIOR.md for details
+  closeBehavior: varchar('close_behavior', { length: 20 }).notNull().default('auto'),
+  bufferMinutes: integer('buffer_minutes'), // Only used when close_behavior = 'auto_with_buffer'
   createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -98,11 +108,18 @@ export const markets = pgTable('markets', {
     statusClosesIdx: index('idx_markets_status_closes').on(table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
     categoryIdx: index('idx_markets_category').on(table.category).where(sql`status = 'ACTIVE'`),
     createdByIdx: index('idx_markets_created_by').on(table.createdBy),
+    // Index for scheduler jobs to find markets needing auto-close by behavior type
+    closeBehaviorIdx: index('idx_markets_close_behavior').on(table.closeBehavior, table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
     statusCheck: check('markets_status_valid', sql`${table.status} IN ('DRAFT', 'ACTIVE', 'PAUSED', 'RESOLVED', 'CANCELLED')`),
     resolutionCheck: check('markets_resolution_valid', sql`${table.resolution} IS NULL OR ${table.resolution} IN ('YES', 'NO', 'CANCELLED')`),
     resolutionStatusCheck: check('markets_resolution_requires_status', sql`
         (${table.status} IN ('RESOLVED', 'CANCELLED') AND ${table.resolution} IS NOT NULL) OR
         (${table.status} NOT IN ('RESOLVED', 'CANCELLED') AND ${table.resolution} IS NULL)
+    `),
+    closeBehaviorCheck: check('markets_close_behavior_valid', sql`${table.closeBehavior} IN ('auto', 'manual', 'auto_with_buffer')`),
+    bufferCheck: check('markets_buffer_valid', sql`
+        (${table.closeBehavior} = 'auto_with_buffer' AND ${table.bufferMinutes} IS NOT NULL AND ${table.bufferMinutes} > 0)
+        OR (${table.closeBehavior} != 'auto_with_buffer' AND ${table.bufferMinutes} IS NULL)
     `),
   }
 });

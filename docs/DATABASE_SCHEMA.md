@@ -187,6 +187,9 @@ CREATE TABLE markets (
     category        VARCHAR(100),
     closes_at       TIMESTAMPTZ,
     resolved_at     TIMESTAMPTZ,
+    -- Close behavior configuration (see SYSTEM_DESIGN.md Section 5.5)
+    close_behavior  VARCHAR(20) NOT NULL DEFAULT 'auto',
+    buffer_minutes  INTEGER,
     created_by      UUID NOT NULL REFERENCES users(id),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -200,13 +203,33 @@ CREATE TABLE markets (
     CONSTRAINT markets_resolution_requires_status CHECK (
         (status IN ('RESOLVED', 'CANCELLED') AND resolution IS NOT NULL) OR
         (status NOT IN ('RESOLVED', 'CANCELLED') AND resolution IS NULL)
+    ),
+    CONSTRAINT markets_close_behavior_valid CHECK (
+        close_behavior IN ('auto', 'manual', 'auto_with_buffer')
+    ),
+    CONSTRAINT markets_buffer_valid CHECK (
+        (close_behavior = 'auto_with_buffer' AND buffer_minutes IS NOT NULL AND buffer_minutes > 0)
+        OR (close_behavior != 'auto_with_buffer' AND buffer_minutes IS NULL)
     )
 );
 
 COMMENT ON TABLE markets IS 'Binary prediction markets';
 COMMENT ON COLUMN markets.status IS 'Market lifecycle state';
 COMMENT ON COLUMN markets.resolution IS 'Final outcome (YES, NO, or CANCELLED)';
+COMMENT ON COLUMN markets.close_behavior IS 'How market closes: auto (immediate), manual (admin), auto_with_buffer (delayed)';
+COMMENT ON COLUMN markets.buffer_minutes IS 'Minutes after closes_at before auto-pause (only for auto_with_buffer)';
 ```
+
+**Close Behavior Options:**
+
+| Value | Behavior | Use Case |
+|-------|----------|----------|
+| `'auto'` | Auto-transition to PAUSED when `closes_at` passes | Crypto prices, weather, exact-time events |
+| `'manual'` | No auto-transition; admin must close | Soccer (added time), elections, awards |
+| `'auto_with_buffer'` | Transition after `closes_at + buffer_minutes` | Basketball (OT buffer), football |
+
+> **Important:** Sports events like soccer have variable end times (added time can be 1-15+ minutes). 
+> Using `close_behavior = 'manual'` prevents the market from auto-closing during the decisive final moments.
 
 ### 3.3 `liquidity_pools` Table
 
@@ -394,6 +417,12 @@ export const MarketStatus = {
   CANCELLED: 'CANCELLED',
 } as const;
 
+export const CloseBehavior = {
+  AUTO: 'auto',              // Auto-close when closes_at passes
+  MANUAL: 'manual',          // Admin must close (sports with added time)
+  AUTO_WITH_BUFFER: 'auto_with_buffer', // Auto-close after buffer period
+} as const;
+
 export const Resolution = {
   YES: 'YES',
   NO: 'NO',
@@ -444,6 +473,9 @@ export const markets = pgTable('markets', {
   category: varchar('category', { length: 100 }),
   closesAt: timestamp('closes_at', { withTimezone: true }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  // Close behavior configuration (see SYSTEM_DESIGN.md Section 5.5)
+  closeBehavior: varchar('close_behavior', { length: 20 }).notNull().default('auto'),
+  bufferMinutes: integer('buffer_minutes'),
   createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -809,6 +841,10 @@ CREATE TABLE markets (
     category VARCHAR(100),
     closes_at TIMESTAMPTZ,
     resolved_at TIMESTAMPTZ,
+    -- Close behavior: 'auto' (default), 'manual' (sports), 'auto_with_buffer'
+    close_behavior VARCHAR(20) NOT NULL DEFAULT 'auto'
+        CHECK (close_behavior IN ('auto', 'manual', 'auto_with_buffer')),
+    buffer_minutes INTEGER,
     created_by UUID NOT NULL REFERENCES users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -816,6 +852,10 @@ CREATE TABLE markets (
     CONSTRAINT markets_resolution_requires_status CHECK (
         (status IN ('RESOLVED', 'CANCELLED') AND resolution IS NOT NULL) OR
         (status NOT IN ('RESOLVED', 'CANCELLED') AND resolution IS NULL)
+    ),
+    CONSTRAINT markets_buffer_valid CHECK (
+        (close_behavior = 'auto_with_buffer' AND buffer_minutes IS NOT NULL AND buffer_minutes > 0)
+        OR (close_behavior != 'auto_with_buffer' AND buffer_minutes IS NULL)
     )
 );
 
@@ -902,6 +942,9 @@ CREATE INDEX idx_markets_status ON markets(status);
 CREATE INDEX idx_markets_status_closes ON markets(status, closes_at) WHERE status = 'ACTIVE';
 CREATE INDEX idx_markets_category ON markets(category) WHERE status = 'ACTIVE';
 CREATE INDEX idx_markets_created_by ON markets(created_by);
+-- Index for scheduler jobs to find markets needing auto-close
+CREATE INDEX idx_markets_close_behavior ON markets(close_behavior, status, closes_at) 
+    WHERE status = 'ACTIVE';
 CREATE INDEX idx_portfolios_user ON portfolios(user_id);
 CREATE INDEX idx_portfolios_market ON portfolios(market_id);
 CREATE INDEX idx_portfolios_holdings ON portfolios(user_id, market_id) WHERE yes_qty > 0 OR no_qty > 0;
