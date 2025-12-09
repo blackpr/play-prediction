@@ -1400,6 +1400,24 @@ toast.error('Insufficient balance')
 
 ---
 
+### DETAIL-9: Create Recent Trades Component
+
+**As a** user  
+**I want** to see recent trades in the market  
+**So that** I can gauge market activity and trends
+
+**Acceptance Criteria:**
+- [ ] Create `src/components/market/RecentTrades.tsx`
+- [ ] List last 10-20 trades
+- [ ] Show time, side (YES/NO), amount, and price
+- [ ] Color code by side (Green/Red)
+- [ ] Animate new trades entering the list
+- [ ] Update in real-time via WebSocket
+
+**References:** WEBSOCKET_PROTOCOL.md Section 5.2
+
+---
+
 ## Epic 5: Trading Engine (Core)
 
 **Goal:** The CPMM swap logic - buy and sell shares.
@@ -2823,10 +2841,11 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 - [ ] On `balance_update`: Update auth/me cache
 - [ ] On `trade_confirmed`: Invalidate portfolio queries
 - [ ] On `market_state`: Invalidate market queries
+- [ ] On `market_resolved`: Invalidate market queries and portfolio
 - [ ] Use `queryClient.setQueryData` for instant updates
 - [ ] Use `queryClient.invalidateQueries` for refetch
 
-**References:** FRONTEND_STATE.md Section 5.1
+**References:** FRONTEND_STATE.md Section 5.1, WEBSOCKET_PROTOCOL.md Section 5.2
 
 ---
 
@@ -2857,6 +2876,56 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 - [ ] Tooltip with status details
 - [ ] Reconnection attempt indicator
 - [ ] Manual reconnect button when disconnected
+
+---
+
+### WS-9: Handle Live Trade Broadcasts
+
+**As a** user  
+**I want** to see trades happen in real-time  
+**So that** the market feels alive
+
+**Acceptance Criteria:**
+- [ ] Listen for `trade` messages on market channel
+- [ ] Update RecentTrades component list
+- [ ] Flash/highlight the new trade
+- [ ] Limit list size (keep last 20-50) in state
+- [ ] Handle high frequency updates efficiently
+
+**References:** WEBSOCKET_PROTOCOL.md Section 5.2
+
+---
+
+### WS-10: Handle New Market Notifications
+
+**As a** user  
+**I want** to know when new markets are created  
+**So that** I can be one of the first to trade
+
+**Acceptance Criteria:**
+- [ ] Listen for `new_market` messages on global channel
+- [ ] Show toast notification with market title
+- [ ] Option to click toast to go to market
+- [ ] Add to markets list cache if on markets page
+
+**References:** WEBSOCKET_PROTOCOL.md Section 5.4
+
+---
+
+### WS-11: Handle Market State Updates
+
+**As a** user  
+**I want** the UI to react to market state changes  
+**So that** I don't try to trade on closed markets
+
+**Acceptance Criteria:**
+- [ ] Listen for `market_state` and `market_resolved` messages
+- [ ] Update market status badge immediately
+- [ ] Disable TradeForm if paused/resolved
+- [ ] Show resolution banner if resolved
+- [ ] Refresh market data to get full state
+
+**References:** WEBSOCKET_PROTOCOL.md Section 5.2
 
 ---
 
@@ -2936,16 +3005,16 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 | 1 | 11 | Authentication (login, register, session, password reset) |
 | 2 | 14 | User Profile & Balance (UI components, accessibility, error handling) |
 | 3 | 8 | Markets Listing (search, filter, categories) |
-| 4 | 8 | Market Detail (chart, metadata, time intervals) |
+| 4 | 9 | Market Detail (chart, metadata, time intervals, recent trades) |
 | 5 | 7 | Trading Engine (CPMM, fees, validation) |
 | 6 | 10 | Trading UI (form, slippage, price impact, confirmation) |
 | 7 | 4 | Mint & Merge (netting protocol) |
 | 8 | 7 | Portfolio (positions, P&L, history, empty states) |
 | 9 | 9 | Admin - Market Management (CRUD, skewed genesis, images) |
 | 10 | 16 | Admin - Resolution, Points, Users, Audit (resolve, cancel, grant, users, audit log, categories) |
-| 11 | 8 | WebSocket (connection, channels, reconnect) |
+| 11 | 11 | WebSocket (connection, channels, reconnect, updates) |
 | 12 | 1 | Webhooks (Future) |
-| **Total** | **116** | |
+| **Total** | **120** | |
 
 ---
 
