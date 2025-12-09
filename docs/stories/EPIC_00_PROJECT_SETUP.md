@@ -177,17 +177,62 @@ npx drizzle-kit studio
 **So that** I can build the React frontend
 
 **Acceptance Criteria:**
-- [ ] Create `frontend/` directory
-- [ ] Initialize TanStack Start project in SPA mode
-- [ ] Install dependencies:
-  - @tanstack/react-start, @tanstack/react-router
-  - @tanstack/react-query ^5.60.0
-  - @tanstack/react-form
-  - react ^19.0.0, react-dom ^19.0.0
-  - recharts, lucide-react
-  - zod ^4.0.0
-  - clsx, tailwind-merge
-- [ ] Configure Vite with SPA mode and API proxy
+- [ ] Initialize TanStack Start project using CLI:
+  ```bash
+  # Run from project root - creates frontend/ directory
+  npm create @tanstack/start@latest frontend
+  
+  # CLI will prompt for options:
+  # - Project name: frontend
+  # - Add Tailwind CSS? Yes
+  # - Add ESLint? Yes
+  # - Package manager: npm
+  ```
+- [ ] Configure SPA mode in `frontend/vite.config.ts`:
+  ```typescript
+  import { defineConfig } from 'vite'
+  import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+
+  export default defineConfig({
+    plugins: [
+      tanstackStart({
+        spa: {
+          enabled: true,
+        },
+      }),
+    ],
+  })
+  ```
+- [ ] Install additional dependencies:
+  ```bash
+  cd frontend
+  npm install @tanstack/react-query @tanstack/react-form
+  npm install recharts lucide-react
+  npm install zod clsx tailwind-merge
+  npm install @supabase/ssr @supabase/supabase-js
+  ```
+- [ ] Configure API proxy for development in `frontend/vite.config.ts`:
+  ```typescript
+  export default defineConfig({
+    plugins: [
+      tanstackStart({
+        spa: { enabled: true },
+      }),
+    ],
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+        },
+        '/ws': {
+          target: 'ws://localhost:4000',
+          ws: true,
+        },
+      },
+    },
+  })
+  ```
 - [ ] Set up file-based routing structure:
   ```
   src/routes/
@@ -204,8 +249,16 @@ npx drizzle-kit studio
       ├── index.tsx
       └── markets.tsx
   ```
-- [ ] Create router.tsx with QueryClient
-- [ ] Configure tsr.config.json
+- [ ] Configure QueryClient in root route
+
+**SPA Mode Benefits:**
+- Easier deployment to CDN (static hosting)
+- No SSR complexity
+- Still supports server functions for API calls
+- Shell prerendering for faster initial load
+
+**CLI Reference:** https://tanstack.com/start/latest/docs/framework/react/quick-start
+**SPA Mode Reference:** https://tanstack.com/start/latest/docs/framework/react/guide/spa-mode
 
 **References:** FRONTEND_ARCHITECTURE.md Sections 2-5
 
