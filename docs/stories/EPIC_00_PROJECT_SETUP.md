@@ -12,8 +12,9 @@
 - [x] Create `backend/` directory with package.json
 - [x] Configure TypeScript with strict mode (tsconfig.json)
 - [x] Install dependencies:
-  - fastify ^4.28.1
-  - @fastify/cookie, @fastify/cors, @fastify/websocket
+  - fastify ^5.6.2
+  - @fastify/cookie, @fastify/cors, @fastify/websocket, @fastify/rate-limit
+  - awilix, @fastify/awilix (dependency injection)
   - drizzle-orm, postgres
   - @supabase/ssr, @supabase/supabase-js
   - zod for validation
@@ -383,14 +384,46 @@ npx drizzle-kit studio
 **So that** the system is protected from abuse
 
 **Acceptance Criteria:**
-- [ ] Install @fastify/rate-limit or similar
-- [ ] Configure limits per endpoint type:
+- [x] Install @fastify/rate-limit or similar
+- [x] Configure limits per endpoint type:
   - Public: 100 req/min per IP
   - Authenticated: 60 req/min per user
   - Trading: 30 req/min per user
   - Admin: 120 req/min per user
-- [ ] Return rate limit headers (X-RateLimit-*)
-- [ ] Return 429 with Retry-After header when exceeded
+- [x] Return rate limit headers (X-RateLimit-*)
+- [x] Return 429 with Retry-After header when exceeded
+
+**Implementation Details:**
+- Installed `@fastify/rate-limit@10.3.0` (latest version)
+- **Using Redis backend for production-ready distributed rate limiting**
+- Created `src/presentation/fastify/plugins/rate-limit.ts` with:
+  - Rate limit plugin registration with Redis integration
+  - Four predefined rate limit types (PUBLIC, AUTHENTICATED, TRADING, ADMIN)
+  - Smart key generation (user ID for authenticated, IP for public)
+  - Proper error response format matching API specification
+  - Graceful degradation if Redis unavailable
+  - Optimized Redis connection settings
+- Updated `src/main.ts` to register rate limiting plugin
+- Created comprehensive test suite in `test/rate-limit.test.ts`
+- Created usage examples in `src/presentation/fastify/examples/rate-limit-examples.ts`
+- Created documentation in `src/presentation/fastify/plugins/RATE_LIMIT.md`
+- Updated error handler to properly format rate limit errors with Retry-After header
+- All rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset) are included in responses
+- **Added REDIS_URL to .env.example and .env.local**
+
+**Production Readiness:**
+- ✅ Redis backend for distributed systems
+- ✅ Horizontal scaling ready (multiple API instances share state)
+- ✅ Graceful degradation on Redis failure
+- ✅ Optimized for rate limiting workload
+
+**Usage:**
+```typescript
+import { withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
+
+fastify.get('/api/markets', withRateLimit(RateLimitType.PUBLIC), handler);
+fastify.post('/api/trades/buy', withRateLimit(RateLimitType.TRADING), handler);
+```
 
 **References:** API_SPECIFICATION.md Section 6
 
@@ -563,30 +596,63 @@ jobs:
 **So that** I can manage dependencies cleanly and swap implementations
 
 **Acceptance Criteria:**
-- [ ] Create `src/shared/container.ts` with Container class
-- [ ] Support singleton and factory registrations
-- [ ] Create composition root in `src/main.ts`
-- [ ] Register all repositories, services, and use cases
-- [ ] Document the pattern for adding new dependencies
-- [ ] Enable easy mocking for unit tests
+- [x] Install Awilix + @fastify/awilix for dependency injection
+- [x] Create `src/shared/container/types.ts` with TypeScript interfaces
+- [x] Create `src/shared/container/index.ts` with composition root
+- [x] Integrate with Fastify via `registerContainer()` in `src/main.ts`
+- [x] Register database connection as singleton
+- [x] Document the pattern for adding new dependencies
+- [x] Enable easy mocking for unit tests via container scopes
+
+**Library Choice: Awilix + @fastify/awilix**
+
+We use [Awilix](https://github.com/jeffijoe/awilix) with the official [@fastify/awilix](https://github.com/fastify/fastify-awilix) plugin because:
+- ✅ Battle-tested (~320k weekly downloads)
+- ✅ Official Fastify plugin with first-class integration
+- ✅ Request-scoped containers built-in
+- ✅ Automatic resource disposal on request/app close
+- ✅ No decorators required - clean, composable code
+- ✅ Excellent TypeScript support
+
+**Lifetimes:**
+- `SINGLETON`: One instance for the entire application (db, redis)
+- `SCOPED`: One instance per request (use cases with request context)
+- `TRANSIENT`: New instance every time resolved
 
 **Implementation:**
 ```typescript
-// Simple DI Container
-class Container {
-  private singletons = new Map<string, unknown>();
-  private factories = new Map<string, () => unknown>();
-  
-  registerSingleton<T>(key: string, instance: T): void;
-  registerFactory<T>(key: string, factory: () => T): void;
-  resolve<T>(key: string): T;
+// src/shared/container/types.ts - Define dependencies
+export interface AppCradle {
+  db: DrizzleDB;
+  userRepository: UserRepository;
+  tradingService: TradingService;
 }
 
-// Usage in composition root
-const container = new Container();
-container.registerSingleton('db', drizzleClient);
-container.registerFactory('userRepository', () => new PostgresUserRepository(container.resolve('db')));
+// Module augmentation for type-safe resolution
+declare module '@fastify/awilix' {
+  interface Cradle extends AppCradle {}
+}
+
+// src/shared/container/index.ts - Register dependencies
+import { asValue, asClass } from 'awilix';
+import { diContainer, fastifyAwilixPlugin } from '@fastify/awilix';
+
+diContainer.register({
+  db: asValue(db),
+  userRepository: asClass(PostgresUserRepository).singleton(),
+  tradingService: asClass(TradingService).scoped(),
+});
+
+// Usage in routes - type-safe resolution
+app.get('/users/:id', async (request) => {
+  const userRepo = request.diScope.resolve('userRepository');
+  return userRepo.findById(request.params.id);
+});
 ```
+
+**Files:**
+- `src/shared/container/types.ts` - TypeScript interfaces for dependencies
+- `src/shared/container/index.ts` - Composition root, registration logic
 
 **References:** BACKEND_ARCHITECTURE.md Section 8
 

@@ -1,9 +1,11 @@
-import { db } from './index';
+import { createDatabase } from './index';
 import { users, markets, liquidityPools, pointGrants, UserRole, MarketStatus } from './drizzle/schema';
 import { sql } from 'drizzle-orm';
 
 async function seed() {
   console.log('🌱 Seeding database...');
+
+  const db = createDatabase();
 
   try {
     // Check connection
@@ -14,10 +16,10 @@ async function seed() {
     // 1. Create Treasury User
     console.log('Creating Treasury user...');
     const treasuryId = '00000000-0000-0000-0000-000000000001';
-    
+
     // Check if exists
     const existingUser = await db.select().from(users).where(sql`${users.id} = ${treasuryId}`);
-    
+
     if (existingUser.length === 0) {
       await db.insert(users).values({
         id: treasuryId,
@@ -40,14 +42,14 @@ async function seed() {
       createdBy: treasuryId,
       closesAt: new Date(Date.now() + 86400000), // 24h from now
     }).returning();
-    
+
     // 3. Initialize Liquidity Pool
     await db.insert(liquidityPools).values({
       id: market.id,
       yesQty: 10_000_000n,
       noQty: 10_000_000n,
     });
-    
+
     console.log(`✅ Market created: ${market.title} (${market.id})`);
 
     console.log('✅ Seeding complete');
