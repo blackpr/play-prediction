@@ -97,14 +97,14 @@ const { data: { session } } = await supabase.auth.getSession();
 ```
 
 **Acceptance Criteria:**
-- [ ] Login: Call `supabase.auth.signInWithPassword()`
-- [ ] Session cookie set automatically via @supabase/ssr
-- [ ] Return user profile from `users` table
-- [ ] Handle INVALID_CREDENTIALS (401)
-- [ ] Handle EMAIL_NOT_CONFIRMED (401)
-- [ ] Handle ACCOUNT_DISABLED (403)
-- [ ] Logout: Call `supabase.auth.signOut()`
-- [ ] Clear session cookies
+- [x] Login: Call `supabase.auth.signInWithPassword()`
+- [x] Session cookie set automatically via @supabase/ssr
+- [x] Return user profile from `users` table
+- [x] Handle INVALID_CREDENTIALS (401)
+- [x] Handle EMAIL_NOT_CONFIRMED (401)
+- [x] Handle ACCOUNT_DISABLED (403)
+- [x] Logout: Call `supabase.auth.signOut()`
+- [x] Clear session cookies
 
 **References:** API_SPECIFICATION.md Sections 4.1.2, 4.1.3
 

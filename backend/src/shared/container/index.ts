@@ -17,6 +17,10 @@ import { diContainer, fastifyAwilixPlugin } from '@fastify/awilix';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '../../infrastructure/database';
 import { RedisCircuitBreakerService } from '../../infrastructure/circuit-breakers/circuit-breaker.service';
+import { PostgresUserRepository } from '../../infrastructure/database/repositories/postgres-user.repository';
+import { SupabaseAuthService } from '../../infrastructure/auth/supabase-auth.service';
+import { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
+import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
 
 // Import types for module augmentation
 import './types';
@@ -47,13 +51,9 @@ export function registerDependencies(): void {
   // Repositories
   // ========================================
 
-  // Register repositories as they're implemented:
-  // diContainer.register({
-  //   userRepository: asClass(PostgresUserRepository).singleton(),
-  //   marketRepository: asClass(PostgresMarketRepository).singleton(),
-  //   portfolioRepository: asClass(PostgresPortfolioRepository).singleton(),
-  //   tradeLedgerRepository: asClass(PostgresTradeLedgerRepository).singleton(),
-  // });
+  diContainer.register({
+    userRepository: asClass(PostgresUserRepository).singleton(),
+  });
 
   // ========================================
   // Domain Services
@@ -63,22 +63,29 @@ export function registerDependencies(): void {
     circuitBreakerService: asClass(RedisCircuitBreakerService).singleton(),
   });
 
-  // Register domain services as they're implemented:
-  // diContainer.register({
-  //   pricingService: asClass(CPMMPricingService).singleton(),
-  //   tradingService: asClass(TradingService).singleton(),
-  // });
-
   // ========================================
   // Application Services / Use Cases
   // ========================================
 
-  // Register use cases as they're implemented:
-  // diContainer.register({
-  //   createMarketUseCase: asClass(CreateMarketUseCase).scoped(),
-  //   executeBuyUseCase: asClass(ExecuteBuyUseCase).scoped(),
-  //   executeSellUseCase: asClass(ExecuteSellUseCase).scoped(),
-  // });
+  diContainer.register({
+    // AuthService needs to be SCOPED because it depends on request/reply which are request-scoped
+    // But we need to make sure Awilix injects them. 
+    // Usually 'req' / 'reply' are available in the scope if using fastify-awilix.
+    // We'll trust standard injection by name/type or rely on the class structure.
+    // If SupabaseAuthService constructor asks for specific names, we must match.
+    // SupabaseAuthService(request: FastifyRequest, reply: FastifyReply)
+    // Awilix by default uses camelCase of type or name?
+    // It's safer to use PROXY injection which injects everything from cradle.
+    // But typically we rely on 'classic' or 'proxy'.
+    // If we use CLASSIC, it injects by name.
+    // Lets assume we need to manually pass them if they are named 'req' / 'reply' in the container.
+    // fastify-awilix registers 'req' and 'res'? or 'request' and 'reply'?
+    // We can use an arrow function to be explicit.
+    authService: asFunction(({ request, reply }: any) => new SupabaseAuthService(request, reply)).scoped(),
+
+    loginUseCase: asClass(LoginUseCase).scoped(),
+    logoutUseCase: asClass(LogoutUseCase).scoped(),
+  });
 }
 
 /**
@@ -99,6 +106,15 @@ export async function registerContainer(app: FastifyInstance): Promise<void> {
 
   // Register all application dependencies
   registerDependencies();
+
+  // Register request and reply in the scope so they can be injected
+  app.addHook('onRequest', (request, reply, done) => {
+    request.diScope.register({
+      request: asValue(request),
+      reply: asValue(reply),
+    });
+    done();
+  });
 }
 
 // Re-export commonly used items for convenience

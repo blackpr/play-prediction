@@ -11,6 +11,10 @@
 
 import type { DrizzleDB } from '../../infrastructure/database';
 import type { CircuitBreakerService } from '../../application/ports/services/circuit-breaker.service';
+import type { UserRepository } from '../../application/ports/repositories/user.repository';
+import type { AuthService } from '../../application/ports/services/auth.service';
+import type { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
+import type { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
 
 /**
  * Application-level dependencies (Singleton/Transient lifetime)
@@ -21,24 +25,18 @@ export interface AppCradle {
   db: DrizzleDB;
 
   // Repositories
-  // Add repository interfaces here as they're implemented:
-  // userRepository: UserRepository;
-  // marketRepository: MarketRepository;
-  // portfolioRepository: PortfolioRepository;
-  // tradeLedgerRepository: TradeLedgerRepository;
+  userRepository: UserRepository;
 
   // Domain Services
   circuitBreakerService: CircuitBreakerService;
-  // Add domain services here as they're implemented:
-  // tradingService: TradingService;
-  // pricingService: PricingService;
 
   // Application Services / Use Cases
-  // Add use cases here as they're implemented:
-  // createMarketUseCase: CreateMarketUseCase;
-  // executeBuyUseCase: ExecuteBuyUseCase;
-  // executeSellUseCase: ExecuteSellUseCase;
+  authService: AuthService;
+  loginUseCase: LoginUseCase;
+  logoutUseCase: LogoutUseCase;
 }
+
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 /**
  * Request-scoped dependencies
@@ -47,6 +45,8 @@ export interface AppCradle {
  */
 export interface AppRequestCradle extends AppCradle {
   // Request-specific dependencies
+  request: FastifyRequest;
+  reply: FastifyReply;
   // currentUser: User | null;
   // requestId: string;
 }
