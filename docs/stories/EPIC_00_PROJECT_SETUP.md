@@ -497,17 +497,17 @@ fastify.post('/api/trades/buy', withRateLimit(RateLimitType.TRADING), handler);
 **So that** I can write and run tests
 
 **Acceptance Criteria:**
-- [ ] Configure Vitest for backend
-- [ ] Use local Supabase for integration tests (`supabase start`)
-- [ ] Create test utilities for common patterns:
+- [x] Configure Vitest for backend
+- [x] Use local Supabase for integration tests (`supabase start`)
+- [x] Create test utilities for common patterns:
   - `createTestUser()` - creates user with Supabase auth
   - `createTestMarket()` - creates market with liquidity
   - `cleanupTestData()` - removes test data after each test
-- [ ] Configure code coverage reporting
-- [ ] Add test scripts to package.json
-- [ ] Create example unit test (domain logic)
-- [ ] Create example integration test (with local Supabase)
-- [ ] Set up GitHub Actions to run tests with Supabase CLI
+- [x] Configure code coverage reporting
+- [x] Add test scripts to package.json
+- [x] Create example unit test (domain logic)
+- [x] Create example integration test (with local Supabase)
+- [x] Set up GitHub Actions to run tests with Supabase CLI
 
 **Scripts:**
 ```json

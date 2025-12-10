@@ -1,0 +1,69 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test.yml'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm test
+
+      - name: Supabase Setup
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase start
+        working-directory: ./
+        
+      - name: Run Integration Tests
+        run: npm run test:integration
+        env:
+          # Supabase local dev default keys (from config.toml)
+          SUPABASE_URL: http://127.0.0.1:55321
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MTY1NTczNTUsImV4cCI6MTkzMjMxMzM1NX0.2Ss-Z7_h_I9d8k5_v8h8k5_v8h8k5_v8h8k5_v8h8k5
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYxNjU1NzM1NSwiZXhwIjoxOTMyMzEzMzU1fQ.2Ss-Z7_h_I9d8k5_v8h8k5_v8h8k5_v8h8k5_v8h8k5
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55326/postgres
+          REDIS_URL: redis://localhost:6379 
+          # Note: The above ports/keys depend on how `supabase start` configures things in CI. 
+          # Default supabase start uses 54321 for API, 54322 for DB? No, usually 54322 is transaction pooler.
+          # Standard local dev: API 54321, DB 54322.
+          # But in the user story (Setup-2), it said:
+          # API: 55321, DB: 55326
+          # We should probably respect the project's config.toml or default behavior.
+
+      - name: Stop Supabase
+        run: supabase stop
+        working-directory: ./
+        if: always()
