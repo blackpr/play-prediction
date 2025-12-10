@@ -39,8 +39,13 @@ async function buildServer() {
   // Register Rate Limit Plugin
   await server.register(registerRateLimit);
 
+  // Register BullMQ Board (Admin only)
+  const { bullBoardPlugin } = await import('./presentation/fastify/plugins/bull-board');
+  await server.register(bullBoardPlugin);
+
   // Register global error handler
   server.setErrorHandler(errorHandler);
+
 
   // Add hook to include userId in logs if authenticated
   server.addHook('preHandler', async (request) => {

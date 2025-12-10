@@ -8,7 +8,8 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:db\" \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:frontend\"",
+    "dev": "concurrently \"npm run dev:db\" \"npm run services:up\" \"npm run dev:backend\" \"npm run dev:worker\" \"npm run dev:frontend\"",
+    "services:up": "docker-compose up -d",
     "dev:db": "supabase start",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:worker": "npm run worker:dev --workspace=backend",

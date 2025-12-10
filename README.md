@@ -58,6 +58,22 @@ This is a monorepo containing:
    - Backend: http://localhost:4000
    - Supabase Studio: http://localhost:55323
 
+7. **Background Jobs**
+   The project uses BullMQ + Redis for background processing.
+   Redis runs via Docker Compose (started automatically by `npm run dev` or manually via `npm run services:up`).
+
+   **CLI Tools for Developers:**
+   ```bash
+   # Trigger a job manually
+   npm run job:trigger --workspace=backend market-ops market:check-expired
+   
+   # View queue statistics
+   npm run job:stats --workspace=backend
+   
+   # Clear a queue
+   npm run job:clear --workspace=backend market-ops
+   ```
+
 ## Available Scripts
 
 - `npm run dev`: Start all services in development mode

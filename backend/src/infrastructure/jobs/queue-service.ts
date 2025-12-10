@@ -111,6 +111,14 @@ export class QueueService {
     const promises = Array.from(this.queues.values()).map(q => q.close());
     await Promise.all(promises);
   }
+
+  /**
+   * Get all initialized queues.
+   * Useful for monitoring tools like BullBoard.
+   */
+  public getQueues(): Queue[] {
+    return Array.from(this.queues.values());
+  }
 }
 
 // Export singleton

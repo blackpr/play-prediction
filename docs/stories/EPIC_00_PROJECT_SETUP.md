@@ -781,17 +781,17 @@ process.on('SIGTERM', async () => {
 **So that** I can test background jobs during development
 
 **Acceptance Criteria:**
-- [ ] Add Redis to local development (Docker or Supabase self-hosted)
-- [ ] Update `supabase/config.toml` or create `docker-compose.yml` for Redis
-- [ ] Update root `package.json` dev script to start Redis
-- [ ] Create CLI commands for job management:
+- [x] Add Redis to local development (Docker or Supabase self-hosted)
+- [x] Update `supabase/config.toml` or create `docker-compose.yml` for Redis
+- [x] Update root `package.json` dev script to start Redis
+- [x] Create CLI commands for job management:
   ```bash
   npm run job:trigger <queue> <jobType>  # Manually trigger a job
   npm run job:stats                       # Show queue statistics
   npm run job:clear <queue>              # Clear failed jobs
   ```
-- [ ] Add BullMQ Board (optional) for visual queue management
-- [ ] Document job testing workflow in README
+- [x] Add BullMQ Board (optional) for visual queue management
+- [x] Document job testing workflow in README
 
 **Docker Compose (if not using Supabase Redis):**
 ```yaml

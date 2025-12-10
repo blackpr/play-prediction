@@ -12,6 +12,8 @@
 - [ ] Check user.role === 'admin'
 - [ ] Return 403 FORBIDDEN if not admin
 - [ ] Apply to all /admin routes
+- [ ] Verify protection of sensitive sidecars:
+  - [ ] BullMQ Board (`/admin/queues`)
 
 **References:** API_SPECIFICATION.md Section 2.5
 

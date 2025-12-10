@@ -14,7 +14,10 @@ export function createQueue(name: QueueName, options: Partial<QueueOptions> = {}
         type: 'exponential',
         delay: 1000,
       },
-      removeOnComplete: true, // Keep memory clean
+      removeOnComplete: {
+        age: 24 * 3600, // Keep for 24h
+        count: 1000,    // Max 1000 jobs
+      },
       removeOnFail: {
         age: 24 * 3600, // Keep failed jobs for 24h
         count: 1000,
