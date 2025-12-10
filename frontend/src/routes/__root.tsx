@@ -9,6 +9,15 @@ import appCss from '../styles.css?url'
 
 const queryClient = new QueryClient()
 
+function NotFound() {
+  return (
+    <div className="p-4 text-center text-text">
+      <h3 className="text-xl font-semibold">404 Not Found</h3>
+      <p className="text-text-muted">The page you are looking for does not exist.</p>
+    </div>
+  )
+}
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -30,7 +39,7 @@ export const Route = createRootRoute({
       },
     ],
   }),
-
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 })
 

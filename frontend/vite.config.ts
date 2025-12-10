@@ -19,6 +19,9 @@ const config = defineConfig({
       spa: {
         enabled: true,
       },
+      prerender: {
+        enabled: false,
+      },
     }),
     viteReact(),
   ],
@@ -33,6 +36,10 @@ const config = defineConfig({
         ws: true,
       },
     },
+  },
+  preview: {
+    port: 3005,
+    strictPort: false,
   },
 })
 

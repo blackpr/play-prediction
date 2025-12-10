@@ -275,20 +275,20 @@ npx drizzle-kit studio
 **So that** I have a consistent design system
 
 **Acceptance Criteria:**
-- [ ] Install and configure Tailwind CSS v4
-- [ ] Define color palette (dark theme):
+- [x] Install and configure Tailwind CSS v4
+- [x] Define color palette (dark theme):
   - Background: #0a0a0f, #12121a, #1a1a24, #22222e
   - Text: #f0f0f5, #a0a0b0, #606070
   - Accent: #3b82f6 (blue), #8b5cf6 (purple)
   - YES color: #22c55e (green)
   - NO color: #ef4444 (red)
-- [ ] Create base UI components:
+- [x] Create base UI components:
   - Button (primary, secondary, ghost, danger, yes, no variants)
   - Input (with label, error, hint)
   - Card (default, elevated, outlined)
   - Modal (with Dialog)
   - Spinner
-- [ ] Create utility functions:
+- [x] Create utility functions:
   - `cn()` for class merging
   - `formatPoints()` - MicroPoints to human readable
   - `formatCompactPoints()` - compact notation
