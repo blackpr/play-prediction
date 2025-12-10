@@ -88,8 +88,9 @@ jobs:
           echo "DATABASE_URL is set (masked for security)"
           
           # Run Migrations to create tables (since supabase start gives empty DB)
+          # Use migrate instead of push to avoid interactive prompts and ensure versioned schema
           echo "Running migrations..."
-          npm run db:push --workspace=backend
+          npm run db:migrate --workspace=backend
           
           echo "Running tests..."
           npm run test:integration --workspace=backend
