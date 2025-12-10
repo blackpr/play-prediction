@@ -350,12 +350,12 @@ npx drizzle-kit studio
 **So that** errors are handled consistently
 
 **Acceptance Criteria:**
-- [ ] Create error handler middleware
-- [ ] Map domain errors to HTTP status codes
-- [ ] Return consistent error response format
-- [ ] Log errors appropriately (don't log expected errors)
-- [ ] Handle Zod validation errors
-- [ ] Handle unknown errors gracefully
+- [x] Create error handler middleware
+- [x] Map domain errors to HTTP status codes
+- [x] Return consistent error response format
+- [x] Log errors appropriately (don't log expected errors)
+- [x] Handle Zod validation errors
+- [x] Handle unknown errors gracefully
 
 **Error Response Format:**
 ```json

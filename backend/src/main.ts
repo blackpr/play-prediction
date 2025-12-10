@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { errorHandler } from './presentation/fastify/middleware/error-handler';
 
 const server = Fastify({
   logger: true
@@ -10,6 +11,9 @@ server.register(cors, {
   origin: true, // Allow all for dev
   credentials: true,
 });
+
+// Register global error handler
+server.setErrorHandler(errorHandler);
 
 server.get('/', async () => {
   return { hello: 'world' };
