@@ -59,9 +59,10 @@ jobs:
           cat status.json
           
           # Extract keys with fallback handling checks
-          SUPABASE_ANON_KEY=$(jq -r '.anonKey // empty' status.json)
-          SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.serviceRoleKey // empty' status.json)
-          DATABASE_URL=$(jq -r '.dbUrl // empty' status.json)
+          # keys in CI seem to be UPPERCASE based on logs provided: ANON_KEY, DB_URL, SERVICE_ROLE_KEY
+          SUPABASE_ANON_KEY=$(jq -r '.ANON_KEY // .anonKey // empty' status.json)
+          SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.SERVICE_ROLE_KEY // .serviceRoleKey // empty' status.json)
+          DATABASE_URL=$(jq -r '.DB_URL // .dbUrl // empty' status.json)
           
           if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "null" ]; then
              echo "Error: Failed to extract DATABASE_URL from supabase status"
