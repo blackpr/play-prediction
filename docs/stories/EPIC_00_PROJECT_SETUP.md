@@ -821,18 +821,18 @@ volumes:
 **So that** I can detect and fix issues quickly
 
 **Acceptance Criteria:**
-- [ ] Expose queue metrics:
+- [x] Expose queue metrics:
   - `jobs_processed_total` (counter, by queue and status)
   - `jobs_processing_duration_seconds` (histogram)
   - `jobs_waiting_count` (gauge, per queue)
   - `jobs_failed_total` (counter)
-- [ ] Add health check endpoint: `GET /health/worker`
-- [ ] Log job failures with full context
-- [ ] Alert on:
+- [x] Add health check endpoint: `GET /health/worker`
+- [x] Log job failures with full context
+- [x] Alert on:
   - Job failure rate > 5%
   - Queue depth > 1000 jobs
   - Job processing time > 5 minutes
-- [ ] Optional: BullMQ Board integration for admin UI
+- [x] Optional: BullMQ Board integration for admin UI
 
 **Health Check Response:**
 ```json
