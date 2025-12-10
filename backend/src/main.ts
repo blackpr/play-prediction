@@ -1,6 +1,7 @@
 import './shared/config/bootstrap';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import { errorHandler } from './presentation/fastify/middleware/error-handler';
 import healthRoutes from './presentation/fastify/routes/health';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
@@ -18,6 +19,8 @@ async function buildServer() {
     origin: true, // Allow all for dev
     credentials: true,
   });
+
+  await server.register(cookie);
 
   // Register DI Container
   await registerContainer(server);

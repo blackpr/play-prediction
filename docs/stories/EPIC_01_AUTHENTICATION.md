@@ -9,14 +9,14 @@
 **So that** routes can be protected
 
 **Acceptance Criteria:**
-- [ ] Create `createSupabaseClient(req, reply)` function using @supabase/ssr
-- [ ] Parse cookies from request headers
-- [ ] Set cookies on response headers
-- [ ] Always use `supabase.auth.getUser()` for validation (NEVER `getSession()`)
-- [ ] Create `authMiddleware` - populates `request.user` if authenticated
-- [ ] Create `requireAuth` - returns 401 if not authenticated
-- [ ] Create `requireAdmin` - returns 403 if not admin role
-- [ ] Attach user to request: `{ id, email, role }`
+- [x] Create `createSupabaseClient(req, reply)` function using @supabase/ssr
+- [x] Parse cookies from request headers
+- [x] Set cookies on response headers
+- [x] Always use `supabase.auth.getUser()` for validation (NEVER `getSession()`)
+- [x] Create `authMiddleware` - populates `request.user` if authenticated
+- [x] Create `requireAuth` - returns 401 if not authenticated
+- [x] Create `requireAdmin` - returns 403 if not admin role
+- [x] Attach user to request: `{ id, email, role }`
 
 **Implementation Notes:**
 ```typescript
