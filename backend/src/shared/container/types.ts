@@ -15,25 +15,32 @@ import type { UserRepository } from '../../application/ports/repositories/user.r
 import type { AuthService } from '../../application/ports/services/auth.service';
 import type { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
 import type { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
+import { PointGrantRepository } from '../../application/ports/repositories/point-grant.repository';
+import { RegisterUseCase } from '../../application/use-cases/auth/register.use-case';
 
 /**
  * Application-level dependencies (Singleton/Transient lifetime)
  * These are available throughout the application lifecycle.
  */
+import { TransactionManager } from '../../application/ports/transaction-manager.port';
+
 export interface AppCradle {
   // Infrastructure
   db: DrizzleDB;
+  transactionManager: TransactionManager;
 
   // Repositories
   userRepository: UserRepository;
+  pointGrantRepository: PointGrantRepository;
 
   // Domain Services
   circuitBreakerService: CircuitBreakerService;
+  authService: AuthService;
 
   // Application Services / Use Cases
-  authService: AuthService;
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
+  registerUseCase: RegisterUseCase;
 }
 
 import type { FastifyRequest, FastifyReply } from 'fastify';

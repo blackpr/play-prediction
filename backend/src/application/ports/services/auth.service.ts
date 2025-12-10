@@ -17,6 +17,8 @@ export interface AuthService {
    * We can either pass them to the method, or scope the service to the request.
    * Given the DI setup (scoped), we can inject the request context or pass it.
    */
+  signUp(email: string, password: string): Promise<AuthUser>;
   login(email: string, password: string): Promise<AuthUser>;
-  logout(): Promise<void>;
+  logout(email?: string): Promise<void>;
+  checkHealth(): Promise<boolean>;
 }

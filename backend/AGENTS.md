@@ -202,12 +202,15 @@ npx drizzle-kit migrate
 const db = request.diScope.resolve('db');
 
 // Query
+// Query
 const users = await db.select().from(users).where(eq(users.id, id));
 
-// Transaction
-await db.transaction(async (tx) => {
-  await tx.insert(users).values({ ... });
-  await tx.insert(pointGrants).values({ ... });
+// Transaction (Use TransactionManager in Use Cases)
+// Do NOT use db.transaction() directly in Application layer.
+// Inject 'transactionManager' and pass 'tx' to repositories.
+await transactionManager.run(async (tx) => {
+  await userRepository.save(user, tx);
+  await pointGrantRepository.create(grant, tx);
 });
 ```
 
@@ -314,6 +317,7 @@ await queueService.addRepeatable('maintenance', {
 ### New Repository
 
 1. Define interface in `application/ports/repositories/`
+   - MUST accept optional `tx?: Transaction` for atomic operations
 2. Implement in `infrastructure/database/repositories/`
 3. Register in `shared/container/index.ts`
 4. Add type to `shared/container/types.ts`

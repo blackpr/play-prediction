@@ -18,9 +18,12 @@ import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '../../infrastructure/database';
 import { RedisCircuitBreakerService } from '../../infrastructure/circuit-breakers/circuit-breaker.service';
 import { PostgresUserRepository } from '../../infrastructure/database/repositories/postgres-user.repository';
+import { PostgresPointGrantRepository } from '../../infrastructure/database/repositories/postgres-point-grant.repository';
 import { SupabaseAuthService } from '../../infrastructure/auth/supabase-auth.service';
+import { RegisterUseCase } from '../../application/use-cases/auth/register.use-case';
 import { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
+import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
 
 // Import types for module augmentation
 import './types';
@@ -47,12 +50,17 @@ export function registerDependencies(): void {
     db: asFunction(() => createDatabase()).singleton(),
   });
 
+  diContainer.register({
+    transactionManager: asClass(DrizzleTransactionManager).singleton(),
+  });
+
   // ========================================
   // Repositories
   // ========================================
 
   diContainer.register({
     userRepository: asClass(PostgresUserRepository).singleton(),
+    pointGrantRepository: asClass(PostgresPointGrantRepository).singleton(),
   });
 
   // ========================================
@@ -74,17 +82,13 @@ export function registerDependencies(): void {
     // We'll trust standard injection by name/type or rely on the class structure.
     // If SupabaseAuthService constructor asks for specific names, we must match.
     // SupabaseAuthService(request: FastifyRequest, reply: FastifyReply)
-    // Awilix by default uses camelCase of type or name?
-    // It's safer to use PROXY injection which injects everything from cradle.
-    // But typically we rely on 'classic' or 'proxy'.
-    // If we use CLASSIC, it injects by name.
-    // Lets assume we need to manually pass them if they are named 'req' / 'reply' in the container.
-    // fastify-awilix registers 'req' and 'res'? or 'request' and 'reply'?
-    // We can use an arrow function to be explicit.
-    authService: asFunction(({ request, reply }: any) => new SupabaseAuthService(request, reply)).scoped(),
+    // Services
+    authService: asClass(SupabaseAuthService).scoped(), // Modified to asClass
 
+    // Use Cases
     loginUseCase: asClass(LoginUseCase).scoped(),
     logoutUseCase: asClass(LogoutUseCase).scoped(),
+    registerUseCase: asClass(RegisterUseCase).scoped(), // Added
   });
 }
 

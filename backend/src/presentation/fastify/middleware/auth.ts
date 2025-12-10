@@ -1,9 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '../../../infrastructure/auth/supabase';
-import { createDatabase } from '../../../infrastructure/database';
-import { users } from '../../../infrastructure/database/drizzle/schema';
-import { eq } from 'drizzle-orm';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -28,14 +25,9 @@ export async function authMiddleware(
     return;
   }
 
-  // fetch user role from db
-  const db = createDatabase();
-  const dbUser = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-    columns: {
-      role: true,
-    }
-  });
+  // fetch user role from db using repository
+  const userRepository = request.diScope.resolve('userRepository');
+  const dbUser = await userRepository.findById(user.id);
 
   request.user = {
     id: user.id,

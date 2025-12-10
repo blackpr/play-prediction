@@ -41,4 +41,23 @@ export class PostgresUserRepository implements UserRepository {
       createdAt: user.createdAt,
     };
   }
+
+  async create(dto: import('../../../application/ports/repositories/user.repository').CreateUserDTO, tx?: unknown): Promise<User> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const [user] = await db.insert(users).values({
+      id: dto.id,
+      email: dto.email,
+      role: dto.role,
+      balance: dto.balance,
+    }).returning();
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      balance: user.balance,
+      createdAt: user.createdAt,
+    };
+  }
 }
