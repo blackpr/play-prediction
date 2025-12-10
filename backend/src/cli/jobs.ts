@@ -1,34 +1,15 @@
-import { resolve } from 'node:path';
-import { loadEnv } from '../shared/config/env';
-
-// Load env vars from backend root BEFORE importing services
-loadEnv(resolve(__dirname, '../../'));
-
+import '../shared/config/bootstrap';
 import { Command } from 'commander';
 import { JobsOptions } from 'bullmq';
 import { QueueName } from '../infrastructure/jobs/types';
-
-// Late bound imports to ensure env vars are loaded
-let queueService: any;
-let closeRedis: any;
+import { queueService } from '../infrastructure/jobs/queue-service';
+import { closeRedis } from '../infrastructure/redis/connection';
 
 const program = new Command();
 
 program
   .name('jobs')
   .description('CLI for managing background jobs');
-
-// Helper to load dependencies
-const loadDeps = async () => {
-  if (!queueService) {
-    const qsModule = await import('../infrastructure/jobs/queue-service');
-    queueService = qsModule.queueService;
-  }
-  if (!closeRedis) {
-    const rcModule = await import('../infrastructure/redis/connection');
-    closeRedis = rcModule.closeRedis;
-  }
-};
 
 program
   .command('trigger')
@@ -38,7 +19,6 @@ program
   .argument('[data]', 'JSON data for the job', '{}')
   .option('-d, --delay <ms>', 'Delay in milliseconds')
   .action(async (queueName, type, dataStr, options) => {
-    await loadDeps();
     try {
       const data = JSON.parse(dataStr);
       const jobOptions: JobsOptions = {};
@@ -64,13 +44,12 @@ program
   .description('Get queue statistics')
   .argument('[queue]', 'Queue name (optional, defaults to checking all known queues)')
   .action(async (queueName) => {
-    await loadDeps();
     try {
       // Cast to QueueName or array of strings. 
       // Ideally we get valid queue names from the service or types.
       const queues = queueName
         ? [queueName as QueueName]
-        : ['market-ops', 'notifications', 'maintenance'] as QueueName[];
+        : ['market-ops', 'notifications', 'maintenance', 'analytics', 'integrations'] as QueueName[];
 
       console.log('Fetching queue stats...');
       const stats = await Promise.all(queues.map(async (q) => {
@@ -93,7 +72,6 @@ program
   .description('Clear completed and failed jobs from a queue')
   .argument('<queue>', 'Queue name')
   .action(async (queueName) => {
-    await loadDeps();
     try {
       console.log(`Clearing ${queueName}...`);
       // Since QueueService doesn't expose clean/obliterate directly yet:
@@ -118,3 +96,4 @@ async function cleanup() {
 }
 
 program.parse();
+

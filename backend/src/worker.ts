@@ -1,18 +1,10 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { loadEnv } from './shared/config/env';
-
-// Determine backend root directory (src/.. -> backend/)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const backendRoot = path.resolve(__dirname, '..');
-
-// Load environment variables from backend root
-loadEnv(backendRoot);
-
+import './shared/config/bootstrap';
 import fastify from 'fastify';
 import { Processor } from 'bullmq';
-
+import { createWorkers } from './infrastructure/jobs/worker-factory';
+import { handlers } from './infrastructure/jobs/handlers';
+import { metricsService } from './infrastructure/observability/metrics.service';
+import { queueService } from './infrastructure/jobs/queue-service';
 
 // Create lightweight health check server
 const app = fastify({
@@ -24,19 +16,9 @@ app.get('/health', async () => {
   return { status: 'ok' };
 });
 
-
-// Create workers (workers array is now managed in factory but we get the instances)
-// Note: worker-factory currently exports createWorkers which returns the array.
-
 // Start workers and health check
 const start = async () => {
   try {
-    // Dynamic imports to ensure env is loaded first
-    const { createWorkers } = await import('./infrastructure/jobs/worker-factory');
-    const { handlers } = await import('./infrastructure/jobs/handlers');
-    const { metricsService } = await import('./infrastructure/observability/metrics.service');
-    const { queueService } = await import('./infrastructure/jobs/queue-service');
-
     // Create workers
     const workerInstances = createWorkers(handlers as Record<string, Processor>);
 
@@ -168,3 +150,4 @@ const shutdown = async (signal: string) => {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+
