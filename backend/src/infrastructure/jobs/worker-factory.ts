@@ -22,9 +22,26 @@ export function createWorker(
     console.error(`[Worker:${name}] Job ${job?.id} failed:`, err);
   });
 
+  worker.on('completed', (job) => {
+    const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
+    console.log(`[Worker:${name}] Job ${job.id} completed in ${duration}ms`);
+  });
+
   worker.on('error', (err) => {
     console.error(`[Worker:${name}] Worker error:`, err);
   });
 
   return worker;
+}
+
+/**
+ * Creates multiple workers from a map of queue names to processors.
+ */
+export function createWorkers(
+  handlerMap: Record<string, Processor>,
+  options: Partial<WorkerOptions> = {}
+): Worker[] {
+  return Object.entries(handlerMap).map(([name, processor]) => {
+    return createWorker(name as QueueName, processor, options);
+  });
 }

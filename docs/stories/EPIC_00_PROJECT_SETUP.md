@@ -729,14 +729,14 @@ interface QueueService {
 **So that** background jobs don't affect API performance
 
 **Acceptance Criteria:**
-- [ ] Create worker entry point: `src/worker.ts`
-- [ ] Register all job handlers on startup
-- [ ] Graceful shutdown handling (finish current jobs)
-- [ ] Add npm script: `"worker": "tsx src/worker.ts"`
-- [ ] Add npm script: `"worker:dev": "tsx watch src/worker.ts"`
-- [ ] Log job start, completion, and failures
-- [ ] Emit metrics for job processing times
-- [ ] Health check endpoint for worker process
+- [x] Create worker entry point: `src/worker.ts`
+- [x] Register all job handlers on startup
+- [x] Graceful shutdown handling (finish current jobs)
+- [x] Add npm script: `"worker": "tsx src/worker.ts"`
+- [x] Add npm script: `"worker:dev": "tsx watch src/worker.ts"`
+- [x] Log job start, completion, and failures
+- [x] Emit metrics for job processing times
+- [x] Health check endpoint for worker process
 
 **Worker Entry Point:**
 ```typescript
