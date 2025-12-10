@@ -11,6 +11,7 @@
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
     "test:integration": "supabase start && vitest run --config vitest.integration.config.ts && supabase stop",
+    "worker:dev": "echo 'Worker not implemented yet'",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

@@ -305,14 +305,14 @@ npx drizzle-kit studio
 **So that** I can run both backend and frontend locally
 
 **Acceptance Criteria:**
-- [ ] Create root package.json with workspace scripts
-- [ ] Configure backend dev server on port 4000
-- [ ] Configure frontend dev server on port 3000
-- [ ] Set up Vite proxy for /api -> localhost:4000
-- [ ] Set up Vite proxy for /ws -> ws://localhost:4000
-- [ ] Create comprehensive README.md with setup instructions
-- [ ] Document required environment variables
-- [ ] Create `dev` script that starts all services
+- [x] Create root package.json with workspace scripts
+- [x] Configure backend dev server on port 4000
+- [x] Configure frontend dev server on port 3000
+- [x] Set up Vite proxy for /api -> localhost:4000
+- [x] Set up Vite proxy for /ws -> ws://localhost:4000
+- [x] Create comprehensive README.md with setup instructions
+- [x] Document required environment variables
+- [x] Create `dev` script that starts all services
 
 **Development Scripts (root package.json):**
 ```json
