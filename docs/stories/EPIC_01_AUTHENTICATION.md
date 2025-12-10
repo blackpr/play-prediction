@@ -48,14 +48,14 @@ const { data: { session } } = await supabase.auth.getSession();
 ```
 
 **Acceptance Criteria:**
-- [ ] Validate email format and password strength
-- [ ] Create Supabase Auth user via `supabase.auth.signUp()`
-- [ ] Create user profile in `users` table (Drizzle transaction)
-- [ ] Grant welcome bonus (REGISTRATION_BONUS_AMOUNT from config)
-- [ ] Log bonus to `point_grants` table
-- [ ] Return user data (without password)
-- [ ] Handle EMAIL_ALREADY_EXISTS error (409)
-- [ ] Handle INVALID_EMAIL, WEAK_PASSWORD errors (400)
+- [x] Validate email format and password strength
+- [x] Create Supabase Auth user via `supabase.auth.signUp()`
+- [x] Create user profile in `users` table (Drizzle transaction)
+- [x] Grant welcome bonus (REGISTRATION_BONUS_AMOUNT from config)
+- [x] Log bonus to `point_grants` table
+- [x] Return user data (without password)
+- [x] Handle EMAIL_ALREADY_EXISTS error (409)
+- [x] Handle INVALID_EMAIL, WEAK_PASSWORD errors (400)
 
 **Response (201):**
 ```json

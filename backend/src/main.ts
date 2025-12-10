@@ -3,7 +3,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import { errorHandler } from './presentation/fastify/middleware/error-handler';
+import { authMiddleware } from './presentation/fastify/middleware/auth';
 import healthRoutes from './presentation/fastify/routes/health';
+import { authRoutes } from './presentation/fastify/routes/auth';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import { loggerConfig } from './shared/logger/index';
 import { registerContainer } from './shared/container/index';
@@ -38,6 +40,9 @@ async function buildServer() {
   // Register global error handler
   server.setErrorHandler(errorHandler);
 
+  // Register global auth middleware (initializes request.supabase)
+  server.addHook('preHandler', authMiddleware);
+
 
   // Add hook to include userId in logs if authenticated
   server.addHook('preHandler', async (request) => {
@@ -50,6 +55,7 @@ async function buildServer() {
 
   // Routes
   server.register(healthRoutes);
+  server.register(authRoutes);
 
   // Test route for rate limiting (can be removed in production)
   server.get('/test-rate-limit', withRateLimit(RateLimitType.PUBLIC), async () => {
