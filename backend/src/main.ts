@@ -13,8 +13,10 @@ loadEnv(backendRoot);
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { errorHandler } from './presentation/fastify/middleware/error-handler';
+import healthRoutes from './presentation/fastify/routes/health';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import { loggerConfig } from './shared/logger/index';
+import { registerContainer } from './shared/container/index';
 
 const server = Fastify({
   logger: loggerConfig
@@ -26,6 +28,9 @@ async function buildServer() {
     origin: true, // Allow all for dev
     credentials: true,
   });
+
+  // Register DI Container
+  await registerContainer(server);
 
   // Register Rate Limit Plugin
   await server.register(registerRateLimit);
@@ -43,13 +48,7 @@ async function buildServer() {
   });
 
   // Routes
-  server.get('/', async () => {
-    return { hello: 'world' };
-  });
-
-  server.get('/health', withRateLimit(RateLimitType.PUBLIC), async () => {
-    return { status: 'healthy', timestamp: new Date().toISOString() };
-  });
+  server.register(healthRoutes);
 
   // Test route for rate limiting (can be removed in production)
   server.get('/test-rate-limit', withRateLimit(RateLimitType.PUBLIC), async () => {

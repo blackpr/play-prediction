@@ -469,12 +469,12 @@ fastify.post('/api/trades/buy', withRateLimit(RateLimitType.TRADING), handler);
 **Endpoint:** `GET /health`
 
 **Acceptance Criteria:**
-- [ ] Public endpoint (no auth required)
-- [ ] Check database connectivity
-- [ ] Check Supabase auth connectivity
-- [ ] Return overall status
-- [ ] Return component statuses
-- [ ] Fast response (<100ms)
+- [x] Public endpoint (no auth required)
+- [x] Check database connectivity
+- [x] Check Supabase auth connectivity
+- [x] Return overall status
+- [x] Return component statuses
+- [x] Fast response (<100ms)
 
 **Response:**
 ```json
