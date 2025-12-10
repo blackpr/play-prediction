@@ -87,6 +87,11 @@ jobs:
           
           echo "DATABASE_URL is set (masked for security)"
           
+          # Run Migrations to create tables (since supabase start gives empty DB)
+          echo "Running migrations..."
+          npm run db:push --workspace=backend
+          
+          echo "Running tests..."
           npm run test:integration --workspace=backend
 
       - name: Stop Supabase
