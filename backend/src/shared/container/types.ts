@@ -10,6 +10,7 @@
  */
 
 import type { DrizzleDB } from '../../infrastructure/database';
+import type { CircuitBreakerService } from '../../application/ports/services/circuit-breaker.service';
 
 /**
  * Application-level dependencies (Singleton/Transient lifetime)
@@ -27,6 +28,7 @@ export interface AppCradle {
   // tradeLedgerRepository: TradeLedgerRepository;
 
   // Domain Services
+  circuitBreakerService: CircuitBreakerService;
   // Add domain services here as they're implemented:
   // tradingService: TradingService;
   // pricingService: PricingService;

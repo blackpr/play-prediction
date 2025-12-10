@@ -17,6 +17,7 @@ import healthRoutes from './presentation/fastify/routes/health';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import { loggerConfig } from './shared/logger/index';
 import { registerContainer } from './shared/container/index';
+import { circuitBreakerPlugin } from './presentation/fastify/plugins/circuit-breaker';
 
 const server = Fastify({
   logger: loggerConfig
@@ -31,6 +32,9 @@ async function buildServer() {
 
   // Register DI Container
   await registerContainer(server);
+
+  // Register Circuit Breaker Plugin (Must be after DI)
+  await server.register(circuitBreakerPlugin);
 
   // Register Rate Limit Plugin
   await server.register(registerRateLimit);

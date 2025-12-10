@@ -62,3 +62,15 @@ export class InternalServerError extends DomainError {
     super(message, 'INTERNAL_ERROR', 500);
   }
 }
+
+export class InvariantViolationError extends DomainError {
+  constructor(message: string, details?: unknown) {
+    super(message, 'INVARIANT_VIOLATION', 500, details);
+  }
+}
+
+export class CircuitBreakerOpenError extends DomainError {
+  constructor(message: string) {
+    super(message, 'CIRCUIT_BREAKER_OPEN', 503);
+  }
+}

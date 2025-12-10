@@ -16,6 +16,7 @@ import { asValue, asFunction, asClass, Lifetime } from 'awilix';
 import { diContainer, fastifyAwilixPlugin } from '@fastify/awilix';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '../../infrastructure/database';
+import { RedisCircuitBreakerService } from '../../infrastructure/circuit-breakers/circuit-breaker.service';
 
 // Import types for module augmentation
 import './types';
@@ -57,6 +58,10 @@ export function registerDependencies(): void {
   // ========================================
   // Domain Services
   // ========================================
+
+  diContainer.register({
+    circuitBreakerService: asClass(RedisCircuitBreakerService).singleton(),
+  });
 
   // Register domain services as they're implemented:
   // diContainer.register({

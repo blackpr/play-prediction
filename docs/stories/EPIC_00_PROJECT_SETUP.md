@@ -535,12 +535,12 @@ fastify.post('/api/trades/buy', withRateLimit(RateLimitType.TRADING), handler);
 **So that** the system fails safely under stress
 
 **Acceptance Criteria:**
-- [ ] k-invariant monitor: Alert and reject if k decreases
-- [ ] Rapid price movement detector: Alert if >30% in 5 minutes
-- [ ] High error rate detector: Alert if >5% errors for 5 minutes
-- [ ] Database connection monitor: Reject requests if pool exhausted
-- [ ] Log all circuit breaker triggers
-- [ ] Admin notification on trigger
+- [x] k-invariant monitor: Alert and reject if k decreases
+- [x] Rapid price movement detector: Alert if >30% in 5 minutes
+- [x] High error rate detector: Alert if >5% errors for 5 minutes
+- [x] Database connection monitor: Reject requests if pool exhausted
+- [x] Log all circuit breaker triggers
+- [x] Admin notification on trigger
 
 **References:** EDGE_CASES.md Section 10
 
