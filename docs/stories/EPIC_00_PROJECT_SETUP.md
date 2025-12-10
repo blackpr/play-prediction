@@ -436,12 +436,12 @@ fastify.post('/api/trades/buy', withRateLimit(RateLimitType.TRADING), handler);
 **So that** logs are searchable and analyzable
 
 **Acceptance Criteria:**
-- [ ] Use Pino logger (Fastify default)
-- [ ] Log level based on environment
-- [ ] Include requestId in all logs
-- [ ] Include userId when authenticated
-- [ ] Never log sensitive data (passwords, tokens)
-- [ ] Log trade executions with amounts
+- [x] Use Pino logger (Fastify default)
+- [x] Log level based on environment
+- [x] Include requestId in all logs
+- [x] Include userId when authenticated
+- [x] Never log sensitive data (passwords, tokens)
+- [x] Log trade executions with amounts
 
 **Log Format:**
 ```json

@@ -14,9 +14,10 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { errorHandler } from './presentation/fastify/middleware/error-handler';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
+import { loggerConfig } from './shared/logger/index';
 
 const server = Fastify({
-  logger: true
+  logger: loggerConfig
 });
 
 async function buildServer() {
@@ -31,6 +32,15 @@ async function buildServer() {
 
   // Register global error handler
   server.setErrorHandler(errorHandler);
+
+  // Add hook to include userId in logs if authenticated
+  server.addHook('preHandler', async (request) => {
+    // Assuming auth middleware populates request.user
+    const user = (request as any).user;
+    if (user?.id) {
+      request.log = request.log.child({ userId: user.id });
+    }
+  });
 
   // Routes
   server.get('/', async () => {
