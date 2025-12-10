@@ -2,12 +2,12 @@ name: Backend Tests
 
 on:
   push:
-    branches: [ staging ]
+    branches: [ main, staging ]
     paths:
       - 'backend/**'
       - '.github/workflows/test.yml'
   pull_request:
-    branches: [ staging ]
+    branches: [ main, staging ]
     paths:
       - 'backend/**'
       - '.github/workflows/test.yml'
@@ -43,20 +43,23 @@ jobs:
         run: supabase start
         
       - name: Run Integration Tests
-        run: npm run test:integration --workspace=backend
-        env:
-          # Supabase local dev default keys (from config.toml)
-          SUPABASE_URL: http://127.0.0.1:55321
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MTY1NTczNTUsImV4cCI6MTkzMjMxMzM1NX0.2Ss-Z7_h_I9d8k5_v8h8k5_v8h8k5_v8h8k5_v8h8k5_v8h8k5
-          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTYxNjU1NzM1NSwiZXhwIjoxOTMyMzEzMzU1fQ.2Ss-Z7_h_I9d8k5_v8h8k5_v8h8k5_v8h8k5_v8h8k5_v8h8k5
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55326/postgres
-          REDIS_URL: redis://localhost:6379 
-          # Note: The above ports/keys depend on how `supabase start` configures things in CI. 
-          # Default supabase start uses 54321 for API, 54322 for DB? No, usually 54322 is transaction pooler.
-          # Standard local dev: API 54321, DB 54322.
-          # But in the user story (Setup-2), it said:
-          # API: 55321, DB: 55326
-          # We should probably respect the project's config.toml or default behavior.
+        run: |
+          # Get keys from supabase status
+          SUPABASE_ANON_KEY=$(supabase status -o json | jq -r '.anonKey')
+          SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.serviceRoleKey')
+          # DB URL is usually standard but let's be safe. standard is 5432/postgres.
+          # But we formatted config to 55326 in config.toml
+          # json output has dbUrl usually.
+          DATABASE_URL=$(supabase status -o json | jq -r '.dbUrl')
+          
+          # Export to env for the test command
+          export SUPABASE_URL=http://127.0.0.1:55321
+          export SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          export SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+          export DATABASE_URL=$DATABASE_URL
+          export REDIS_URL=redis://localhost:6379
+          
+          npm run test:integration --workspace=backend
 
       - name: Stop Supabase
         run: supabase stop
