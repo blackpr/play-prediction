@@ -669,20 +669,20 @@ app.get('/users/:id', async (request) => {
 **So that** we can run background tasks reliably and reuse it across features
 
 **Acceptance Criteria:**
-- [ ] Add dependencies: `bullmq`, `ioredis`
-- [ ] Create Redis connection utility: `src/infrastructure/redis/connection.ts`
-- [ ] Create queue factory: `src/infrastructure/jobs/queue-factory.ts`
-- [ ] Create worker factory: `src/infrastructure/jobs/worker-factory.ts`
-- [ ] Create QueueService for adding jobs: `src/infrastructure/jobs/queue-service.ts`
-- [ ] Add environment variables:
+- [x] Add dependencies: `bullmq`, `ioredis`
+- [x] Create Redis connection utility: `src/infrastructure/redis/connection.ts`
+- [x] Create queue factory: `src/infrastructure/jobs/queue-factory.ts`
+- [x] Create worker factory: `src/infrastructure/jobs/worker-factory.ts`
+- [x] Create QueueService for adding jobs: `src/infrastructure/jobs/queue-service.ts`
+- [x] Add environment variables:
   ```bash
   REDIS_URL=redis://localhost:6379
   REDIS_PASSWORD=
   WORKER_CONCURRENCY=10
   ENABLE_WORKER=true
   ```
-- [ ] Create connection health check
-- [ ] Handle Redis connection errors gracefully
+- [x] Create connection health check
+- [x] Handle Redis connection errors gracefully
 
 **Folder Structure:**
 ```

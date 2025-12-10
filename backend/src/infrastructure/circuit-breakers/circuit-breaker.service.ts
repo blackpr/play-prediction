@@ -1,6 +1,6 @@
 import { CircuitBreakerService } from '../../application/ports/services/circuit-breaker.service';
 import { InvariantViolationError, CircuitBreakerOpenError } from '../../domain/errors/domain-error';
-import { createRedisClient } from '../redis/connection';
+import { getRedisClient } from '../redis/connection';
 import { DrizzleDB } from '../database';
 import { sql } from 'drizzle-orm';
 import Redis from 'ioredis';
@@ -19,7 +19,7 @@ export class RedisCircuitBreakerService implements CircuitBreakerService {
 
   constructor({ db }: { db: DrizzleDB }) {
     this.db = db;
-    this.redis = createRedisClient();
+    this.redis = getRedisClient();
   }
 
   // ... (keeping kInvariant and checkPriceMovement same) ...
