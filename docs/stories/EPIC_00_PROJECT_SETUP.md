@@ -181,7 +181,7 @@ npx drizzle-kit studio
 **So that** I can build the React frontend
 
 **Acceptance Criteria:**
-- [ ] Initialize TanStack Start project using CLI:
+- [x] Initialize TanStack Start project using CLI:
   ```bash
   # Run from project root - creates frontend/ directory
   npm create @tanstack/start@latest frontend
@@ -192,7 +192,7 @@ npx drizzle-kit studio
   # - Add ESLint? Yes
   # - Package manager: npm
   ```
-- [ ] Configure SPA mode in `frontend/vite.config.ts`:
+- [x] Configure SPA mode in `frontend/vite.config.ts`:
   ```typescript
   import { defineConfig } from 'vite'
   import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -207,7 +207,7 @@ npx drizzle-kit studio
     ],
   })
   ```
-- [ ] Install additional dependencies:
+- [x] Install additional dependencies:
   ```bash
   cd frontend
   npm install @tanstack/react-query @tanstack/react-form
@@ -215,7 +215,7 @@ npx drizzle-kit studio
   npm install zod clsx tailwind-merge
   npm install @supabase/ssr @supabase/supabase-js
   ```
-- [ ] Configure API proxy for development in `frontend/vite.config.ts`:
+- [x] Configure API proxy for development in `frontend/vite.config.ts`:
   ```typescript
   export default defineConfig({
     plugins: [
@@ -237,7 +237,7 @@ npx drizzle-kit studio
     },
   })
   ```
-- [ ] Set up file-based routing structure:
+- [x] Set up file-based routing structure:
   ```
   src/routes/
   ├── __root.tsx
@@ -253,7 +253,7 @@ npx drizzle-kit studio
       ├── index.tsx
       └── markets.tsx
   ```
-- [ ] Configure QueryClient in root route
+- [x] Configure QueryClient in root route
 
 **SPA Mode Benefits:**
 - Easier deployment to CDN (static hosting)
