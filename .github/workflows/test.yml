@@ -51,6 +51,9 @@ jobs:
       - name: Start Supabase
         run: supabase start
 
+      - name: Typecheck Backend
+        run: npm run build --workspace=backend
+
       - name: Run Integration Tests
         run: |
           # Debug Supabase Status

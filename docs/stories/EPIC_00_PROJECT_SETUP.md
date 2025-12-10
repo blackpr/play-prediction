@@ -553,13 +553,13 @@ fastify.post('/api/trades/buy', withRateLimit(RateLimitType.TRADING), handler);
 **So that** code is tested and deployed consistently
 
 **Acceptance Criteria:**
-- [ ] Create `.github/workflows/test.yml` for PR checks:
-  - Install Supabase CLI
-  - Run `supabase start` for integration tests
-  - Run unit tests
-  - Run integration tests
-  - Check TypeScript compilation
-  - Run linting
+- [x] Create `.github/workflows/test.yml` for PR checks:
+  - [x] Install Supabase CLI
+  - [x] Run `supabase start` for integration tests
+  - [x] Run unit tests
+  - [x] Run integration tests
+  - [x] Check TypeScript compilation
+  - [ ] Run linting (Backend lint script pending)
 - [ ] Create `.github/workflows/deploy.yml` for deployments:
   - Deploy backend to hosting platform
   - Run `npx drizzle-kit migrate` to apply migrations
