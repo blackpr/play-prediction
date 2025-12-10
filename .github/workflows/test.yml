@@ -39,25 +39,52 @@ jobs:
         with:
           version: latest
 
+      - name: Cache Supabase
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.supabase/
+          key: ${{ runner.os }}-supabase-${{ hashFiles('supabase/config.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-supabase-
+
       - name: Start Supabase
         run: supabase start
-        
+
       - name: Run Integration Tests
         run: |
-          # Get keys from supabase status
-          SUPABASE_ANON_KEY=$(supabase status -o json | jq -r '.anonKey')
-          SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.serviceRoleKey')
-          # DB URL is usually standard but let's be safe. standard is 5432/postgres.
-          # But we formatted config to 55326 in config.toml
-          # json output has dbUrl usually.
-          DATABASE_URL=$(supabase status -o json | jq -r '.dbUrl')
+          # Debug Supabase Status
+          echo "Fetching Supabase Status..."
+          supabase status -o json > status.json
+          cat status.json
           
+          # Extract keys with fallback handling checks
+          SUPABASE_ANON_KEY=$(jq -r '.anonKey // empty' status.json)
+          SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.serviceRoleKey // empty' status.json)
+          DATABASE_URL=$(jq -r '.dbUrl // empty' status.json)
+          
+          if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "null" ]; then
+             echo "Error: Failed to extract DATABASE_URL from supabase status"
+             # Fallback to constructing it manually if json fails but we know ports
+             # Config toml says port 55326 for db
+             echo "Attempting fallback construction..."
+             DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:55326/postgres"
+             # Note: This fallback assumes default postgres/postgres credentials which are standard for supabase CLI
+          fi
+
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+             echo "Error: Failed to extract keys. Integration tests will fail."
+             exit 1
+          fi
+
           # Export to env for the test command
           export SUPABASE_URL=http://127.0.0.1:55321
           export SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
           export SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
           export DATABASE_URL=$DATABASE_URL
           export REDIS_URL=redis://localhost:6379
+          
+          echo "DATABASE_URL is set (masked for security)"
           
           npm run test:integration --workspace=backend
 
