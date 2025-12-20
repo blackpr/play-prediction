@@ -529,6 +529,44 @@ export function Header() {
 
 ---
 
+### 3.2 NotFoundPage
+
+```tsx
+// src/components/NotFoundPage.tsx
+import { Link } from '@tanstack/react-router'
+import { ArrowLeft, Home, TrendingUp } from 'lucide-react'
+import { Button } from './ui/Button'
+
+export function NotFoundPage() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="relative z-10 space-y-8 max-w-lg mx-auto text-center">
+        <h1 className="text-9xl font-black text-white/5">404</h1>
+        <h2 className="text-3xl font-bold text-white">Page Not Found</h2>
+        <p className="text-lg text-gray-400">
+          Sorry, we couldn't find the page you're looking for.
+        </p>
+        
+        <div className="flex gap-4 justify-center">
+          <Link to="/">
+            <Button size="lg" leftIcon={<Home className="w-4 h-4" />}>
+              Go Home
+            </Button>
+          </Link>
+          <Link to="/markets">
+            <Button variant="ghost" size="lg" leftIcon={<TrendingUp className="w-4 h-4" />}>
+              Browse Markets
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
 ## 4. Market Components
 
 ### 4.1 Market Card

@@ -183,10 +183,10 @@ toast.error('Insufficient balance')
 **Route:** Catch-all route
 
 **Acceptance Criteria:**
-- [ ] Clear "Page Not Found" message
-- [ ] Link back to home
-- [ ] Link to markets
-- [ ] Consistent with site design
+- [x] Clear "Page Not Found" message
+- [x] Link back to home
+- [x] Link to markets
+- [x] Consistent with site design
 
 ---
 

@@ -50,6 +50,22 @@ backend/
 
 ---
 
+## 🗺️ Quick File Glossary
+*Use this to quickly locate common files.*
+
+| Concept | Locations |
+|---------|-----------|
+| **Routes** | `src/presentation/fastify/routes/` |
+| **Middlewares** | `src/presentation/fastify/middleware/` |
+| **Use Cases** | `src/application/use-cases/` |
+| **Repositories** | `src/infrastructure/database/repositories/` |
+| **Entities** | `src/domain/entities/` |
+| **Main Server** | `src/main.ts` |
+| **DI Container** | `src/shared/container/index.ts` |
+| **Env Vars** | `src/shared/config/env.ts` |
+
+---
+
 ## 🚀 Entry Point
 
 The app starts from `bootstrap.ts`, NOT `main.ts`:

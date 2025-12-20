@@ -19,16 +19,7 @@ import appCss from '../styles.css?url'
 import { queryClient } from '../lib/queryClient'
 import type { QueryClient } from '@tanstack/react-query'
 
-function NotFound() {
-  return (
-    <div className="p-4 text-center text-text">
-      <h3 className="text-xl font-semibold">404 Not Found</h3>
-      <p className="text-text-muted">
-        The page you are looking for does not exist.
-      </p>
-    </div>
-  )
-}
+import { NotFoundPage } from '../components/NotFoundPage'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -53,7 +44,7 @@ export const Route = createRootRouteWithContext<{
       },
     ],
   }),
-  notFoundComponent: NotFound,
+  notFoundComponent: NotFoundPage,
   component: RootComponent,
 })
 
