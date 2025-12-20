@@ -1,22 +1,25 @@
-
 import { useEffect, useState } from 'react'
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 import { onSessionExpired } from '../lib/auth-events'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
+import { useIsClient } from '../hooks/useIsClient'
 
 export function SessionManager() {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const router = useRouter()
+  const isClient = useIsClient()
 
   useEffect(() => {
+    // Only set up session management on client
+    if (!isClient) return
     const unsubscribe = onSessionExpired(() => {
       setIsOpen(true)
     })
     return unsubscribe
-  }, [])
+  }, [isClient])
 
   const handleLogin = async () => {
     setIsOpen(false)
@@ -32,11 +35,7 @@ export function SessionManager() {
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={() => { }}
-      title="Session Expired"
-    >
+    <Modal isOpen={isOpen} onClose={() => {}} title="Session Expired">
       <div className="space-y-4">
         <p className="text-text-muted">
           Your session has expired. Please log in again to continue.

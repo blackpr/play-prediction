@@ -4,6 +4,32 @@ Frontend-specific instructions for AI agents. See also: [Root AGENTS.md](../AGEN
 
 ---
 
+## 🚨 Critical: Build Configuration
+
+**IMPORTANT:** The frontend build requires specific configuration to work correctly.
+
+### Required Setup
+
+1. **DO NOT use Nitro plugin** in `vite.config.ts`
+   - Nitro conflicts with TanStack Start's preview server during build
+   - We have a separate Fastify backend, Nitro is not needed
+
+2. **Must use `useIsClient()` hook for SSR safety**
+   - File: `src/hooks/useIsClient.ts`
+   - Use in components that make API calls or use browser APIs
+   - Example in `Header.tsx` - conditionally call `useAuth()` only on client
+
+3. **Must have SSR check in `useAuth.ts`**
+   ```typescript
+   if (typeof window === 'undefined') {
+     return null
+   }
+   ```
+
+**Without these:** Build will hang with "Failed to start the Vite preview server for prerendering"
+
+---
+
 ## 🏗️ Stack
 
 | Technology | Purpose |

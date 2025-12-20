@@ -1,11 +1,17 @@
 import { Link } from '@tanstack/react-router'
 import { useAuth, useLogout } from '../../hooks/useAuth'
+import { useIsClient } from '../../hooks/useIsClient'
 import { Button } from '../ui/Button'
 import { formatPoints } from '../../lib/format'
 import { Wallet, LogOut } from 'lucide-react'
 
 export function Header() {
-  const { user, isAuthenticated, isLoading } = useAuth()
+  const isClient = useIsClient()
+  // Only call useAuth on client to avoid API calls during SSR
+  const auth = isClient
+    ? useAuth()
+    : { user: null, isAuthenticated: false, isLoading: true }
+  const { user, isAuthenticated, isLoading } = auth
   const logoutMutation = useLogout()
 
   return (
@@ -13,7 +19,10 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <span className="text-2xl">🎯</span>
             <span className="text-xl font-bold text-text">Play Prediction</span>
           </Link>
@@ -65,7 +74,9 @@ export function Header() {
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm">Sign In</Button>
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
                 </Link>
                 <Link to="/register">
                   <Button size="sm">Get Started</Button>

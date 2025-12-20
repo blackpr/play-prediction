@@ -12,6 +12,10 @@ interface AuthState {
 export const authQueryOptions = {
   queryKey: ['auth', 'me'],
   queryFn: async (): Promise<User | null> => {
+    // Skip API call during SSR/prerendering to prevent build hanging
+    if (typeof window === 'undefined') {
+      return null
+    }
     try {
       const response = await api.get<User>('/auth/me')
       return response.data
