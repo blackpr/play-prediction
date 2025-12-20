@@ -54,8 +54,8 @@ async function buildServer() {
   });
 
   // Routes
-  server.register(healthRoutes);
-  server.register(authRoutes);
+  server.register(healthRoutes, { prefix: '/api' });
+  server.register(authRoutes, { prefix: '/api' });
 
   // Test route for rate limiting (can be removed in production)
   server.get('/test-rate-limit', withRateLimit(RateLimitType.PUBLIC), async () => {

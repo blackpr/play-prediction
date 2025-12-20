@@ -152,14 +152,14 @@ const { data: { session } } = await supabase.auth.getSession();
 **Route:** `/login`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/login.tsx`
-- [ ] Use TanStack Form for form state
-- [ ] Email input with validation
-- [ ] Password input
-- [ ] Show error messages from API
-- [ ] Redirect to ?redirect param or /markets on success
-- [ ] Link to registration page
-- [ ] Style with dark theme
+- [x] Create route at `src/routes/login.tsx`
+- [x] Use TanStack Form for form state
+- [x] Email input with validation
+- [x] Password input
+- [x] Show error messages from API
+- [x] Redirect to ?redirect param or /markets on success
+- [x] Link to registration page
+- [x] Style with dark theme
 
 **References:** FRONTEND_ARCHITECTURE.md Section 6.2
 

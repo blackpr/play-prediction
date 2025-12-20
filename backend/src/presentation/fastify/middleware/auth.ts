@@ -9,32 +9,54 @@ declare module 'fastify' {
   }
 }
 
-export async function authMiddleware(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
+export const authMiddleware = async (request: FastifyRequest, reply: FastifyReply) => {
+  // 1. Initialize Supabase client
   const supabase = createClient(request, reply);
-
   request.supabase = supabase;
 
-  // validation with getUser()
-  const { data: { user }, error } = await supabase.auth.getUser();
+  // 2. Check auth status using getUser (validates JWT and auto-refreshes)
+  // Wrap in timeout to prevent hanging
+  let user = null;
+  try {
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('getUser timeout')), 5000)
+    );
 
-  if (error || !user) {
+    const getUserPromise = supabase.auth.getUser();
+
+    const { data, error } = await Promise.race([getUserPromise, timeoutPromise]) as any;
+
+    if (!error && data?.user) {
+      user = data.user;
+    }
+  } catch (err) {
+    request.log.warn(err, 'Auth middleware getUser failed or timed out');
+  }
+
+  if (!user) {
     request.user = null;
     return;
   }
 
   // fetch user role from db using repository
-  const userRepository = request.diScope.resolve('userRepository');
-  const dbUser = await userRepository.findById(user.id);
+  try {
+    const userRepository = request.diScope.resolve('userRepository');
+    const dbUser = await userRepository.findById(user.id);
 
-  request.user = {
-    id: user.id,
-    email: user.email!,
-    role: dbUser?.role ?? 'user',
-  };
-}
+    request.user = {
+      id: user.id,
+      email: user.email!,
+      role: dbUser?.role ?? 'user',
+    };
+  } catch (err) {
+    request.log.error(err, 'Error fetching user from DB in auth middleware');
+    request.user = {
+      id: user.id,
+      email: user.email!,
+      role: 'user',
+    };
+  }
+};
 
 export async function requireAuth(
   request: FastifyRequest,
