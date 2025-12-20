@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Modal } from './ui/Modal'
-import { Button } from './ui/Button'
-import { onSessionExpired } from '../lib/auth-events'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
+import { onSessionExpired } from '../lib/auth-events'
 import { useIsClient } from '../hooks/useIsClient'
+import { Button } from './ui/Button'
+import { Modal } from './ui/Modal'
 
 export function SessionManager() {
   const [isOpen, setIsOpen] = useState(false)

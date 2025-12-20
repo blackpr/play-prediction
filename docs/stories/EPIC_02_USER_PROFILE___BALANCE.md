@@ -86,11 +86,11 @@
 **So that** I can see bonuses and grants
 
 **Acceptance Criteria:**
-- [ ] Create points history component/page
-- [ ] Display list of grants
-- [ ] Show type badge (Registration, Admin Grant, etc.)
-- [ ] Show amount and running balance
-- [ ] Pagination
+- [x] Create points history component/page
+- [x] Display list of grants
+- [x] Show type badge (Registration, Admin Grant, etc.)
+- [x] Show amount and running balance
+- [x] Pagination
 
 ---
 

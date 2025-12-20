@@ -1,6 +1,7 @@
 // In production, API is served from same origin. In dev, use env var or default to localhost:4000
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:4000/api/v1' : '/api/v1')
 import { notifySessionExpired } from '../lib/auth-events'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:4000/api/v1' : '/api/v1')
 
 interface ApiResponse<T> {
   success: boolean
@@ -64,7 +65,22 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
+  get: <T>(path: string, options?: { headers?: Record<string, string>; params?: Record<string, any> }) => {
+    let url = path
+    if (options?.params) {
+      const searchParams = new URLSearchParams()
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value))
+        }
+      })
+      const queryString = searchParams.toString()
+      if (queryString) {
+        url += `${url.includes('?') ? '&' : '?'}${queryString}`
+      }
+    }
+    return request<T>('GET', url, options)
+  },
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),

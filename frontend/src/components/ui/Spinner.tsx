@@ -1,5 +1,5 @@
-import { cn } from "../../utils"
 import { Loader2 } from "lucide-react"
+import { cn } from "../../utils"
 
 interface SpinnerProps {
   className?: string;

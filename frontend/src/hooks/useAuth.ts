@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
-import { User } from '../api/types'
+import type { PointsHistoryResponse, User } from '../api/types'
 
 interface AuthState {
   user: User | null
@@ -8,14 +8,17 @@ interface AuthState {
   isLoading: boolean
 }
 
+export interface PointsHistoryParams {
+  page?: number
+  pageSize?: number
+}
+
 // Query for current auth status
 export const authQueryOptions = {
   queryKey: ['auth', 'me'],
   queryFn: async (): Promise<User | null> => {
-    // Skip API call during SSR/prerendering to prevent build hanging
-    if (typeof window === 'undefined') {
-      return null
-    }
+    // Return null immediately on server to prevent build hangs
+    if (typeof window === 'undefined') return null
     try {
       const response = await api.get<User>('/auth/me')
       return response.data
@@ -23,7 +26,7 @@ export const authQueryOptions = {
       return null
     }
   },
-  staleTime: 1000 * 60 * 5, // 5 minutes
+  staleTime: 1000 * 60 * 5,
   retry: false,
 }
 
@@ -33,55 +36,68 @@ export function useAuth(): AuthState {
   return {
     user: user ?? null,
     isAuthenticated: !!user,
-    isLoading,
+    // On server, isLoading should be false if we aren't fetching
+    isLoading: typeof window === 'undefined' ? false : isLoading,
   }
 }
 
-// Login mutation
+// Points History query
+export function usePointsHistory({ page = 1, pageSize = 20 }: PointsHistoryParams = {}) {
+  const query = useQuery({
+    queryKey: ['users', 'me', 'points-history', { page, pageSize }],
+    queryFn: async () => {
+      if (typeof window === 'undefined') return null
+      const response = await api.get<PointsHistoryResponse>('/users/me/points-history', {
+        params: { page, pageSize },
+      })
+      return response.data
+    },
+    // Only enable on client
+    enabled: typeof window !== 'undefined',
+  })
+
+  return {
+    ...query,
+    // On server, isLoading should be false to prevent build hangs
+    isLoading: typeof window === 'undefined' ? false : query.isLoading,
+  }
+}
+
+// Mutations below...
 export function useLogin() {
   const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       const response = await api.post<{ user: User }>('/auth/login', credentials)
       return response.data.user
     },
     onSuccess: (user) => {
-      // Update auth cache
       queryClient.setQueryData(['auth', 'me'], user)
-      // Invalidate user-specific queries
-      // queryClient.invalidateQueries({ queryKey: ['portfolio'] })
     },
   })
 }
 
-// Logout mutation
 export function useLogout() {
   const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: async () => {
       await api.post('/auth/logout')
     },
     onSuccess: () => {
-      // Clear all cached data
       queryClient.clear()
     },
   })
 }
 
-// Register mutation
 export function useRegister() {
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
       const response = await api.post<{ user: User; message: string }>('/auth/register', data)
       return response.data
     },
-    // Note: We don't set auth state here because user needs to verify email first
   })
 }
 
-// Forgot Password mutation
 export function useForgotPassword() {
   return useMutation({
     mutationFn: async (email: string) => {
@@ -91,7 +107,6 @@ export function useForgotPassword() {
   })
 }
 
-// Reset Password mutation
 export function useResetPassword() {
   return useMutation({
     mutationFn: async (password: string) => {

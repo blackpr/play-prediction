@@ -1,12 +1,12 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
+import { useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { useForgotPassword } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import { Spinner } from '../components/ui/Spinner'
-import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,

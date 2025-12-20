@@ -1,12 +1,12 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
+import { useState } from 'react'
+import { Check, X } from 'lucide-react'
 import { useRegister } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import { Spinner } from '../components/ui/Spinner'
-import { useState } from 'react'
-import { Check, X } from 'lucide-react'
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,

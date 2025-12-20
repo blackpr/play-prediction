@@ -4,29 +4,43 @@ Frontend-specific instructions for AI agents. See also: [Root AGENTS.md](../AGEN
 
 ---
 
-## 🚨 Critical: Build Configuration
+## 🚨 Critical: SSR & Hydration Stability
 
-**IMPORTANT:** The frontend build requires specific configuration to work correctly.
+**IMPORTANT:** TanStack Start performs **Prerendering** during the build phase. This means your components actually "run" in a Node.js environment before the browser ever sees them.
 
-### Required Setup
+### 1. No "Loading" states on Server (Prevents Build Hangs)
+If a hook (like `useQuery`) reports `isLoading: true` during the build phase, the TanStack Start builder will **wait indefinitely** for that loading to finish.
+*   **RULE:** Hooks must explicitly report `isLoading: false` when `typeof window === 'undefined'`.
+*   **RULE:** Queries that depend on cookies/browser state must be `enabled: typeof window !== 'undefined'`.
 
-1. **DO NOT use Nitro plugin** in `vite.config.ts`
-   - Nitro conflicts with TanStack Start's preview server during build
-   - We have a separate Fastify backend, Nitro is not needed
+### 2. No Conditional Hooks (Prevents Browser Crashes)
+Never call hooks conditionally based on `isClient` (e.g., `const auth = isClient ? useAuth() : null`). This violates the **Rule of Hooks** and will cause the browser to crash with a "length" or "hydration mismatch" error because the client runs more hooks than the server did.
 
-2. **Must use `useIsClient()` hook for SSR safety**
-   - File: `src/hooks/useIsClient.ts`
-   - Use in components that make API calls or use browser APIs
-   - Example in `Header.tsx` - conditionally call `useAuth()` only on client
+### 3. The "Component Guard" Pattern (The Solution)
+If you need to use authenticated hooks or client-only logic in a layout (like the `Header`), move that logic into a **sub-component** that is conditionally rendered.
 
-3. **Must have SSR check in `useAuth.ts`**
-   ```typescript
-   if (typeof window === 'undefined') {
-     return null
-   }
-   ```
+```tsx
+// ✅ CORRECT PATTERN
+export function Header() {
+  const isClient = useIsClient()
+  
+  // 1. Return a skeleton on the server. 
+  // 2. The hooks inside AuthenticatedSection are NEVER seen by the server.
+  // 3. The build completes instantly.
+  if (!isClient) return <HeaderSkeleton />
 
-**Without these:** Build will hang with "Failed to start the Vite preview server for prerendering"
+  return <AuthenticatedSection />
+}
+
+function AuthenticatedSection() {
+  // Hooks are called UNCONDITIONALLY here.
+  // This is safe because this component only mounts in the browser.
+  const { user } = useAuth()
+  return <div>{user.name}</div>
+}
+```
+
+**Without this:** The build will hang OR the browser will show a white/black screen with "Something went wrong".
 
 ---
 
