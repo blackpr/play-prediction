@@ -265,21 +265,21 @@ export const Route = createFileRoute('/portfolio/')({
 - `POST /v1/auth/reset-password` - Set new password with token
 
 **Acceptance Criteria:**
-- [ ] Forgot Password: Call `supabase.auth.resetPasswordForEmail()`
-- [ ] Send reset email with secure token link
-- [ ] Reset Password: Validate token and update password
-- [ ] Invalidate all existing sessions after password change
-- [ ] Return appropriate error messages
-- [ ] Rate limit: Max 3 reset requests per email per hour
+- [x] Forgot Password: Call `supabase.auth.resetPasswordForEmail()`
+- [x] Send reset email with secure token link
+- [x] Reset Password: Validate token and update password
+- [x] Invalidate all existing sessions after password change
+- [x] Return appropriate error messages
+- [x] Rate limit: Max 3 reset requests per email per hour
 
 **Frontend:**
-- [ ] Create `/forgot-password` route
-- [ ] Email input form with validation
-- [ ] Success message: "Check your email for reset link"
-- [ ] Create `/reset-password` route (with token in URL)
-- [ ] New password + confirm password inputs
-- [ ] Password strength requirements display
-- [ ] Success message + redirect to login
+- [x] Create `/forgot-password` route
+- [x] Email input form with validation
+- [x] Success message: "Check your email for reset link"
+- [x] Create `/reset-password` route (with token in URL)
+- [x] New password + confirm password inputs
+- [x] Password strength requirements display
+- [x] Success message + redirect to login
 
 **References:** EDGE_CASES.md Section 5
 

@@ -18,6 +18,8 @@ import type { LogoutUseCase } from '../../application/use-cases/auth/logout.use-
 import { PointGrantRepository } from '../../application/ports/repositories/point-grant.repository';
 import { RegisterUseCase } from '../../application/use-cases/auth/register.use-case';
 import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
+import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case';
+import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
 
 /**
  * Application-level dependencies (Singleton/Transient lifetime)
@@ -43,6 +45,8 @@ export interface AppCradle {
   logoutUseCase: LogoutUseCase;
   registerUseCase: RegisterUseCase;
   meUseCase: MeUseCase;
+  forgotPasswordUseCase: ForgotPasswordUseCase;
+  resetPasswordUseCase: ResetPasswordUseCase;
 }
 
 import type { FastifyRequest, FastifyReply } from 'fastify';

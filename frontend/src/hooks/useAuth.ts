@@ -76,3 +76,23 @@ export function useRegister() {
     // Note: We don't set auth state here because user needs to verify email first
   })
 }
+
+// Forgot Password mutation
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const response = await api.post<{ message: string }>('/auth/forgot-password', { email })
+      return response.data
+    },
+  })
+}
+
+// Reset Password mutation
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async (password: string) => {
+      const response = await api.post<{ message: string }>('/auth/reset-password', { password })
+      return response.data
+    },
+  })
+}

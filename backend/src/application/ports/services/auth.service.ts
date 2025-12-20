@@ -20,5 +20,7 @@ export interface AuthService {
   signUp(email: string, password: string): Promise<AuthUser>;
   login(email: string, password: string): Promise<AuthUser>;
   logout(email?: string): Promise<void>;
+  resetPasswordForEmail(email: string): Promise<void>;
+  updatePassword(password: string): Promise<void>;
   checkHealth(): Promise<boolean>;
 }

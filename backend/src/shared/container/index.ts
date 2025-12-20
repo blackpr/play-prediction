@@ -24,6 +24,8 @@ import { RegisterUseCase } from '../../application/use-cases/auth/register.use-c
 import { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
 import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
+import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case';
+import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
 import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
 
 // Import types for module augmentation
@@ -90,7 +92,9 @@ export function registerDependencies(): void {
     loginUseCase: asClass(LoginUseCase).scoped(),
     logoutUseCase: asClass(LogoutUseCase).scoped(),
     registerUseCase: asClass(RegisterUseCase).scoped(),
-    meUseCase: asClass(MeUseCase).scoped(), // Added
+    meUseCase: asClass(MeUseCase).scoped(),
+    forgotPasswordUseCase: asClass(ForgotPasswordUseCase).scoped(),
+    resetPasswordUseCase: asClass(ResetPasswordUseCase).scoped(), // Added
   });
 }
 

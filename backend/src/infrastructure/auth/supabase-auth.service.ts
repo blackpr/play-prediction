@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService, AuthUser } from '../../application/ports/services/auth.service';
 import { AuthenticationError } from '../../domain/errors/domain-error';
-import { requireEnv } from '../../shared/config/env';
+import { requireEnv, getEnv } from '../../shared/config/env';
 import { createClient } from './supabase';
 
 export class SupabaseAuthService implements AuthService {
@@ -76,5 +76,24 @@ export class SupabaseAuthService implements AuthService {
 
   async logout(): Promise<void> {
     await this.supabase.auth.signOut();
+  }
+
+  async resetPasswordForEmail(email: string): Promise<void> {
+    const apiUrl = getEnv('API_URL', 'http://localhost:4000');
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${apiUrl}/api/v1/auth/callback`,
+    });
+
+    if (error) {
+      throw new AuthenticationError(error.message);
+    }
+  }
+
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await this.supabase.auth.updateUser({ password });
+
+    if (error) {
+      throw new AuthenticationError(error.message);
+    }
   }
 }
