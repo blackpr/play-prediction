@@ -65,3 +65,14 @@ export function useLogout() {
     },
   })
 }
+
+// Register mutation
+export function useRegister() {
+  return useMutation({
+    mutationFn: async (data: { email: string; password: string }) => {
+      const response = await api.post<{ user: User; message: string }>('/auth/register', data)
+      return response.data
+    },
+    // Note: We don't set auth state here because user needs to verify email first
+  })
+}

@@ -174,13 +174,13 @@ const { data: { session } } = await supabase.auth.getSession();
 **Route:** `/register`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/register.tsx`
-- [ ] Email input with validation
-- [ ] Password input with strength requirements
-- [ ] Confirm password field
-- [ ] Show error messages from API
-- [ ] Show success message about email confirmation
-- [ ] Link to login page
+- [x] Create route at `src/routes/register.tsx`
+- [x] Email input with validation
+- [x] Password input with strength requirements
+- [x] Confirm password field
+- [x] Show error messages from API
+- [x] Show success message about email confirmation
+- [x] Link to login page
 
 ---
 
