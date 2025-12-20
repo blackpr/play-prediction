@@ -166,11 +166,11 @@ toast.error('Insufficient balance')
 **So that** I see placeholder content while data loads
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/ui/Skeleton.tsx`
-- [ ] Create `src/components/market/MarketCardSkeleton.tsx`
-- [ ] Create `src/components/portfolio/PositionCardSkeleton.tsx`
-- [ ] Pulse animation
-- [ ] Match dimensions of real components
+- [x] Create `src/components/ui/Skeleton.tsx`
+- [x] Create `src/components/market/MarketCardSkeleton.tsx`
+- [x] Create `src/components/portfolio/PositionCardSkeleton.tsx`
+- [x] Pulse animation
+- [x] Match dimensions of real components
 
 ---
 

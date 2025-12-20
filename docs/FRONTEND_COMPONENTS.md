@@ -227,75 +227,81 @@ Input.displayName = 'Input'
 
 ```tsx
 // src/components/ui/Card.tsx
-import { clsx } from 'clsx'
+import * as React from 'react'
+import { cn } from '../../utils'
 
-interface CardProps {
-  children: React.ReactNode
-  className?: string
-  variant?: 'default' | 'elevated' | 'outlined'
-  padding?: 'none' | 'sm' | 'md' | 'lg'
-}
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      'rounded-xl border border-gray-800 bg-gray-950 text-gray-100 shadow',
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = 'Card'
 
-const variantStyles = {
-  default: 'bg-gray-900',
-  elevated: 'bg-gray-800 shadow-xl',
-  outlined: 'bg-transparent border border-gray-700',
-}
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    {...props}
+  />
+))
+CardHeader.displayName = 'CardHeader'
 
-const paddingStyles = {
-  none: '',
-  sm: 'p-3',
-  md: 'p-4 md:p-6',
-  lg: 'p-6 md:p-8',
-}
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn('font-semibold leading-none tracking-tight', className)}
+    {...props}
+  />
+))
+CardTitle.displayName = 'CardTitle'
 
-export function Card({
-  children,
-  className,
-  variant = 'default',
-  padding = 'md',
-}: CardProps) {
-  return (
-    <div
-      className={clsx(
-        'rounded-xl',
-        variantStyles[variant],
-        paddingStyles[padding],
-        className
-      )}
-    >
-      {children}
-    </div>
-  )
-}
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn('text-sm text-gray-400', className)}
+    {...props}
+  />
+))
+CardDescription.displayName = 'CardDescription'
 
-export function CardHeader({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div className={clsx('mb-4', className)}>
-      {children}
-    </div>
-  )
-}
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+))
+CardContent.displayName = 'CardContent'
 
-export function CardTitle({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <h3 className={clsx('text-xl font-semibold text-white', className)}>
-      {children}
-    </h3>
-  )
-}
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn('flex items-center p-6 pt-0', className)}
+    {...props}
+  />
+))
+CardFooter.displayName = 'CardFooter'
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 ```
 
 ### 2.4 Modal
