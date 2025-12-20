@@ -32,7 +32,7 @@ export class LoginUseCase {
         role: user.role,
         balance: user.balance.toString(),
         createdAt: user.createdAt,
-      }
+      },
     };
   }
 }

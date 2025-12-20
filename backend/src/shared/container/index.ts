@@ -23,6 +23,7 @@ import { SupabaseAuthService } from '../../infrastructure/auth/supabase-auth.ser
 import { RegisterUseCase } from '../../application/use-cases/auth/register.use-case';
 import { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
+import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
 import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
 
 // Import types for module augmentation
@@ -88,7 +89,8 @@ export function registerDependencies(): void {
     // Use Cases
     loginUseCase: asClass(LoginUseCase).scoped(),
     logoutUseCase: asClass(LogoutUseCase).scoped(),
-    registerUseCase: asClass(RegisterUseCase).scoped(), // Added
+    registerUseCase: asClass(RegisterUseCase).scoped(),
+    meUseCase: asClass(MeUseCase).scoped(), // Added
   });
 }
 

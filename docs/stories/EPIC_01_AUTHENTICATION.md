@@ -119,10 +119,10 @@ const { data: { session } } = await supabase.auth.getSession();
 **Endpoint:** `GET /v1/auth/me`
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Return user from `users` table
-- [ ] Include balance in MicroPoints (as string)
-- [ ] Return 401 if not authenticated
+- [x] Require authentication
+- [x] Return user from `users` table
+- [x] Include balance in MicroPoints (as string)
+- [x] Return 401 if not authenticated
 
 **Response (200):**
 ```json

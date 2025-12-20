@@ -1,15 +1,13 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { createServerClient } from '@supabase/ssr';
 import { AuthService, AuthUser } from '../../application/ports/services/auth.service';
 import { AuthenticationError } from '../../domain/errors/domain-error';
 import { requireEnv } from '../../shared/config/env';
-import { createClient } from './supabase'; // Existing helper
+import { createClient } from './supabase';
 
 export class SupabaseAuthService implements AuthService {
   private readonly supabase;
 
-  constructor(request: FastifyRequest, reply: FastifyReply) {
-    // We create the client using the request and reply objects to handle cookies
+  constructor({ request, reply }: { request: FastifyRequest; reply: FastifyReply }) {
     this.supabase = createClient(request, reply);
   }
 
@@ -18,8 +16,8 @@ export class SupabaseAuthService implements AuthService {
       email,
       password,
       options: {
-        data: { role: 'user' }
-      }
+        data: { role: 'user' },
+      },
     });
 
     if (error) {
@@ -45,7 +43,7 @@ export class SupabaseAuthService implements AuthService {
       const authHealthUrl = `${supabaseUrl}/auth/v1/health`;
       const response = await fetch(authHealthUrl);
       return response.ok;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -63,13 +61,10 @@ export class SupabaseAuthService implements AuthService {
       if (error.message.includes('Email not confirmed')) {
         throw new AuthenticationError('Email not confirmed');
       }
-      // For other errors, we might want to throw a generic auth error or a business logic error
-      // Ideally we shouldn't leak technical details if not necessary, but for debugging logging is key.
-      // Here we throw AuthError.
       throw new AuthenticationError(error.message);
     }
 
-    if (!data.user) {
+    if (!data.user || !data.session) {
       throw new AuthenticationError('Login failed: no user data returned');
     }
 
@@ -80,11 +75,6 @@ export class SupabaseAuthService implements AuthService {
   }
 
   async logout(): Promise<void> {
-    const { error } = await this.supabase.auth.signOut();
-    if (error) {
-      // Log warning but don't fail operation typically?
-      // For strict correctness, we can throw.
-      console.error('Logout failed', error);
-    }
+    await this.supabase.auth.signOut();
   }
 }
