@@ -1,6 +1,7 @@
-import { PointGrantRepository, CreatePointGrantDTO } from '../../../application/ports/repositories/point-grant.repository';
+import { eq, desc, count } from 'drizzle-orm';
+import { PointGrantRepository, CreatePointGrantDTO, PointGrant } from '../../../application/ports/repositories/point-grant.repository';
 import { DrizzleDB } from '../../database';
-import { pointGrants, PointGrantType } from '../drizzle/schema';
+import { pointGrants } from '../drizzle/schema';
 
 export class PostgresPointGrantRepository implements PointGrantRepository {
   private readonly db: DrizzleDB;
@@ -21,4 +22,34 @@ export class PostgresPointGrantRepository implements PointGrantRepository {
       reason: grant.reason,
     });
   }
+
+  async findByUserId(userId: string, { page, pageSize }: { page: number; pageSize: number }): Promise<{ items: (PointGrant & { grantedByEmail?: string })[]; total: number }> {
+    const offset = (page - 1) * pageSize;
+
+    const [items, totalCount] = await Promise.all([
+      this.db.query.pointGrants.findMany({
+        where: eq(pointGrants.userId, userId),
+        orderBy: [desc(pointGrants.createdAt)],
+        limit: pageSize,
+        offset: offset,
+        with: {
+          grantedByUser: {
+            columns: {
+              email: true
+            }
+          }
+        }
+      }),
+      this.db.select({ count: count() }).from(pointGrants).where(eq(pointGrants.userId, userId))
+    ]);
+
+    return {
+      items: items.map(item => ({
+        ...item,
+        grantedByEmail: item.grantedByUser?.email ?? undefined
+      })),
+      total: Number(totalCount[0].count)
+    };
+  }
 }
+

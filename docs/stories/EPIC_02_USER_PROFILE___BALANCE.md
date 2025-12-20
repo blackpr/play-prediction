@@ -69,9 +69,11 @@
 - `pageSize` (default: 20)
 
 **Acceptance Criteria:**
-- [ ] Query `point_grants` table for user
-- [ ] Return paginated results
-- [ ] Include grant type, amount, balance after, reason, granted by, date
+- [x] Query `point_grants` table for user
+- [x] Return paginated results
+- [x] Include grant type, amount, balance after, reason, granted by, date
+
+
 
 **References:** API_SPECIFICATION.md Section 4.2.2
 

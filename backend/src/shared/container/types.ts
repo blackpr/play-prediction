@@ -20,6 +20,8 @@ import { RegisterUseCase } from '../../application/use-cases/auth/register.use-c
 import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
 import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
+import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-points-history.use-case';
+
 
 /**
  * Application-level dependencies (Singleton/Transient lifetime)
@@ -47,7 +49,9 @@ export interface AppCradle {
   meUseCase: MeUseCase;
   forgotPasswordUseCase: ForgotPasswordUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
+  getPointsHistoryUseCase: GetPointsHistoryUseCase;
 }
+
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 

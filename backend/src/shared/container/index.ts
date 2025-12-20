@@ -26,7 +26,9 @@ import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case'
 import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
 import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
+import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-points-history.use-case';
 import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
+
 
 // Import types for module augmentation
 import './types';
@@ -94,9 +96,11 @@ export function registerDependencies(): void {
     registerUseCase: asClass(RegisterUseCase).scoped(),
     meUseCase: asClass(MeUseCase).scoped(),
     forgotPasswordUseCase: asClass(ForgotPasswordUseCase).scoped(),
-    resetPasswordUseCase: asClass(ResetPasswordUseCase).scoped(), // Added
+    resetPasswordUseCase: asClass(ResetPasswordUseCase).scoped(),
+    getPointsHistoryUseCase: asClass(GetPointsHistoryUseCase).scoped(),
   });
 }
+
 
 /**
  * Configure and register the Awilix plugin with Fastify.

@@ -40,4 +40,57 @@ export async function meRoute(fastify: FastifyInstance) {
       });
     }
   });
+  fastify.get('/me/points-history', {
+    preHandler: [requireAuth],
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', minimum: 1, default: 1 },
+          pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      const getPointsHistoryUseCase = request.diScope.resolve('getPointsHistoryUseCase');
+      const { page, pageSize } = request.query as { page: number; pageSize: number };
+
+      const { items, total } = await getPointsHistoryUseCase.execute({
+        userId: request.user!.id,
+        page,
+        pageSize,
+      });
+
+      return reply.status(200).send({
+        success: true,
+        data: {
+          items: items.map(item => ({
+            id: item.id,
+            type: item.grantType,
+            amount: item.amount.toString(),
+            balanceAfter: item.balanceAfter.toString(),
+            grantedBy: item.grantedByEmail ?? null,
+            reason: item.reason,
+            createdAt: item.createdAt.toISOString(),
+          })),
+          pagination: {
+            page,
+            pageSize,
+            totalItems: total,
+          }
+        }
+      });
+    } catch (error) {
+      request.log.error(error, 'Failed to fetch points history');
+      return reply.status(500).send({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to fetch points history',
+        }
+      });
+    }
+  });
 }
+
