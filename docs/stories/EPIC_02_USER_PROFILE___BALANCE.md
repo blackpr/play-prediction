@@ -126,12 +126,12 @@
 **So that** I can access important links
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/layout/Footer.tsx`
-- [ ] Logo and tagline
-- [ ] Navigation links
-- [ ] Social links (placeholder)
-- [ ] Copyright notice
-- [ ] Responsive layout (stacked on mobile)
+- [x] Create `src/components/layout/Footer.tsx`
+- [x] Logo and tagline
+- [x] Navigation links
+- [x] Social links (placeholder)
+- [x] Copyright notice
+- [x] Responsive layout (stacked on mobile)
 
 ---
 
