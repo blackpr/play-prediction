@@ -310,13 +310,13 @@ export const Route = createFileRoute('/portfolio/')({
 **So that** users receive professional-looking emails
 
 **Acceptance Criteria:**
-- [ ] Configure Supabase email templates in project settings
-- [ ] Design welcome/verification email template
-- [ ] Design password reset email template
-- [ ] Test email delivery with Inbucket locally
-- [ ] Verify email links work correctly
-- [ ] Include branding (logo, colors)
-- [ ] Mobile-responsive email layout
+- [x] Configure Supabase email templates in project settings
+- [x] Design welcome/verification email template
+- [x] Design password reset email template
+- [x] Test email delivery with Inbucket locally
+- [x] Verify email links work correctly
+- [x] Include branding (logo, colors)
+- [x] Mobile-responsive email layout
 
 **Email Templates to Configure:**
 1. **Confirm Signup** - Sent after registration
