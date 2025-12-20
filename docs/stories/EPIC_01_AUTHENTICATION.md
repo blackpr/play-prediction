@@ -246,9 +246,9 @@ export const Route = createFileRoute('/portfolio/')({
 - `type` - email or signup
 
 **Acceptance Criteria:**
-- [ ] Verify OTP with Supabase
-- [ ] Redirect to frontend on success
-- [ ] Handle errors gracefully
+- [x] Verify OTP with Supabase
+- [x] Redirect to frontend on success
+- [x] Handle errors gracefully
 
 **References:** API_SPECIFICATION.md Section 4.1.4
 
