@@ -209,10 +209,10 @@ const { data: { session } } = await supabase.auth.getSession();
 **So that** certain pages require authentication
 
 **Acceptance Criteria:**
-- [ ] Use TanStack Router's `beforeLoad` for auth check
-- [ ] Redirect to /login if not authenticated
-- [ ] Pass redirect URL in search params
-- [ ] Create reusable auth check pattern
+- [x] Use TanStack Router's `beforeLoad` for auth check
+- [x] Redirect to /login if not authenticated
+- [x] Pass redirect URL in search params
+- [x] Create reusable auth check pattern
 
 **Example:**
 ```typescript

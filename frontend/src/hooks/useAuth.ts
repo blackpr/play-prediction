@@ -13,8 +13,8 @@ export const authQueryOptions = {
   queryKey: ['auth', 'me'],
   queryFn: async (): Promise<User | null> => {
     try {
-      const response = await api.get<{ user: User }>('/auth/me')
-      return response.data.user
+      const response = await api.get<User>('/auth/me')
+      return response.data
     } catch {
       return null
     }

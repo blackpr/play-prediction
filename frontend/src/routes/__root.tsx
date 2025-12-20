@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -7,7 +7,7 @@ import Header from '../components/Header'
 
 import appCss from '../styles.css?url'
 
-const queryClient = new QueryClient()
+import { queryClient } from '../lib/queryClient'
 
 function NotFound() {
   return (
@@ -18,7 +18,9 @@ function NotFound() {
   )
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient
+}>()({
   head: () => ({
     meta: [
       {
@@ -40,8 +42,16 @@ export const Route = createRootRoute({
     ],
   }),
   notFoundComponent: NotFound,
-  shellComponent: RootDocument,
+  component: RootComponent,
 })
+
+function RootComponent() {
+  return (
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
