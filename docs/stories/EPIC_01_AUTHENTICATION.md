@@ -191,12 +191,12 @@ const { data: { session } } = await supabase.auth.getSession();
 **So that** components can access user info
 
 **Acceptance Criteria:**
-- [ ] Create `src/hooks/useAuth.ts`
-- [ ] Create `authQueryOptions` for TanStack Query
-- [ ] `useAuth()` returns `{ user, isAuthenticated, isLoading }`
-- [ ] `useLogin()` mutation with cache update
-- [ ] `useLogout()` mutation that clears all queries
-- [ ] `useRegister()` mutation
+- [x] Create `src/hooks/useAuth.ts`
+- [x] Create `authQueryOptions` for TanStack Query
+- [x] `useAuth()` returns `{ user, isAuthenticated, isLoading }`
+- [x] `useLogin()` mutation with cache update
+- [x] `useLogout()` mutation that clears all queries
+- [x] `useRegister()` mutation
 
 **References:** FRONTEND_ARCHITECTURE.md Section 6.1, FRONTEND_STATE.md Section 3
 
