@@ -25,14 +25,14 @@
 **So that** I always know my points
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/layout/Header.tsx`
-- [ ] Show logo and navigation links
-- [ ] Markets link, Portfolio link (if authenticated)
-- [ ] Balance display with wallet icon
-- [ ] Format balance using `formatPoints()`
-- [ ] Sign In / Get Started buttons if not authenticated
-- [ ] Sign Out button if authenticated
-- [ ] Loading skeleton while auth loading
+- [x] Create `src/components/layout/Header.tsx`
+- [x] Show logo and navigation links
+- [x] Markets link, Portfolio link (if authenticated)
+- [x] Balance display with wallet icon
+- [x] Format balance using `formatPoints()`
+- [x] Sign In / Get Started buttons if not authenticated
+- [x] Sign Out button if authenticated
+- [x] Loading skeleton while auth loading
 
 **References:** FRONTEND_COMPONENTS.md Section 3.1
 
@@ -45,12 +45,12 @@
 **So that** MicroPoints display correctly
 
 **Acceptance Criteria:**
-- [ ] Create `src/lib/format.ts`
-- [ ] `formatPoints(microPoints)` - "1,000.00" format
-- [ ] `formatCompactPoints(microPoints)` - "10K", "1.5M" format
-- [ ] `parsePoints(string)` - convert to MicroPoints string
-- [ ] Handle BigInt serialization (strings in JSON)
-- [ ] Scale: 1 Point = 1,000,000 MicroPoints
+- [x] Create `src/lib/format.ts`
+- [x] `formatPoints(microPoints)` - "1,000.00" format
+- [x] `formatCompactPoints(microPoints)` - "10K", "1.5M" format
+- [x] `parsePoints(string)` - convert to MicroPoints string
+- [x] Handle BigInt serialization (strings in JSON)
+- [x] Scale: 1 Point = 1,000,000 MicroPoints
 
 **References:** FRONTEND_COMPONENTS.md Section 8.1
 
