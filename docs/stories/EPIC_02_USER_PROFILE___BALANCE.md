@@ -142,13 +142,13 @@
 **So that** I get feedback on my actions
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/ui/Toast.tsx`
-- [ ] Create toast context/provider
-- [ ] Support variants: success, error, warning, info
-- [ ] Auto-dismiss after 5 seconds
-- [ ] Manual dismiss button
-- [ ] Stack multiple toasts
-- [ ] Position: bottom-right
+- [x] Create `src/components/ui/Toast.tsx`
+- [x] Create toast context/provider
+- [x] Support variants: success, error, warning, info
+- [x] Auto-dismiss after 5 seconds
+- [x] Manual dismiss button
+- [x] Stack multiple toasts
+- [x] Position: bottom-right
 
 **Usage:**
 ```typescript
