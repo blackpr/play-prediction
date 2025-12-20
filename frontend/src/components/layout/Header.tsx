@@ -12,7 +12,9 @@ export function Header() {
             to="/"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <span className="text-2xl" role="img" aria-label="logo">🎯</span>
+            <span className="text-2xl" role="img" aria-label="logo">
+              🎯
+            </span>
             <span className="text-xl font-bold text-text">Play Prediction</span>
           </Link>
 

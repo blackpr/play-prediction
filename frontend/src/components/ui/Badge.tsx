@@ -1,7 +1,13 @@
 import React from 'react'
 import { cn } from '../../utils'
 
-export type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline'
+export type BadgeVariant =
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
+  | 'outline'
 
 interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: BadgeVariant
@@ -24,12 +30,12 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         className={cn(
           'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
           variantStyles[variant],
-          className
+          className,
         )}
         {...props}
       />
     )
-  }
+  },
 )
 
 Badge.displayName = 'Badge'

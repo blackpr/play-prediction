@@ -21,10 +21,25 @@ export interface Market {
   outcome: boolean | null
   createdAt: string
   updatedAt: string
-  // pool: LiquidityPool // To be implemented when Market types are needed
+  category: string
+  imageUrl: string | null
+  closesAt: string | null
+  pool: MarketPool
+  volume24h: MicroPoints
 }
 
-export type PointGrantType = 'REGISTRATION_BONUS' | 'ADMIN_GRANT' | 'PROMOTION' | 'CORRECTION'
+export interface MarketPool {
+  yesQty: MicroPoints
+  noQty: MicroPoints
+  yesPrice: string // Decimal string
+  noPrice: string // Decimal string
+}
+
+export type PointGrantType =
+  | 'REGISTRATION_BONUS'
+  | 'ADMIN_GRANT'
+  | 'PROMOTION'
+  | 'CORRECTION'
 
 export interface PointsHistoryItem {
   id: string

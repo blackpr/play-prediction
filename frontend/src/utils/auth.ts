@@ -6,7 +6,11 @@ import { queryClient } from '../lib/queryClient'
  * Route guard for authenticated routes.
  * Safe for SSR - skips check during build phase.
  */
-export const requireAuth = async ({ location }: { location: { href: string } }) => {
+export const requireAuth = async ({
+  location,
+}: {
+  location: { href: string }
+}) => {
   // Prevent build from hanging by skipping auth checks during SSR/prerender
   if (typeof window === 'undefined') {
     return null

@@ -5,7 +5,13 @@ import { Check, X } from 'lucide-react'
 import { useRegister } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card'
 import { Spinner } from '../components/ui/Spinner'
 
 export const Route = createFileRoute('/register')({
@@ -60,12 +66,14 @@ function RegisterPage() {
             <div className="rounded-md bg-green-900/50 p-4 text-sm text-green-200">
               <p className="font-medium mb-2">Registration successful!</p>
               <p>
-                We've sent a confirmation email to <strong>{registeredEmail}</strong>.
-                Please check your inbox and click the verification link to activate your account.
+                We've sent a confirmation email to{' '}
+                <strong>{registeredEmail}</strong>. Please check your inbox and
+                click the verification link to activate your account.
               </p>
             </div>
             <p className="text-sm text-gray-400 text-center">
-              Didn't receive the email? Check your spam folder or contact support.
+              Didn't receive the email? Check your spam folder or contact
+              support.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
@@ -113,7 +121,10 @@ function RegisterPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-gray-200">
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-medium text-gray-200"
+                  >
                     Email
                   </label>
                   <Input
@@ -123,7 +134,9 @@ function RegisterPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={field.state.meta.errors.length ? 'border-red-500' : ''}
+                    className={
+                      field.state.meta.errors.length ? 'border-red-500' : ''
+                    }
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-400">
@@ -140,7 +153,7 @@ function RegisterPage() {
                 onChange: ({ value }) => {
                   if (!value) return 'Password is required'
                   const failedRequirements = PASSWORD_REQUIREMENTS.filter(
-                    (req) => !req.test(value)
+                    (req) => !req.test(value),
                   )
                   if (failedRequirements.length > 0) {
                     return 'Password does not meet all requirements'
@@ -151,7 +164,10 @@ function RegisterPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-gray-200">
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-200"
+                  >
                     Password
                   </label>
                   <Input
@@ -161,7 +177,9 @@ function RegisterPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={field.state.meta.errors.length ? 'border-red-500' : ''}
+                    className={
+                      field.state.meta.errors.length ? 'border-red-500' : ''
+                    }
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-400">
@@ -172,14 +190,17 @@ function RegisterPage() {
                   {/* Password strength requirements */}
                   {field.state.value && (
                     <div className="mt-2 space-y-1">
-                      <p className="text-xs font-medium text-gray-400">Password must contain:</p>
+                      <p className="text-xs font-medium text-gray-400">
+                        Password must contain:
+                      </p>
                       {PASSWORD_REQUIREMENTS.map((req, index) => {
                         const isMet = req.test(field.state.value)
                         return (
                           <div
                             key={index}
-                            className={`flex items-center gap-2 text-xs ${isMet ? 'text-green-400' : 'text-gray-500'
-                              }`}
+                            className={`flex items-center gap-2 text-xs ${
+                              isMet ? 'text-green-400' : 'text-gray-500'
+                            }`}
                           >
                             {isMet ? (
                               <Check className="h-3 w-3" />
@@ -212,7 +233,10 @@ function RegisterPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-200">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="text-sm font-medium text-gray-200"
+                  >
                     Confirm Password
                   </label>
                   <Input
@@ -222,7 +246,9 @@ function RegisterPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={field.state.meta.errors.length ? 'border-red-500' : ''}
+                    className={
+                      field.state.meta.errors.length ? 'border-red-500' : ''
+                    }
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-400">
@@ -264,7 +290,10 @@ function RegisterPage() {
         <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
           <p className="text-sm text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-400 hover:text-blue-300">
+            <Link
+              to="/login"
+              className="font-medium text-blue-400 hover:text-blue-300"
+            >
               Sign in
             </Link>
           </p>
@@ -273,4 +302,3 @@ function RegisterPage() {
     </div>
   )
 }
-

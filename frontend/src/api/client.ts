@@ -1,7 +1,9 @@
 // In production, API is served from same origin. In dev, use env var or default to localhost:4000
 import { notifySessionExpired } from '../lib/auth-events'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:4000/api/v1' : '/api/v1')
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? 'http://localhost:4000/api/v1' : '/api/v1')
 
 interface ApiResponse<T> {
   success: boolean
@@ -18,7 +20,7 @@ class ApiError extends Error {
     public code: string,
     message: string,
     public status: number,
-    public details?: Record<string, unknown>
+    public details?: Record<string, unknown>,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -31,7 +33,7 @@ async function request<T>(
   options?: {
     body?: unknown
     headers?: Record<string, string>
-  }
+  },
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE}${path}`
 
@@ -47,7 +49,6 @@ async function request<T>(
 
   const json = await response.json()
 
-
   if (!response.ok || !json.success) {
     if (response.status === 401) {
       notifySessionExpired()
@@ -57,7 +58,7 @@ async function request<T>(
       json.error?.code ?? 'UNKNOWN_ERROR',
       json.error?.message ?? 'An error occurred',
       response.status,
-      json.error?.details
+      json.error?.details,
     )
   }
 
@@ -65,7 +66,13 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(path: string, options?: { headers?: Record<string, string>; params?: Record<string, any> }) => {
+  get: <T>(
+    path: string,
+    options?: {
+      headers?: Record<string, string>
+      params?: Record<string, any>
+    },
+  ) => {
     let url = path
     if (options?.params) {
       const searchParams = new URLSearchParams()
@@ -83,7 +90,8 @@ export const api = {
   },
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
-  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
+  patch: <T>(path: string, body?: unknown) =>
+    request<T>('PATCH', path, { body }),
   delete: <T>(path: string) => request<T>('DELETE', path),
 }
 

@@ -5,7 +5,9 @@ export const MICRO_POINTS_SCALE = 1_000_000n
  * Handles string, number, or BigInt input.
  * Returns "0.00" if input is null or undefined.
  */
-export function formatPoints(microPoints: number | string | bigint | undefined | null): string {
+export function formatPoints(
+  microPoints: number | string | bigint | undefined | null,
+): string {
   if (microPoints === undefined || microPoints === null) return '0.00'
 
   try {
@@ -30,7 +32,9 @@ export function formatPoints(microPoints: number | string | bigint | undefined |
 /**
  * Formats micro-points to a compact string (e.g., "10K", "1.5M").
  */
-export function formatCompactPoints(microPoints: number | string | bigint | undefined | null): string {
+export function formatCompactPoints(
+  microPoints: number | string | bigint | undefined | null,
+): string {
   if (microPoints === undefined || microPoints === null) return '0'
 
   try {

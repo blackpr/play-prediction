@@ -1,13 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Clock, Info } from 'lucide-react'
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Info,
+} from 'lucide-react'
 import { requireAuth } from '../../utils/auth'
 import { usePointsHistory } from '../../hooks/useAuth'
 import { formatPoints } from '../../lib/format'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
 import { Spinner } from '../../components/ui/Spinner'
-import type { BadgeVariant } from '../../components/ui/Badge';
+import type { BadgeVariant } from '../../components/ui/Badge'
 
 const historySearchSchema = z.object({
   page: z.number().catch(1),
@@ -36,7 +43,9 @@ function PointsHistoryPage() {
   const items = data?.items ?? []
   const pagination = data?.pagination
 
-  const getGrantTypeConfig = (type: string): { label: string; variant: BadgeVariant } => {
+  const getGrantTypeConfig = (
+    type: string,
+  ): { label: string; variant: BadgeVariant } => {
     switch (type) {
       case 'REGISTRATION_BONUS':
         return { label: 'Welcome Bonus', variant: 'success' }
@@ -64,7 +73,8 @@ function PointsHistoryPage() {
           Points History
         </h1>
         <p className="text-lg text-text-muted max-w-2xl">
-          A detailed record of all point movements in your account, including bonuses and manual adjustments.
+          A detailed record of all point movements in your account, including
+          bonuses and manual adjustments.
         </p>
       </div>
 
@@ -73,24 +83,42 @@ function PointsHistoryPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/5 bg-white/5">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim">Date & Time</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim">Transaction Type</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim">Description</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim text-right">Amount</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim text-right">Running Balance</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim">
+                  Date & Time
+                </th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim">
+                  Transaction Type
+                </th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim">
+                  Description
+                </th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim text-right">
+                  Amount
+                </th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-dim text-right">
+                  Running Balance
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center text-text-dim">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-20 text-center text-text-dim"
+                  >
                     <div className="flex flex-col items-center gap-4">
                       <div className="rounded-full bg-surface-highlight p-4">
                         <Info className="h-10 w-10 text-text-dim" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-lg font-medium text-text">No Transactions Yet</p>
-                        <p className="text-sm">When you receive points or bonuses, they will appear here.</p>
+                        <p className="text-lg font-medium text-text">
+                          No Transactions Yet
+                        </p>
+                        <p className="text-sm">
+                          When you receive points or bonuses, they will appear
+                          here.
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -102,19 +130,28 @@ function PointsHistoryPage() {
                   const isPositive = amountBigInt > 0n
 
                   return (
-                    <tr key={item.id} className="hover:bg-white/5 transition-all duration-200 group">
+                    <tr
+                      key={item.id}
+                      className="hover:bg-white/5 transition-all duration-200 group"
+                    >
                       <td className="px-6 py-5">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-semibold text-text">
-                            {new Date(item.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
+                            {new Date(item.createdAt).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              },
+                            )}
                           </span>
                           <span className="text-[11px] text-text-dim flex items-center gap-1.5">
                             <Clock className="h-3 w-3" />
-                            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(item.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </span>
                         </div>
                       </td>
@@ -137,8 +174,14 @@ function PointsHistoryPage() {
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <div className={`inline-flex items-center gap-1.5 text-sm font-bold tabular-nums ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {isPositive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
+                        <div
+                          className={`inline-flex items-center gap-1.5 text-sm font-bold tabular-nums ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}
+                        >
+                          {isPositive ? (
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowDownLeft className="h-3.5 w-3.5" />
+                          )}
                           {formatPoints(item.amount)}
                         </div>
                       </td>
@@ -158,11 +201,19 @@ function PointsHistoryPage() {
         {pagination && pagination.totalItems > 0 && (
           <div className="flex items-center justify-between border-t border-white/5 bg-surface-highlight/30 px-6 py-5">
             <div className="text-sm text-text-dim">
-              Showing <span className="font-semibold text-text">{(page - 1) * pageSize + 1}</span> to{' '}
+              Showing{' '}
+              <span className="font-semibold text-text">
+                {(page - 1) * pageSize + 1}
+              </span>{' '}
+              to{' '}
               <span className="font-semibold text-text">
                 {Math.min(page * pageSize, pagination.totalItems)}
               </span>{' '}
-              of <span className="font-semibold text-text">{pagination.totalItems}</span> entries
+              of{' '}
+              <span className="font-semibold text-text">
+                {pagination.totalItems}
+              </span>{' '}
+              entries
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -175,8 +226,12 @@ function PointsHistoryPage() {
               </button>
 
               <div className="flex items-center gap-1 px-2">
-                <span className="text-sm font-medium text-text">Page {page}</span>
-                <span className="text-sm text-text-dim">of {Math.ceil(pagination.totalItems / pageSize)}</span>
+                <span className="text-sm font-medium text-text">
+                  Page {page}
+                </span>
+                <span className="text-sm text-text-dim">
+                  of {Math.ceil(pagination.totalItems / pageSize)}
+                </span>
               </div>
 
               <button

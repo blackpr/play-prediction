@@ -14,7 +14,7 @@ import { SessionManager } from '../components/SessionManager'
 import appCss from '../styles.css?url'
 
 import { queryClient } from '../lib/queryClient'
-import type { QueryClient} from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query'
 
 function NotFound() {
   return (

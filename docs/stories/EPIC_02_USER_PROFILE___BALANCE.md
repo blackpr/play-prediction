@@ -103,13 +103,13 @@
 **Route:** `/`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/index.tsx`
-- [ ] Hero section with tagline and CTA
-- [ ] Featured/trending markets section
-- [ ] How it works section (3 steps)
-- [ ] Call to action for registration
-- [ ] Responsive design
-- [ ] Animated elements (subtle)
+- [x] Create route at `src/routes/index.tsx`
+- [x] Hero section with tagline and CTA
+- [x] Featured/trending markets section
+- [x] How it works section (3 steps)
+- [x] Call to action for registration
+- [x] Responsive design
+- [x] Animated elements (subtle)
 
 **Sections:**
 1. Hero: "Predict the Future. Trade Your Knowledge."

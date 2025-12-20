@@ -42,14 +42,20 @@ export function useAuth(): AuthState {
 }
 
 // Points History query
-export function usePointsHistory({ page = 1, pageSize = 20 }: PointsHistoryParams = {}) {
+export function usePointsHistory({
+  page = 1,
+  pageSize = 20,
+}: PointsHistoryParams = {}) {
   const query = useQuery({
     queryKey: ['users', 'me', 'points-history', { page, pageSize }],
     queryFn: async () => {
       if (typeof window === 'undefined') return null
-      const response = await api.get<PointsHistoryResponse>('/users/me/points-history', {
-        params: { page, pageSize },
-      })
+      const response = await api.get<PointsHistoryResponse>(
+        '/users/me/points-history',
+        {
+          params: { page, pageSize },
+        },
+      )
       return response.data
     },
     // Only enable on client
@@ -68,7 +74,10 @@ export function useLogin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await api.post<{ user: User }>('/auth/login', credentials)
+      const response = await api.post<{ user: User }>(
+        '/auth/login',
+        credentials,
+      )
       return response.data.user
     },
     onSuccess: (user) => {
@@ -92,7 +101,10 @@ export function useLogout() {
 export function useRegister() {
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      const response = await api.post<{ user: User; message: string }>('/auth/register', data)
+      const response = await api.post<{ user: User; message: string }>(
+        '/auth/register',
+        data,
+      )
       return response.data
     },
   })
@@ -101,7 +113,10 @@ export function useRegister() {
 export function useForgotPassword() {
   return useMutation({
     mutationFn: async (email: string) => {
-      const response = await api.post<{ message: string }>('/auth/forgot-password', { email })
+      const response = await api.post<{ message: string }>(
+        '/auth/forgot-password',
+        { email },
+      )
       return response.data
     },
   })
@@ -110,7 +125,10 @@ export function useForgotPassword() {
 export function useResetPassword() {
   return useMutation({
     mutationFn: async (password: string) => {
-      const response = await api.post<{ message: string }>('/auth/reset-password', { password })
+      const response = await api.post<{ message: string }>(
+        '/auth/reset-password',
+        { password },
+      )
       return response.data
     },
   })

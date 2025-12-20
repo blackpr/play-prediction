@@ -34,7 +34,7 @@ function ResetPasswordPage() {
       // Manual validation compatible with TanStack Form structure
       if (value.password !== value.confirmPassword) {
         // Validation managed by field level validators mostly
-        return;
+        return
       }
 
       try {
@@ -54,9 +54,12 @@ function ResetPasswordPage() {
       <div className="flex min-h-[80vh] items-center justify-center p-4">
         <Card className="w-full max-w-md bg-gray-900 border-gray-800 border-red-900/50">
           <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-red-400 mb-2">Invalid or Expired Link</h3>
+            <h3 className="text-xl font-bold text-red-400 mb-2">
+              Invalid or Expired Link
+            </h3>
             <p className="text-gray-400 mb-4">
-              Your password reset session is invalid. Please request a new password reset link.
+              Your password reset session is invalid. Please request a new
+              password reset link.
             </p>
             <Link
               to="/forgot-password"
@@ -74,7 +77,9 @@ function ResetPasswordPage() {
     <div className="flex min-h-[80vh] items-center justify-center p-4">
       <Card className="w-full max-w-md bg-gray-900 border-gray-800">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-white">Set New Password</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center text-white">
+            Set New Password
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {success ? (
@@ -82,9 +87,7 @@ function ResetPasswordPage() {
               <div className="p-4 bg-green-900/30 rounded-lg text-green-200 border border-green-800">
                 <p>Your password has been successfully updated.</p>
               </div>
-              <p className="text-gray-400 text-sm">
-                Redirecting to login...
-              </p>
+              <p className="text-gray-400 text-sm">Redirecting to login...</p>
               <Link
                 to="/login"
                 className="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white rounded-md py-2 px-4 transition-colors"
@@ -106,17 +109,23 @@ function ResetPasswordPage() {
                 validators={{
                   onChange: ({ value }) => {
                     if (!value) return 'Password is required'
-                    if (value.length < 8) return 'Password must be at least 8 characters'
-                    if (!/[A-Z]/.test(value)) return 'Must contain an uppercase letter'
-                    if (!/[a-z]/.test(value)) return 'Must contain a lowercase letter'
+                    if (value.length < 8)
+                      return 'Password must be at least 8 characters'
+                    if (!/[A-Z]/.test(value))
+                      return 'Must contain an uppercase letter'
+                    if (!/[a-z]/.test(value))
+                      return 'Must contain a lowercase letter'
                     if (!/[0-9]/.test(value)) return 'Must contain a number'
                     return undefined
-                  }
+                  },
                 }}
               >
                 {(field) => (
                   <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium text-gray-200">
+                    <label
+                      htmlFor="password"
+                      className="text-sm font-medium text-gray-200"
+                    >
                       New Password
                     </label>
                     <Input
@@ -125,7 +134,9 @@ function ResetPasswordPage() {
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
-                      className={field.state.meta.errors.length ? "border-red-500" : ""}
+                      className={
+                        field.state.meta.errors.length ? 'border-red-500' : ''
+                      }
                     />
                     {field.state.meta.errors.length > 0 && (
                       <p className="text-sm text-red-400">
@@ -152,12 +163,15 @@ function ResetPasswordPage() {
                     if (value !== fieldApi.form.getFieldValue('password')) {
                       return 'Passwords do not match'
                     }
-                  }
+                  },
                 }}
               >
                 {(field) => (
                   <div className="space-y-2">
-                    <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-200">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="text-sm font-medium text-gray-200"
+                    >
                       Confirm Password
                     </label>
                     <Input
@@ -166,7 +180,9 @@ function ResetPasswordPage() {
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
-                      className={field.state.meta.errors.length ? "border-red-500" : ""}
+                      className={
+                        field.state.meta.errors.length ? 'border-red-500' : ''
+                      }
                     />
                     {field.state.meta.errors.length > 0 && (
                       <p className="text-sm text-red-400">
@@ -179,7 +195,9 @@ function ResetPasswordPage() {
 
               {resetPasswordMutation.isError && (
                 <div className="rounded-md bg-red-900/50 p-3 text-sm text-red-200">
-                  {resetPasswordMutation.error instanceof Error ? resetPasswordMutation.error.message : 'Failed to update password'}
+                  {resetPasswordMutation.error instanceof Error
+                    ? resetPasswordMutation.error.message
+                    : 'Failed to update password'}
                 </div>
               )}
 

@@ -4,7 +4,13 @@ import { z } from 'zod'
 import { useLogin } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card'
 import { Spinner } from '../components/ui/Spinner'
 
 // Define search params schema for redirect
@@ -42,7 +48,9 @@ function LoginPage() {
     <div className="flex min-h-[80vh] items-center justify-center p-4">
       <Card className="w-full max-w-md bg-gray-900 border-gray-800">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-white">Sign In</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center text-white">
+            Sign In
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -60,12 +68,15 @@ function LoginPage() {
                   if (!value) return 'Email is required'
                   if (!value.includes('@')) return 'Invalid email address'
                   return undefined
-                }
+                },
               }}
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-gray-200">
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-medium text-gray-200"
+                  >
                     Email
                   </label>
                   <Input
@@ -75,7 +86,9 @@ function LoginPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={field.state.meta.errors.length ? "border-red-500" : ""}
+                    className={
+                      field.state.meta.errors.length ? 'border-red-500' : ''
+                    }
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-400">
@@ -89,12 +102,16 @@ function LoginPage() {
             <form.Field
               name="password"
               validators={{
-                onChange: ({ value }) => !value ? 'Password is required' : undefined
+                onChange: ({ value }) =>
+                  !value ? 'Password is required' : undefined,
               }}
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-gray-200">
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-200"
+                  >
                     Password
                   </label>
                   <Input
@@ -104,7 +121,9 @@ function LoginPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={field.state.meta.errors.length ? "border-red-500" : ""}
+                    className={
+                      field.state.meta.errors.length ? 'border-red-500' : ''
+                    }
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-400">
@@ -117,7 +136,9 @@ function LoginPage() {
 
             {loginMutation.isError && (
               <div className="rounded-md bg-red-900/50 p-3 text-sm text-red-200">
-                {loginMutation.error instanceof Error ? loginMutation.error.message : 'Invalid email or password'}
+                {loginMutation.error instanceof Error
+                  ? loginMutation.error.message
+                  : 'Invalid email or password'}
               </div>
             )}
 
@@ -144,7 +165,10 @@ function LoginPage() {
         <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
           <p className="text-sm text-gray-400">
             Don't have an account?{' '}
-            <a href="/register" className="font-medium text-blue-400 hover:text-blue-300">
+            <a
+              href="/register"
+              className="font-medium text-blue-400 hover:text-blue-300"
+            >
               Sign up
             </a>
           </p>
