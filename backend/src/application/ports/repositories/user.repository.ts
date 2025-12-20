@@ -4,8 +4,8 @@ export interface User {
   email: string;
   role: string;
   balance: bigint;
+  isActive: boolean;
   createdAt: Date;
-  // Add other fields as needed
 }
 
 import { Transaction } from '../transaction-manager.port';

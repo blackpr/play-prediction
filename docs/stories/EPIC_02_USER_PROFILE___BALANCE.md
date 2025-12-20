@@ -11,8 +11,8 @@
 **Endpoint:** `GET /v1/users/me`
 
 **Acceptance Criteria:**
-- [ ] Return same data as AUTH-4
-- [ ] Include formatted balance info
+- [x] Return same data as AUTH-4
+- [x] Include formatted balance info
 
 **References:** API_SPECIFICATION.md Section 4.2.1
 

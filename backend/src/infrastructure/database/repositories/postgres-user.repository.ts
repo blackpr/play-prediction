@@ -22,6 +22,7 @@ export class PostgresUserRepository implements UserRepository {
       email: user.email,
       role: user.role,
       balance: user.balance,
+      isActive: user.isActive,
       createdAt: user.createdAt,
     };
   }
@@ -38,6 +39,7 @@ export class PostgresUserRepository implements UserRepository {
       email: user.email,
       role: user.role,
       balance: user.balance,
+      isActive: user.isActive,
       createdAt: user.createdAt,
     };
   }
@@ -57,6 +59,7 @@ export class PostgresUserRepository implements UserRepository {
       email: user.email,
       role: user.role,
       balance: user.balance,
+      isActive: user.isActive,
       createdAt: user.createdAt,
     };
   }
