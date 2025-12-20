@@ -1,5 +1,6 @@
 // In production, API is served from same origin. In dev, use env var or default to localhost:4000
 const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:4000/api/v1' : '/api/v1')
+import { notifySessionExpired } from '../lib/auth-events'
 
 interface ApiResponse<T> {
   success: boolean
@@ -45,7 +46,12 @@ async function request<T>(
 
   const json = await response.json()
 
+
   if (!response.ok || !json.success) {
+    if (response.status === 401) {
+      notifySessionExpired()
+    }
+
     throw new ApiError(
       json.error?.code ?? 'UNKNOWN_ERROR',
       json.error?.message ?? 'An error occurred',

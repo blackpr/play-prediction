@@ -292,12 +292,12 @@ export const Route = createFileRoute('/portfolio/')({
 **So that** I don't lose my work and can re-authenticate
 
 **Acceptance Criteria:**
-- [ ] Detect 401 responses from API
-- [ ] Show session expiry modal/notification
-- [ ] Preserve current URL for redirect after re-login
-- [ ] Clear stale cache data
-- [ ] Redirect to login with return URL
-- [ ] On WebSocket: Handle SESSION_EXPIRED close code (4000)
+- [x] Detect 401 responses from API
+- [x] Show session expiry modal/notification
+- [x] Preserve current URL for redirect after re-login
+- [x] Clear stale cache data
+- [x] Redirect to login with return URL
+- [x] On WebSocket: Handle SESSION_EXPIRED close code (4000)
 
 **References:** WEBSOCKET_PROTOCOL.md Section 7.2, EDGE_CASES.md Section 5.0
 
