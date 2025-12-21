@@ -73,28 +73,16 @@ function LoginPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-200"
-                  >
-                    Email
-                  </label>
                   <Input
                     id="email"
                     type="email"
+                    label="Email"
                     placeholder="name@example.com"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={
-                      field.state.meta.errors.length ? 'border-red-500' : ''
-                    }
+                    error={field.state.meta.errors.join(', ')}
                   />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-400">
-                      {field.state.meta.errors.join(', ')}
-                    </p>
-                  )}
                 </div>
               )}
             </form.Field>
@@ -108,28 +96,16 @@ function LoginPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-200"
-                  >
-                    Password
-                  </label>
                   <Input
                     id="password"
                     type="password"
+                    label="Password"
                     placeholder="Enter your password"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={
-                      field.state.meta.errors.length ? 'border-red-500' : ''
-                    }
+                    error={field.state.meta.errors.join(', ')}
                   />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-400">
-                      {field.state.meta.errors.join(', ')}
-                    </p>
-                  )}
                 </div>
               )}
             </form.Field>

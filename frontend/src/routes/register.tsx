@@ -121,28 +121,16 @@ function RegisterPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-200"
-                  >
-                    Email
-                  </label>
                   <Input
                     id="email"
                     type="email"
+                    label="Email"
                     placeholder="name@example.com"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={
-                      field.state.meta.errors.length ? 'border-red-500' : ''
-                    }
+                    error={field.state.meta.errors.join(', ')}
                   />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-400">
-                      {field.state.meta.errors.join(', ')}
-                    </p>
-                  )}
                 </div>
               )}
             </form.Field>
@@ -164,28 +152,16 @@ function RegisterPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-200"
-                  >
-                    Password
-                  </label>
                   <Input
                     id="password"
                     type="password"
+                    label="Password"
                     placeholder="Create a strong password"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={
-                      field.state.meta.errors.length ? 'border-red-500' : ''
-                    }
+                    error={field.state.meta.errors.join(', ')}
                   />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-400">
-                      {field.state.meta.errors.join(', ')}
-                    </p>
-                  )}
 
                   {/* Password strength requirements */}
                   {field.state.value && (
@@ -198,9 +174,8 @@ function RegisterPage() {
                         return (
                           <div
                             key={index}
-                            className={`flex items-center gap-2 text-xs ${
-                              isMet ? 'text-green-400' : 'text-gray-500'
-                            }`}
+                            className={`flex items-center gap-2 text-xs ${isMet ? 'text-green-400' : 'text-gray-500'
+                              }`}
                           >
                             {isMet ? (
                               <Check className="h-3 w-3" />
@@ -233,28 +208,16 @@ function RegisterPage() {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <label
-                    htmlFor="confirmPassword"
-                    className="text-sm font-medium text-gray-200"
-                  >
-                    Confirm Password
-                  </label>
                   <Input
                     id="confirmPassword"
                     type="password"
+                    label="Confirm Password"
                     placeholder="Re-enter your password"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className={
-                      field.state.meta.errors.length ? 'border-red-500' : ''
-                    }
+                    error={field.state.meta.errors.join(', ')}
                   />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-400">
-                      {field.state.meta.errors.join(', ')}
-                    </p>
-                  )}
                 </div>
               )}
             </form.Field>

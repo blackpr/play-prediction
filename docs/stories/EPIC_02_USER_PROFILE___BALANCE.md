@@ -232,14 +232,14 @@ toast.error('Insufficient balance')
 **So that** I can use it with assistive technologies
 
 **Acceptance Criteria:**
-- [ ] All interactive elements keyboard navigable
-- [ ] Proper focus management on modals
-- [ ] ARIA labels on all buttons and inputs
-- [ ] Color contrast meets WCAG AA standards
-- [ ] Screen reader announcements for dynamic content
-- [ ] Skip to main content link
-- [ ] Form error announcements
-- [ ] Trade confirmation announced to screen readers
+- [x] All interactive elements keyboard navigable
+- [x] Proper focus management on modals
+- [x] ARIA labels on all buttons and inputs
+- [x] Color contrast meets WCAG AA standards
+- [x] Screen reader announcements for dynamic content
+- [x] Skip to main content link
+- [x] Form error announcements
+- [x] Trade confirmation announced to screen readers
 
 ---
 

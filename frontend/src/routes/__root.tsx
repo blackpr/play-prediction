@@ -67,9 +67,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
             <div className="flex flex-col min-h-screen">
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-primary focus:font-bold focus:top-4 focus:left-4 focus:outline-none focus:ring-2 focus:ring-primary rounded-md shadow-lg"
+              >
+                Skip to main content
+              </a>
               <Header />
               <SessionManager />
-              <main className="flex-1">
+              <main
+                id="main-content"
+                className="flex-1 focus:outline-none"
+                tabIndex={-1}
+              >
                 <ErrorBoundary>
                   {children}
                 </ErrorBoundary>
