@@ -145,10 +145,10 @@
 **So that** I can assess the market's credibility
 
 **Acceptance Criteria:**
-- [ ] Display creator's display name or "Admin"
-- [ ] Show creation date
-- [ ] Admin badge if created by admin
-- [ ] Link to view creator's other markets (optional)
+- [x] Display creator's display name or "Admin"
+- [x] Show creation date
+- [x] Admin badge if created by admin
+- [x] Link to view creator's other markets (optional)
 
 ---
 

@@ -26,6 +26,11 @@ export interface Market {
   closesAt: string | null
   pool: MarketPool
   volume24h: MicroPoints
+  creator?: {
+    email: string
+    displayName: string | null
+    role: string
+  }
 }
 
 export interface MarketPool {

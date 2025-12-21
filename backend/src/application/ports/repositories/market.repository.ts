@@ -26,6 +26,11 @@ export interface MarketStats {
 
 export interface MarketExtendedDetails extends MarketWithDetails {
   stats: MarketStats;
+  creator: {
+    email: string;
+    displayName: string | null;
+    role: string;
+  };
 }
 
 export interface GetMarketsParams {

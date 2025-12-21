@@ -72,6 +72,7 @@ export const Side = {
 export const users = pgTable('users', {
   id: uuid('id').primaryKey(), // References auth.users(id) - set by trigger
   email: varchar('email', { length: 255 }).notNull().unique(),
+  displayName: varchar('display_name', { length: 100 }),
   balance: bigint('balance', { mode: 'bigint' }).notNull().default(sql`0`),
   role: varchar('role', { length: 20 }).notNull().default('user'),
   isActive: boolean('is_active').notNull().default(true),

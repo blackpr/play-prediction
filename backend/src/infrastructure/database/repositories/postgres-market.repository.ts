@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, sql, gt, ilike, or } from 'drizzle-orm';
 import { MarketRepository, GetMarketsParams, MarketWithDetails, MarketExtendedDetails, MarketStats, PriceCandle } from '../../../application/ports/repositories/market.repository';
 import { DrizzleDB } from '..';
-import { markets, liquidityPools, tradeLedger } from '../drizzle/schema';
+import { markets, liquidityPools, tradeLedger, users } from '../drizzle/schema';
 
 export class PostgresMarketRepository implements MarketRepository {
   private readonly db: DrizzleDB;
@@ -98,6 +98,7 @@ export class PostgresMarketRepository implements MarketRepository {
       .select()
       .from(markets)
       .leftJoin(liquidityPools, eq(liquidityPools.id, markets.id))
+      .leftJoin(users, eq(users.id, markets.createdBy))
       .where(eq(markets.id, id))
       .limit(1);
 
@@ -105,7 +106,12 @@ export class PostgresMarketRepository implements MarketRepository {
       return null;
     }
 
-    const { markets: market, liquidity_pools: pool } = result[0];
+    const { markets: market, liquidity_pools: pool, users: creator } = result[0];
+
+    if (!creator) {
+      // This shouldn't happen if foreign key constraints are working
+      throw new Error(`Creator not found for market ${id}`);
+    }
 
     const volume24h = await this.get24hVolume(market.id);
     const stats = await this.getMarketStats(market.id);
@@ -128,7 +134,12 @@ export class PostgresMarketRepository implements MarketRepository {
         yesQty: pool.yesQty.toString(),
         noQty: pool.noQty.toString(),
         k: (BigInt(pool.yesQty) * BigInt(pool.noQty)).toString(),
-      } : null
+      } : null,
+      creator: {
+        email: creator.email,
+        displayName: creator.displayName,
+        role: creator.role,
+      }
     };
   }
 

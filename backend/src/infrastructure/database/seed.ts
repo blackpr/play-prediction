@@ -47,13 +47,19 @@ async function seed() {
     if (existingTreasury) {
       treasuryId = existingTreasury.id;
       await db.update(users)
-        .set({ balance: 1_000_000_000_000n, role: UserRole.TREASURY, isActive: true })
+        .set({
+          balance: 1_000_000_000_000n,
+          role: UserRole.TREASURY,
+          isActive: true,
+          displayName: 'Treasury System'
+        })
         .where(sql`${users.id} = ${treasuryId}`);
       console.log(`✅ Treasury user updated (${treasuryId})`);
     } else {
       await db.insert(users).values({
         id: treasuryId,
         email: treasuryEmail,
+        displayName: 'Treasury System',
         role: UserRole.TREASURY,
         balance: 1_000_000_000_000n,
         isActive: true,
@@ -75,13 +81,19 @@ async function seed() {
     if (existingTestUser) {
       testUserId = existingTestUser.id;
       await db.update(users)
-        .set({ balance: 10_000_000_000n, role: UserRole.USER, isActive: true })
+        .set({
+          balance: 10_000_000_000n,
+          role: UserRole.USER,
+          isActive: true,
+          displayName: 'Test User'
+        })
         .where(sql`${users.id} = ${testUserId}`);
       console.log(`✅ Test user updated (${testUserId})`);
     } else {
       await db.insert(users).values({
         id: testUserId,
         email: testUserEmail,
+        displayName: 'Test User',
         role: UserRole.USER,
         balance: 10_000_000_000n,
         isActive: true,
@@ -90,6 +102,74 @@ async function seed() {
         set: { balance: 10_000_000_000n }
       });
       console.log('✅ Test user created');
+    }
+
+    // Admin User
+    const adminEmail = 'admin@playprediction.com';
+    let adminId = 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
+
+    const existingAdmin = await db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.email, adminEmail)
+    });
+
+    if (existingAdmin) {
+      adminId = existingAdmin.id;
+      await db.update(users)
+        .set({
+          balance: 50_000_000_000n,
+          role: UserRole.ADMIN,
+          isActive: true,
+          displayName: 'Admin'
+        })
+        .where(sql`${users.id} = ${adminId}`);
+      console.log(`✅ Admin user updated (${adminId})`);
+    } else {
+      await db.insert(users).values({
+        id: adminId,
+        email: adminEmail,
+        displayName: 'Admin',
+        role: UserRole.ADMIN,
+        balance: 50_000_000_000n,
+        isActive: true,
+      }).onConflictDoUpdate({
+        target: users.id,
+        set: { balance: 50_000_000_000n }
+      });
+      console.log('✅ Admin user created');
+    }
+
+    // Regular User 2 (for variety)
+    const user2Email = 'alice@example.com';
+    let user2Id = 'c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a33';
+
+    const existingUser2 = await db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.email, user2Email)
+    });
+
+    if (existingUser2) {
+      user2Id = existingUser2.id;
+      await db.update(users)
+        .set({
+          balance: 5_000_000_000n,
+          role: UserRole.USER,
+          isActive: true,
+          displayName: 'Alice Chen'
+        })
+        .where(sql`${users.id} = ${user2Id}`);
+      console.log(`✅ User 2 updated (${user2Id})`);
+    } else {
+      await db.insert(users).values({
+        id: user2Id,
+        email: user2Email,
+        displayName: 'Alice Chen',
+        role: UserRole.USER,
+        balance: 5_000_000_000n,
+        isActive: true,
+      }).onConflictDoUpdate({
+        target: users.id,
+        set: { balance: 5_000_000_000n }
+      });
+      console.log('✅ User 2 created');
     }
 
     // ========================================================================
@@ -104,7 +184,8 @@ async function seed() {
       status: string,
       closesInHours: number,
       targetVolume: bigint = 0n,
-      probability = 0.5
+      probability = 0.5,
+      creatorId: string = treasuryId
     ) => {
       const closesAt = new Date(Date.now() + (closesInHours * 60 * 60 * 1000));
       // Market created 7 days ago to allow for price history
@@ -115,7 +196,7 @@ async function seed() {
         description: `Prediction market for: ${title}`,
         status: status as any,
         category,
-        createdBy: treasuryId,
+        createdBy: creatorId,
         closesAt,
         createdAt,
         closeBehavior: CloseBehavior.AUTO,
@@ -246,13 +327,13 @@ async function seed() {
       return market;
     };
 
-    // ACTIVE MARKETS
-    await createMarket('Will Bitcoin hit $100k in 2025?', 'Crypto', MarketStatus.ACTIVE, 24 * 30, 5_000_000_000n, 0.6);
-    await createMarket('Will SpaceX launch Starship in March?', 'Space', MarketStatus.ACTIVE, 24 * 5, 2_000_000_000n, 0.8);
-    await createMarket('Who will win the Super Bowl?', 'Sports', MarketStatus.ACTIVE, 24 * 2, 10_000_000_000n, 0.5);
-    await createMarket('Will GPT-5 be released this year?', 'AI', MarketStatus.ACTIVE, 24 * 180, 1_000_000_000n, 0.3);
-    await createMarket('Will ETH flip BTC market cap?', 'Crypto', MarketStatus.ACTIVE, 24 * 365, 500_000_000n, 0.1);
-    await createMarket('Will it rain in London tomorrow?', 'Weather', MarketStatus.ACTIVE, 20, 100_000_000n, 0.7);
+    // ACTIVE MARKETS - Mix of creators
+    await createMarket('Will Bitcoin hit $100k in 2025?', 'Crypto', MarketStatus.ACTIVE, 24 * 30, 5_000_000_000n, 0.6, treasuryId);
+    await createMarket('Will SpaceX launch Starship in March?', 'Space', MarketStatus.ACTIVE, 24 * 5, 2_000_000_000n, 0.8, adminId);
+    await createMarket('Who will win the Super Bowl?', 'Sports', MarketStatus.ACTIVE, 24 * 2, 10_000_000_000n, 0.5, user2Id);
+    await createMarket('Will GPT-5 be released this year?', 'AI', MarketStatus.ACTIVE, 24 * 180, 1_000_000_000n, 0.3, treasuryId);
+    await createMarket('Will ETH flip BTC market cap?', 'Crypto', MarketStatus.ACTIVE, 24 * 365, 500_000_000n, 0.1, adminId);
+    await createMarket('Will it rain in London tomorrow?', 'Weather', MarketStatus.ACTIVE, 20, 100_000_000n, 0.7, user2Id);
 
     // RESOLVED
     const [resolvedMkt] = await db.insert(markets).values({

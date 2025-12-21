@@ -13,7 +13,7 @@ import { ProbabilityBar } from '../../components/market/ProbabilityBar'
 import { PriceChart } from '../../components/market/PriceChart'
 import { IntervalSelector, type ChartInterval } from '../../components/market/IntervalSelector'
 import { formatCompactPoints } from '../../lib/format'
-import { ArrowLeft, Clock, TrendingUp, BarChart2, Users, Activity } from 'lucide-react'
+import { ArrowLeft, Clock, TrendingUp, BarChart2, Users, Activity, User } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Spinner } from '../../components/ui/Spinner'
 
@@ -262,6 +262,25 @@ function MarketDetailPage() {
                   {new Date(market.createdAt).toLocaleDateString()}
                 </span>
               </div>
+
+              {market.creator && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <User className="w-4 h-4" />
+                    <span>Creator</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white">
+                      {market.creator.displayName || market.creator.email}
+                    </span>
+                    {(market.creator.role === 'admin' || market.creator.role === 'treasury') && (
+                      <Badge variant="default" className="text-xs">
+                        Admin
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
