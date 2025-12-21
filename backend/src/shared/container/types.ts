@@ -25,6 +25,7 @@ import { MarketRepository } from '../../application/ports/repositories/market.re
 import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
 import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
 import { GetMarketPriceHistoryUseCase } from '../../application/use-cases/markets/get-market-price-history.use-case';
+import { GetMarketTradesUseCase } from '../../application/use-cases/get-market-trades.use-case';
 
 
 /**
@@ -58,6 +59,7 @@ export interface AppCradle {
   getMarketsUseCase: GetMarketsUseCase;
   getMarketUseCase: GetMarketUseCase;
   getMarketPriceHistoryUseCase: GetMarketPriceHistoryUseCase;
+  getMarketTradesUseCase: GetMarketTradesUseCase;
 }
 
 

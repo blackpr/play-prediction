@@ -1,5 +1,5 @@
-import { and, asc, count, desc, eq, sql, gt, ilike, or } from 'drizzle-orm';
-import { MarketRepository, GetMarketsParams, MarketWithDetails, MarketExtendedDetails, MarketStats, PriceCandle } from '../../../application/ports/repositories/market.repository';
+import { and, asc, count, desc, eq, sql, gt, ilike, or, inArray } from 'drizzle-orm';
+import { MarketRepository, GetMarketsParams, MarketWithDetails, MarketExtendedDetails, MarketStats, PriceCandle, RecentTrade } from '../../../application/ports/repositories/market.repository';
 import { DrizzleDB } from '..';
 import { markets, liquidityPools, tradeLedger, users } from '../drizzle/schema';
 
@@ -259,5 +259,37 @@ export class PostgresMarketRepository implements MarketRepository {
     }
 
     return { yesPrice, noPrice };
+  }
+
+  async getRecentTrades(marketId: string, limit: number): Promise<RecentTrade[]> {
+    const trades = await this.db
+      .select({
+        id: tradeLedger.id,
+        userId: tradeLedger.userId,
+        action: tradeLedger.action,
+        side: tradeLedger.side,
+        amountIn: tradeLedger.amountIn,
+        amountOut: tradeLedger.amountOut,
+        priceAtExecution: tradeLedger.priceAtExecution,
+        createdAt: tradeLedger.createdAt,
+      })
+      .from(tradeLedger)
+      .where(and(
+        eq(tradeLedger.marketId, marketId),
+        inArray(tradeLedger.action, ['BUY', 'SELL'])
+      ))
+      .orderBy(desc(tradeLedger.createdAt))
+      .limit(limit);
+
+    return trades.map(trade => ({
+      id: trade.id,
+      userId: trade.userId,
+      action: trade.action!,
+      side: trade.side!,
+      amountIn: trade.amountIn.toString(),
+      amountOut: trade.amountOut.toString(),
+      priceAtExecution: trade.priceAtExecution ? trade.priceAtExecution.toString() : '0',
+      createdAt: trade.createdAt,
+    }));
   }
 }

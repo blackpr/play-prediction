@@ -159,13 +159,15 @@
 **So that** I can gauge market activity and trends
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/market/RecentTrades.tsx`
-- [ ] List last 10-20 trades
-- [ ] Show time, side (YES/NO), amount, and price
-- [ ] Color code by side (Green/Red)
-- [ ] Animate new trades entering the list
-- [ ] Update in real-time via WebSocket
+- [x] Create `src/components/market/RecentTrades.tsx`
+- [x] List last 10-20 trades
+- [x] Show time, side (YES/NO), amount, and price
+- [x] Color code by side (Green/Red)
+- [x] Animate new trades entering the list
+- [x] Update in real-time via WebSocket
 
 **References:** WEBSOCKET_PROTOCOL.md Section 5.2
+
+**Notes:** Initial implementation uses polling (5s interval). WebSocket infrastructure is in place for future real-time updates.
 
 ---

@@ -2,12 +2,14 @@ import './shared/config/bootstrap';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import websocket from '@fastify/websocket';
 import { errorHandler } from './presentation/fastify/middleware/error-handler';
 import { authMiddleware } from './presentation/fastify/middleware/auth';
 import healthRoutes from './presentation/fastify/routes/health';
 import { authRoutes } from './presentation/fastify/routes/auth';
 import { usersRoutes } from './presentation/fastify/routes/users';
 import { marketsRoutes } from './presentation/fastify/routes/markets';
+import { websocketHandler } from './presentation/websocket/websocket.route';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import { loggerConfig } from './shared/logger/index';
 import { registerContainer } from './shared/container/index';
@@ -25,6 +27,9 @@ async function buildServer() {
   });
 
   await server.register(cookie);
+
+  // Register WebSocket support
+  await server.register(websocket);
 
   // Register DI Container
   await registerContainer(server);
@@ -53,6 +58,11 @@ async function buildServer() {
     if (user?.id) {
       request.log = request.log.child({ userId: user.id });
     }
+  });
+
+  // WebSocket route (before REST routes to avoid conflicts)
+  server.register(async (fastify) => {
+    fastify.get('/ws', { websocket: true }, websocketHandler);
   });
 
   // Routes

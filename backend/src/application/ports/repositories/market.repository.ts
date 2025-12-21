@@ -43,10 +43,22 @@ export interface GetMarketsParams {
   search?: string;
 }
 
+export interface RecentTrade {
+  id: string;
+  userId: string;
+  action: string;
+  side: string;
+  amountIn: string;
+  amountOut: string;
+  priceAtExecution: string;
+  createdAt: Date;
+}
+
 export interface MarketRepository {
   findAll(params: GetMarketsParams): Promise<{ items: MarketWithDetails[]; total: number }>;
   findById(id: string): Promise<MarketExtendedDetails | null>;
   getPriceHistory(marketId: string, interval: string, from: Date, to: Date): Promise<PriceCandle[]>;
+  getRecentTrades(marketId: string, limit: number): Promise<RecentTrade[]>;
 }
 
 export interface PriceCandle {

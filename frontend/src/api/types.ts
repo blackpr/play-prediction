@@ -79,3 +79,15 @@ export interface PriceHistoryResponse {
   interval: string
   candles: PricePoint[]
 }
+
+export interface RecentTrade {
+  id: string
+  userId: string
+  action: 'BUY' | 'SELL'
+  side: 'YES' | 'NO'
+  amountIn: MicroPoints
+  amountOut: MicroPoints
+  priceAtExecution: MicroPoints
+  createdAt: string
+}
+

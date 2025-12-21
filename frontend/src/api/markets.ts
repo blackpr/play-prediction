@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Market, PriceHistoryResponse } from './types'
+import type { Market, PriceHistoryResponse, RecentTrade } from './types'
 
 export interface GetMarketsParams {
   status?: 'ACTIVE' | 'RESOLVED' | 'CANCELLED'
@@ -53,6 +53,19 @@ export const getMarketPriceHistory = async (
 
   const response = await api.get<PriceHistoryResponse>(
     `/markets/${id}/price-history?${query.toString()}`
+  )
+  return response.data
+}
+
+export const getMarketTrades = async (
+  id: string,
+  limit: number = 20
+): Promise<RecentTrade[]> => {
+  const query = new URLSearchParams()
+  query.append('limit', limit.toString())
+
+  const response = await api.get<RecentTrade[]>(
+    `/markets/${id}/trades?${query.toString()}`
   )
   return response.data
 }

@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { ProbabilityBar } from '../../components/market/ProbabilityBar'
 import { PriceChart } from '../../components/market/PriceChart'
+import { RecentTrades } from '../../components/market/RecentTrades'
 import { IntervalSelector, type ChartInterval } from '../../components/market/IntervalSelector'
 import { formatCompactPoints } from '../../lib/format'
 import { ArrowLeft, Clock, TrendingUp, BarChart2, Users, Activity, User } from 'lucide-react'
@@ -222,6 +223,9 @@ function MarketDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Recent Trades */}
+          <RecentTrades marketId={marketId} />
         </div>
 
         {/* Right Column (Stats & Trade Form Placeholder) */}
