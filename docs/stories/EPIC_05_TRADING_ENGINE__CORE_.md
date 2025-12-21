@@ -9,16 +9,16 @@
 **So that** trading logic is testable and framework-agnostic
 
 **Acceptance Criteria:**
-- [ ] Create `src/domain/services/cpmm-engine.ts`
-- [ ] All calculations use BigInt (no floating point)
-- [ ] `calculateBuyShares(pool, side, pointsIn)` - returns shares out
-- [ ] `calculateSellPoints(pool, side, sharesIn)` - returns points out
-- [ ] `getPrices(pool)` - returns { yes, no } prices
-- [ ] `validatePool(pool)` - validates pool state
-- [ ] Floor rounding on user outputs
-- [ ] Ceiling division for pool calculations
-- [ ] Verify k never decreases after operation
-- [ ] Throw `InvariantViolatedError` if k decreases
+- [x] Create `src/domain/services/cpmm-engine.ts`
+- [x] All calculations use BigInt (no floating point)
+- [x] `calculateBuyShares(pool, side, pointsIn)` - returns shares out
+- [x] `calculateSellPoints(pool, side, sharesIn)` - returns points out
+- [x] `getPrices(pool)` - returns { yes, no } prices
+- [x] `validatePool(pool)` - validates pool state
+- [x] Floor rounding on user outputs
+- [x] Ceiling division for pool calculations
+- [x] Verify k never decreases after operation
+- [x] Throw `InvariantViolatedError` if k decreases
 
 **CPMM Formulas:**
 ```
@@ -36,6 +36,12 @@ Selling Δx YES shares:
 ```
 
 **References:** ENGINE_LOGIC.md Sections 2, 5
+
+**Implementation Notes:**
+- Created `src/domain/services/constants.ts` with `PRICE_PRECISION` and `Side` type
+- Created `src/domain/services/cpmm-engine.ts` with all core functions
+- Comprehensive unit tests in `test/unit/domain/cpmm-engine.test.ts` (30 tests, all passing)
+- Verified k-invariant preservation, proper rounding, and mathematical properties
 
 ---
 

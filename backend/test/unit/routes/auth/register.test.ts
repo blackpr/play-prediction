@@ -56,6 +56,19 @@ describe('Register Route', () => {
   });
 
   it('should register a new user successfully', async () => {
+    // Mock registerUseCase
+    const mockRegisterUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          role: 'user',
+          balance: '10000000',
+          createdAt: new Date().toISOString(),
+        },
+      }),
+    };
+
     // Setup route
     await registerRoute(fastify);
 
@@ -67,14 +80,17 @@ describe('Register Route', () => {
         email: 'test@example.com',
         password: 'Password123!',
       },
-      supabase: {
-        auth: {
-          signUp: mockSupabaseSignUp,
-        }
+      diScope: {
+        resolve: vi.fn((name: string) => {
+          if (name === 'registerUseCase') {
+            return mockRegisterUseCase;
+          }
+          return null;
+        }),
       },
       log: {
         error: vi.fn(),
-      }
+      },
     };
 
     const reply = {
@@ -82,36 +98,27 @@ describe('Register Route', () => {
       send: vi.fn(),
     };
 
-    // Mock Supabase success
-    mockSupabaseSignUp.mockResolvedValue({
-      data: { user: { id: 'user-123' } },
-      error: null,
-    });
-
     // Execute
     await routeHandler(request, reply);
 
-    // Verify Supabase called
-    expect(mockSupabaseSignUp).toHaveBeenCalledWith({
+    // Verify use case called
+    expect(mockRegisterUseCase.execute).toHaveBeenCalledWith({
       email: 'test@example.com',
       password: 'Password123!',
-      options: { data: { role: 'user' } },
     });
-
-    // Verify DB Transaction called
-    expect(mockTransaction).toHaveBeenCalled();
-    expect(mockInsert).toHaveBeenCalledTimes(2); // Users + PointGrants
 
     // Verify Response
     expect(reply.status).toHaveBeenCalledWith(201);
-    expect(reply.send).toHaveBeenCalledWith(expect.objectContaining({
-      success: true,
-      data: expect.objectContaining({
-        user: expect.objectContaining({
-          email: 'test@example.com'
-        })
+    expect(reply.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          user: expect.objectContaining({
+            email: 'test@example.com',
+          }),
+        }),
       })
-    }));
+    );
   });
 
   it('should return 400 for weak password', async () => {

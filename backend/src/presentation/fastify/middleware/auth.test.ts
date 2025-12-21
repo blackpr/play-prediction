@@ -26,13 +26,29 @@ vi.mock('../../../infrastructure/database', () => ({
 }));
 
 describe('Auth Middleware', () => {
-  let req: Partial<FastifyRequest> & { user?: any };
+  let req: Partial<FastifyRequest> & { user?: any; log?: any; diScope?: any };
   let reply: Partial<FastifyReply>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     req = {
       headers: {},
+      log: {
+        warn: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+      },
+      diScope: {
+        resolve: vi.fn((name: string) => {
+          if (name === 'userRepository') {
+            return {
+              findById: mockDbFindFirst,
+            };
+          }
+          return null;
+        }),
+      },
     };
     reply = {
       status: vi.fn().mockReturnThis(),
