@@ -31,6 +31,7 @@ import { DrizzleTransactionManager } from '../../infrastructure/transaction/driz
 import { PostgresMarketRepository } from '../../infrastructure/database/repositories/postgres-market.repository';
 import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
 import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
+import { GetMarketPriceHistoryUseCase } from '../../application/use-cases/markets/get-market-price-history.use-case';
 
 
 // Import types for module augmentation
@@ -104,6 +105,7 @@ export function registerDependencies(): void {
     getPointsHistoryUseCase: asClass(GetPointsHistoryUseCase).scoped(),
     getMarketsUseCase: asClass(GetMarketsUseCase).scoped(),
     getMarketUseCase: asClass(GetMarketUseCase).scoped(),
+    getMarketPriceHistoryUseCase: asClass(GetMarketPriceHistoryUseCase).scoped(),
   });
 }
 

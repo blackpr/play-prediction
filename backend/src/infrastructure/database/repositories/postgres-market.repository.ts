@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, sql, gt, ilike, or } from 'drizzle-orm';
-import { MarketRepository, GetMarketsParams, MarketWithDetails, MarketExtendedDetails, MarketStats } from '../../../application/ports/repositories/market.repository';
+import { MarketRepository, GetMarketsParams, MarketWithDetails, MarketExtendedDetails, MarketStats, PriceCandle } from '../../../application/ports/repositories/market.repository';
 import { DrizzleDB } from '..';
 import { markets, liquidityPools, tradeLedger } from '../drizzle/schema';
 
@@ -130,6 +130,66 @@ export class PostgresMarketRepository implements MarketRepository {
         k: (BigInt(pool.yesQty) * BigInt(pool.noQty)).toString(),
       } : null
     };
+  }
+
+  async getPriceHistory(marketId: string, interval: string, from: Date, to: Date): Promise<PriceCandle[]> {
+    // Map interval to seconds
+    let intervalSeconds = 3600; // Default 1h
+    switch (interval) {
+      case '1m': intervalSeconds = 60; break;
+      case '5m': intervalSeconds = 300; break;
+      case '15m': intervalSeconds = 900; break;
+      case '1h': intervalSeconds = 3600; break;
+      case '4h': intervalSeconds = 14400; break;
+      case '1d': intervalSeconds = 86400; break;
+    }
+
+    // SQL for OHLC aggregation
+    // YES PRICE = NO_QTY / (YES_QTY + NO_QTY)
+    const result = await this.db.execute(sql`
+      SELECT
+        to_timestamp(floor(extract(epoch from created_at) / ${intervalSeconds}) * ${intervalSeconds}) as bucket,
+        (array_agg(
+          CASE WHEN (pool_yes_after + pool_no_after) > 0 
+          THEN CAST(pool_no_after AS NUMERIC) / (pool_yes_after + pool_no_after)
+          ELSE 0.5 END
+          ORDER BY created_at ASC
+        ))[1] as open_price,
+        MAX(
+          CASE WHEN (pool_yes_after + pool_no_after) > 0 
+          THEN CAST(pool_no_after AS NUMERIC) / (pool_yes_after + pool_no_after)
+          ELSE 0.5 END
+        ) as high_price,
+        MIN(
+          CASE WHEN (pool_yes_after + pool_no_after) > 0 
+          THEN CAST(pool_no_after AS NUMERIC) / (pool_yes_after + pool_no_after)
+          ELSE 0.5 END
+        ) as low_price,
+        (array_agg(
+          CASE WHEN (pool_yes_after + pool_no_after) > 0 
+          THEN CAST(pool_no_after AS NUMERIC) / (pool_yes_after + pool_no_after)
+          ELSE 0.5 END
+          ORDER BY created_at DESC
+        ))[1] as close_price,
+        COALESCE(SUM(amount_in), 0) as volume
+      FROM ${tradeLedger}
+      WHERE ${tradeLedger.marketId} = ${marketId}
+        AND ${tradeLedger.createdAt} >= ${from.toISOString()}
+        AND ${tradeLedger.createdAt} <= ${to.toISOString()}
+        AND ${tradeLedger.poolYesAfter} IS NOT NULL 
+        AND ${tradeLedger.poolNoAfter} IS NOT NULL
+      GROUP BY bucket
+      ORDER BY bucket ASC
+    `);
+
+    return result.map((row: any) => ({
+      timestamp: new Date(row.bucket).toISOString(),
+      yesOpen: Number(row.open_price).toFixed(2),
+      yesHigh: Number(row.high_price).toFixed(2),
+      yesLow: Number(row.low_price).toFixed(2),
+      yesClose: Number(row.close_price).toFixed(2),
+      volume: row.volume.toString()
+    }));
   }
 
   private async get24hVolume(marketId: string): Promise<string> {

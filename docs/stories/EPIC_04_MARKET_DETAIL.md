@@ -37,10 +37,10 @@
 - `to` (default: now)
 
 **Acceptance Criteria:**
-- [ ] Aggregate trade_ledger data by interval
-- [ ] Return OHLC candles for YES price
-- [ ] Include volume per candle
-- [ ] Limit to reasonable date range
+- [x] Aggregate trade_ledger data by interval
+- [x] Return OHLC candles for YES price
+- [x] Include volume per candle
+- [x] Limit to reasonable date range
 
 **References:** API_SPECIFICATION.md Section 4.3.3
 
