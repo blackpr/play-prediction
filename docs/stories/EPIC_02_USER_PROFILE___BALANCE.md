@@ -250,10 +250,10 @@ toast.error('Insufficient balance')
 **So that** I understand why actions might fail
 
 **Acceptance Criteria:**
-- [ ] Detect online/offline status
-- [ ] Show banner when offline
-- [ ] Queue actions while offline (optional)
-- [ ] Show reconnection status
-- [ ] Different indicator from WebSocket status
+- [x] Detect online/offline status
+- [x] Show banner when offline
+- [x] Queue actions while offline (optional)
+- [x] Show reconnection status
+- [x] Different indicator from WebSocket status
 
 ---

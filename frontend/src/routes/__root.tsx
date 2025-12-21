@@ -12,6 +12,7 @@ import { ToastProvider } from '../contexts/ToastContext'
 
 import { Header } from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
+import { NetworkStatus } from '../components/ui/NetworkStatus'
 import { SessionManager } from '../components/SessionManager'
 
 import appCss from '../styles.css?url'
@@ -73,6 +74,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               >
                 Skip to main content
               </a>
+              <NetworkStatus />
               <Header />
               <SessionManager />
               <main
