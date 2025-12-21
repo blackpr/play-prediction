@@ -59,11 +59,11 @@
 **So that** prices always sum to 1.0
 
 **Acceptance Criteria:**
-- [ ] Implement price calculation: `P_YES = noQty / (yesQty + noQty)`
-- [ ] Implement price calculation: `P_NO = yesQty / (yesQty + noQty)`
-- [ ] Verify `P_YES + P_NO = 1.0` always holds
-- [ ] Return prices as decimal strings (6 decimal places)
-- [ ] Handle edge case: empty pool returns 0.50/0.50
+- [x] Implement price calculation: `P_YES = noQty / (yesQty + noQty)`
+- [x] Implement price calculation: `P_NO = yesQty / (yesQty + noQty)`
+- [x] Verify `P_YES + P_NO = 1.0` always holds
+- [x] Return prices as decimal strings (6 decimal places)
+- [x] Handle edge case: empty pool returns 0.50/0.50
 
 **References:** SYSTEM_DESIGN.md Section 1.4, ENGINE_LOGIC.md Section 2.2
 

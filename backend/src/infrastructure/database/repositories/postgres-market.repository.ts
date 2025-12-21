@@ -61,46 +61,13 @@ export class PostgresMarketRepository implements MarketRepository {
       .offset(offset)
       .orderBy(orderBy);
 
-    // 4. Calculate stats for each market (Volume 24h)
+    // 4. Calculate stats for each market (Volume 24h & Prices)
     const results: MarketWithDetails[] = await Promise.all(
       marketItems.map(async (row: any) => {
         const { markets: market, liquidity_pools: pool } = row;
-        // Calculate 24h volume
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-        const [volumeResult] = await this.db
-          .select({
-            volume: sql<string>`coalesce(sum(${tradeLedger.amountIn}), '0')`
-          })
-          .from(tradeLedger)
-          .where(and(
-            eq(tradeLedger.marketId, market.id),
-            gt(tradeLedger.createdAt, oneDayAgo)
-          ));
-
-        const volume24h = volumeResult.volume;
-
-        // Calculate prices
-        let yesPrice = '0.500000';
-        let noPrice = '0.500000';
-
-        if (pool) {
-          const yesQty = BigInt(pool.yesQty);
-          const noQty = BigInt(pool.noQty);
-
-          if (yesQty > 0n && noQty > 0n) {
-            const totalQty = yesQty + noQty;
-
-            // P_YES = NO_QTY / (YES_QTY + NO_QTY)
-            // Using higher precision for division
-            const precision = 1_000_000n;
-            const yesPriceBig = (noQty * precision) / totalQty;
-            const noPriceBig = (yesQty * precision) / totalQty; // P_NO = YES_QTY / TOTAL
-
-            yesPrice = (Number(yesPriceBig) / 1_000_000).toFixed(6);
-            noPrice = (Number(noPriceBig) / 1_000_000).toFixed(6);
-          }
-        }
+        const volume24h = await this.get24hVolume(market.id);
+        const { yesPrice, noPrice } = this.calculatePrices(pool);
 
         return {
           ...market,
@@ -109,7 +76,7 @@ export class PostgresMarketRepository implements MarketRepository {
             yesQty: pool.yesQty.toString(),
             noQty: pool.noQty.toString(),
           } : null,
-          volume24h: volume24h.toString(),
+          volume24h,
           yesPrice,
           noPrice
         };
@@ -133,19 +100,39 @@ export class PostgresMarketRepository implements MarketRepository {
 
     const { markets: market, liquidity_pools: pool } = result[0];
 
-    // Calculate 24h volume
+    const volume24h = await this.get24hVolume(market.id);
+    const { yesPrice, noPrice } = this.calculatePrices(pool);
+
+    return {
+      ...market,
+      pool: pool ? {
+        ...pool,
+        yesQty: pool.yesQty.toString(),
+        noQty: pool.noQty.toString(),
+      } : null,
+      volume24h,
+      yesPrice,
+      noPrice
+    };
+  }
+
+  private async get24hVolume(marketId: string): Promise<string> {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
     const [volumeResult] = await this.db
       .select({
         volume: sql<string>`coalesce(sum(${tradeLedger.amountIn}), '0')`
       })
       .from(tradeLedger)
       .where(and(
-        eq(tradeLedger.marketId, market.id),
+        eq(tradeLedger.marketId, marketId),
         gt(tradeLedger.createdAt, oneDayAgo)
       ));
 
-    // Calculate prices
+    return volumeResult.volume.toString();
+  }
+
+  private calculatePrices(pool: { yesQty: bigint | string, noQty: bigint | string } | null): { yesPrice: string; noPrice: string } {
     let yesPrice = '0.500000';
     let noPrice = '0.500000';
 
@@ -156,24 +143,17 @@ export class PostgresMarketRepository implements MarketRepository {
       if (yesQty > 0n && noQty > 0n) {
         const totalQty = yesQty + noQty;
         const precision = 1_000_000n;
+
+        // P_YES = NO_QTY / (YES_QTY + NO_QTY)
         const yesPriceBig = (noQty * precision) / totalQty;
-        const noPriceBig = (yesQty * precision) / totalQty;
+        // P_NO = 1.0 - P_YES (ensures sum is 1.0)
+        const noPriceBig = precision - yesPriceBig;
 
         yesPrice = (Number(yesPriceBig) / 1_000_000).toFixed(6);
         noPrice = (Number(noPriceBig) / 1_000_000).toFixed(6);
       }
     }
 
-    return {
-      ...market,
-      pool: pool ? {
-        ...pool,
-        yesQty: pool.yesQty.toString(),
-        noQty: pool.noQty.toString(),
-      } : null,
-      volume24h: volumeResult.volume.toString(),
-      yesPrice,
-      noPrice
-    };
+    return { yesPrice, noPrice };
   }
 }
