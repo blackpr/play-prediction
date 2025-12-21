@@ -11,13 +11,13 @@
 **Endpoint:** `GET /v1/markets/:id`
 
 **Acceptance Criteria:**
-- [ ] Public endpoint
-- [ ] Return full market data
-- [ ] Join liquidity_pool data
-- [ ] Calculate prices
-- [ ] Include k-invariant value
-- [ ] Include stats: totalVolume, volume24h, tradeCount, uniqueTraders
-- [ ] Return 404 if market not found
+- [x] Public endpoint
+- [x] Return full market data
+- [x] Join liquidity_pool data
+- [x] Calculate prices
+- [x] Include k-invariant value
+- [x] Include stats: totalVolume, volume24h, tradeCount, uniqueTraders
+- [x] Return 404 if market not found
 
 **References:** API_SPECIFICATION.md Section 4.3.2
 

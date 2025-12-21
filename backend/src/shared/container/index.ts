@@ -30,6 +30,7 @@ import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-p
 import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
 import { PostgresMarketRepository } from '../../infrastructure/database/repositories/postgres-market.repository';
 import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
+import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
 
 
 // Import types for module augmentation
@@ -102,6 +103,7 @@ export function registerDependencies(): void {
     resetPasswordUseCase: asClass(ResetPasswordUseCase).scoped(),
     getPointsHistoryUseCase: asClass(GetPointsHistoryUseCase).scoped(),
     getMarketsUseCase: asClass(GetMarketsUseCase).scoped(),
+    getMarketUseCase: asClass(GetMarketUseCase).scoped(),
   });
 }
 

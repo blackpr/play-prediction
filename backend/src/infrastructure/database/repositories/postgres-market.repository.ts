@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, sql, gt, ilike, or } from 'drizzle-orm';
-import { MarketRepository, GetMarketsParams, MarketWithDetails } from '../../../application/ports/repositories/market.repository';
+import { MarketRepository, GetMarketsParams, MarketWithDetails, MarketExtendedDetails, MarketStats } from '../../../application/ports/repositories/market.repository';
 import { DrizzleDB } from '..';
 import { markets, liquidityPools, tradeLedger } from '../drizzle/schema';
 
@@ -81,6 +81,7 @@ export class PostgresMarketRepository implements MarketRepository {
             ...pool,
             yesQty: pool.yesQty.toString(),
             noQty: pool.noQty.toString(),
+            k: (BigInt(pool.yesQty) * BigInt(pool.noQty)).toString(),
           } : null,
           volume24h,
           yesPrice,
@@ -92,7 +93,7 @@ export class PostgresMarketRepository implements MarketRepository {
     return { items: results, total };
   }
 
-  async findById(id: string): Promise<MarketWithDetails | null> {
+  async findById(id: string): Promise<MarketExtendedDetails | null> {
     const result = await this.db
       .select()
       .from(markets)
@@ -107,18 +108,27 @@ export class PostgresMarketRepository implements MarketRepository {
     const { markets: market, liquidity_pools: pool } = result[0];
 
     const volume24h = await this.get24hVolume(market.id);
+    const stats = await this.getMarketStats(market.id);
+    // Ensure 24h volume is consistent across stats (though getMarketStats calculates total)
+    // Actually spec asks for stats object with volume24h inside it too
+
     const { yesPrice, noPrice } = this.calculatePrices(pool);
 
     return {
       ...market,
+      volume24h,
+      yesPrice,
+      noPrice,
+      stats: {
+        ...stats,
+        volume24h
+      },
       pool: pool ? {
         ...pool,
         yesQty: pool.yesQty.toString(),
         noQty: pool.noQty.toString(),
-      } : null,
-      volume24h,
-      yesPrice,
-      noPrice
+        k: (BigInt(pool.yesQty) * BigInt(pool.noQty)).toString(),
+      } : null
     };
   }
 
@@ -136,6 +146,23 @@ export class PostgresMarketRepository implements MarketRepository {
       ));
 
     return volumeResult.volume.toString();
+  }
+
+  private async getMarketStats(marketId: string): Promise<Omit<MarketStats, 'volume24h'>> {
+    const [result] = await this.db
+      .select({
+        totalVolume: sql<string>`coalesce(sum(${tradeLedger.amountIn}), '0')`,
+        tradeCount: count(tradeLedger.id),
+        uniqueTraders: sql<number>`count(distinct ${tradeLedger.userId})`
+      })
+      .from(tradeLedger)
+      .where(eq(tradeLedger.marketId, marketId));
+
+    return {
+      totalVolume: result.totalVolume.toString(),
+      tradeCount: Number(result.tradeCount),
+      uniqueTraders: Number(result.uniqueTraders)
+    };
   }
 
   private calculatePrices(pool: { yesQty: bigint | string, noQty: bigint | string } | null): { yesPrice: string; noPrice: string } {

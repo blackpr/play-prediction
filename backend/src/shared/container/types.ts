@@ -23,6 +23,7 @@ import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-pas
 import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-points-history.use-case';
 import { MarketRepository } from '../../application/ports/repositories/market.repository';
 import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
+import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
 
 
 /**
@@ -54,6 +55,7 @@ export interface AppCradle {
   resetPasswordUseCase: ResetPasswordUseCase;
   getPointsHistoryUseCase: GetPointsHistoryUseCase;
   getMarketsUseCase: GetMarketsUseCase;
+  getMarketUseCase: GetMarketUseCase;
 }
 
 

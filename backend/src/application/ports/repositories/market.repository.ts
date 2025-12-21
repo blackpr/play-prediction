@@ -5,6 +5,7 @@ export interface LiquidityPoolDetails {
   id: string;
   yesQty: string;
   noQty: string;
+  k: string; // k-invariant
   versionId: number;
   updatedAt: Date;
 }
@@ -14,6 +15,17 @@ export interface MarketWithDetails extends Market {
   volume24h: string;
   yesPrice: string;
   noPrice: string;
+}
+
+export interface MarketStats {
+  totalVolume: string;
+  volume24h: string;
+  tradeCount: number;
+  uniqueTraders: number;
+}
+
+export interface MarketExtendedDetails extends MarketWithDetails {
+  stats: MarketStats;
 }
 
 export interface GetMarketsParams {
@@ -28,5 +40,5 @@ export interface GetMarketsParams {
 
 export interface MarketRepository {
   findAll(params: GetMarketsParams): Promise<{ items: MarketWithDetails[]; total: number }>;
-  findById(id: string): Promise<MarketWithDetails | null>;
+  findById(id: string): Promise<MarketExtendedDetails | null>;
 }
