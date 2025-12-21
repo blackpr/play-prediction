@@ -141,8 +141,11 @@ async function seed() {
 
       // Generate Random Trades for Price History
       if (targetVolume > 0n) {
-        const numTrades = 50;
+        // Increase number of trades to 200 for better chart resolution
+        const numTrades = 200;
         const avgTradeSize = Number(targetVolume) / numTrades;
+
+        // Ensure we cover the last 24 hours well for the default chart view
         const startTime = createdAt.getTime();
         const endTime = Date.now();
         const duration = endTime - startTime;
@@ -152,88 +155,86 @@ async function seed() {
         const tradeInserts = [];
 
         for (let i = 0; i < numTrades; i++) {
-          // Distribute trades randomly over the last 7 days
-          const tradeTime = new Date(startTime + (duration * (i / numTrades)));
+          // Time distribution: 80% of trades in last 24h, 20% spread over previous 6 days
+          // This ensures the default 24h view shows data
+          const t = i / numTrades;
+          let timeOffset;
 
-          // Randomly BUY YES or BUY NO to fluctuate price
-          const isBuyYes = Math.random() > 0.5;
-          const side = isBuyYes ? Side.YES : Side.NO;
-
-          // Random trade amount (+/- 50% of avg)
-          const amountIn = BigInt(Math.floor(avgTradeSize * (0.5 + Math.random())));
-
-          // SIMPLIFIED PRICE IMPACT CALCULATION FOR SEEDING
-          // In a real AMM (CPMM), k = x * y.
-          // When buying YES:
-          // 1. Fee is taken (ignoring for seed simplicity)
-          // 2. new_pool_no = k / (pool_yes + amount_in)  <-- Simplified, actually amount goes into pool_yes
-
-          // For seeding, we will just update the pool quantities to simulate price movement
-          // without doing the perfect CPMM math, as long as the ratio changes, price changes.
-          // P_YES = NO_QTY / (YES_QTY + NO_QTY)
-
-          if (isBuyYes) {
-            // Buying YES increases YES Qty in pool (user puts money in), 
-            // but actually in CPMM "Buying YES" means you put in Collateral and take out YES shares?
-            // Wait, in our system (conditional tokens / CPMM):
-            // To Buy YES: You put in Collateral (USD/Points). 
-            // The pool gives you YES tokens.
-            // The pool's YES reserves go DOWN? No, CPMM is different.
-
-            // Let's stick to the simplest interpretation of the DB schema:
-            // pool_yes_after and pool_no_after are recorded.
-            // If many people buy YES, the price of YES goes UP.
-            // Price YES = NO_QTY / (YES + NO).
-            // To increase Price YES, NO_QTY must increase relative to YES_QTY? 
-            // Or YES_QTY must Decrease?
-
-            // Actually in CPMM for prediction markets (Gnosis):
-            // You trade Collateral for Outcome Tokens.
-            // If you buy YES:
-            // You send Collateral.
-            // Pool keeps Collateral.
-            // Pool sends you YES tokens.
-            // Pool's YES balance DECREASES.
-            // Pool's NO balance stays same (conceptually, if using shares).
-
-            // However, our schema tracks `yesQty` and `noQty`.
-            // If we assume `k = yesQty * noQty`:
-            // Buying YES -> Remove YES from pool -> yesQty decreases -> Price of YES (in terms of NO) increases?
-
-            // Let's simulate simplified drift:
-            // If Buy YES: decrease yesQty slightly, increase noQty slightly (arbitrary drift)?
-            // Or just modify the ratio directly to ensure "Price History" exists.
-
-            // SIMULATION: Update quantities to shift price
-            const impact = BigInt(Math.floor(Number(currentYesQty) * 0.01)); // 1% impact
-            currentYesQty -= impact;
-            // To keep k roughly similar or just allow it to drift, let's just shift ratio
+          if (t < 0.8) {
+            // First 80% of trades (160 trades) in last 24 hours
+            const last24h = 24 * 60 * 60 * 1000;
+            timeOffset = duration - last24h + (last24h * (t / 0.8));
           } else {
-            // Buy NO -> Price NO goes up (YES goes down)
-            const impact = BigInt(Math.floor(Number(currentNoQty) * 0.01));
-            currentNoQty -= impact;
+            // Last 20% of trades (40 trades) spread over previous 6 days
+            const previous6days = duration - (24 * 60 * 60 * 1000);
+            timeOffset = previous6days * ((t - 0.8) / 0.2);
           }
+
+          const tradeTime = new Date(startTime + timeOffset);
+
+          // Current Price (based on NO/Total)
+          const currentTotal = Number(currentYesQty + currentNoQty);
+          // Safety check for div by zero although unlikely with bigints
+          const currentPrice = currentTotal > 0 ? Number(currentNoQty) / currentTotal : 0.5;
+
+          // Random Walk Target (drifts by +/- 5%)
+          let targetPrice = currentPrice + (Math.random() - 0.5) * 0.1;
+          targetPrice = Math.max(0.1, Math.min(0.9, targetPrice));
+
+          // Determine ACTION to reach target price
+          // Simplified action logic:
+          // If we want Price YES to go UP (Target > Current), we need to DECREASE YES Qty relative to NO.
+          // (As per P_YES = NO / (YES + NO)).
+
+          const isBuyYes = targetPrice > currentPrice;
+
+          // Execute drift
+          const k_invariant = currentYesQty + currentNoQty;
+          const numericTotal = Number(k_invariant);
+
+          let newNoQty, newYesQty;
+
+          // Force quantities to match target price while keeping Sum constant-ish (simplified seeding)
+          // Target = newNo / Total. => newNo = Total * Target.
+          newNoQty = BigInt(Math.floor(numericTotal * targetPrice));
+          newYesQty = k_invariant - newNoQty;
+
+          // Record 'Trade'
+          // Vary volume simply
+          const tradeAmount = BigInt(Math.floor(avgTradeSize * (0.5 + Math.random())));
 
           tradeInserts.push({
             userId: treasuryId,
             marketId: market.id,
             action: TradeAction.BUY,
-            side: side,
-            amountIn: amountIn,
-            amountOut: amountIn, // 1:1 for simplicity in seed
+            side: isBuyYes ? Side.YES : Side.NO,
+            amountIn: tradeAmount,
+            amountOut: tradeAmount,
             feePaid: 0n,
             feeLp: 0n,
             feeVault: 0n,
-            poolYesAfter: currentYesQty,
-            poolNoAfter: currentNoQty,
-            priceAtExecution: 500000n, // Dummy
+            poolYesAfter: newYesQty,
+            poolNoAfter: newNoQty,
+            // Store micro-points price (0.50 => 500000)
+            priceAtExecution: BigInt(Math.floor(targetPrice * 1_000_000)),
             createdAt: tradeTime
           });
+
+          // Update state for next iteration
+          currentYesQty = newYesQty;
+          currentNoQty = newNoQty;
         }
 
-        // Insert all trades
+        // Insert trades in chunks
         if (tradeInserts.length > 0) {
-          await db.insert(tradeLedger).values(tradeInserts);
+          try {
+            const chunkSize = 50;
+            for (let i = 0; i < tradeInserts.length; i += chunkSize) {
+              await db.insert(tradeLedger).values(tradeInserts.slice(i, i + chunkSize));
+            }
+          } catch (e) {
+            console.error('Error inserting trades:', e);
+          }
         }
 
         // Update final pool state

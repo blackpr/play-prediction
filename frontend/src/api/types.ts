@@ -59,3 +59,18 @@ export interface PointsHistoryResponse {
     totalItems: number
   }
 }
+
+export interface PricePoint {
+  timestamp: string
+  yesOpen: string
+  yesHigh: string
+  yesLow: string
+  yesClose: string
+  volume: string
+}
+
+export interface PriceHistoryResponse {
+  marketId: string
+  interval: string
+  candles: PricePoint[]
+}

@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Market } from './types'
+import type { Market, PriceHistoryResponse } from './types'
 
 export interface GetMarketsParams {
   status?: 'ACTIVE' | 'RESOLVED' | 'CANCELLED'
@@ -37,5 +37,22 @@ export const getMarkets = async (params: GetMarketsParams): Promise<GetMarketsRe
 
 export const getMarket = async (id: string): Promise<Market> => {
   const response = await api.get<Market>(`/markets/${id}`)
+  return response.data
+}
+
+export const getMarketPriceHistory = async (
+  id: string,
+  interval: '1m' | '5m' | '1h' | '1d' = '1h',
+  from?: string,
+  to?: string
+): Promise<PriceHistoryResponse> => {
+  const query = new URLSearchParams()
+  query.append('interval', interval)
+  if (from) query.append('from', from)
+  if (to) query.append('to', to)
+
+  const response = await api.get<PriceHistoryResponse>(
+    `/markets/${id}/price-history?${query.toString()}`
+  )
   return response.data
 }

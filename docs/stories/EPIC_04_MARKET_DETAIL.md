@@ -55,14 +55,14 @@
 **Route:** `/markets/$marketId`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/markets/$marketId.tsx`
-- [ ] Load market data with loader
-- [ ] Show market title, description
-- [ ] Show status badge and close time
-- [ ] Show ProbabilityBar
-- [ ] Show PriceChart
-- [ ] Show TradeForm (from Epic 6)
-- [ ] Show market stats
+- [x] Create route at `src/routes/markets/$marketId.tsx`
+- [x] Load market data with loader
+- [x] Show market title, description
+- [x] Show status badge and close time
+- [x] Show ProbabilityBar
+- [x] Show PriceChart
+- [x] Show TradeForm (from Epic 6)
+- [x] Show market stats
 
 **References:** FRONTEND_ARCHITECTURE.md Section 5.3
 
@@ -75,12 +75,12 @@
 **So that** I can quickly see YES/NO odds
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/market/ProbabilityBar.tsx`
-- [ ] Green portion for YES percentage
-- [ ] Red portion for NO percentage
-- [ ] Optional labels showing percentages
-- [ ] Size variants: sm, md, lg
-- [ ] Smooth transitions on updates
+- [x] Create `src/components/market/ProbabilityBar.tsx`
+- [x] Green portion for YES percentage
+- [x] Red portion for NO percentage
+- [x] Optional labels showing percentages
+- [x] Size variants: sm, md, lg
+- [x] Smooth transitions on updates
 
 **References:** FRONTEND_COMPONENTS.md Section 4.2
 
@@ -93,13 +93,13 @@
 **So that** I can see historical prices
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/market/PriceChart.tsx`
-- [ ] Use Recharts LineChart
-- [ ] Two lines: YES price (green), NO price (red)
-- [ ] X-axis: timestamps
-- [ ] Y-axis: 0-100% scale
-- [ ] Tooltip with date and prices
-- [ ] Responsive container
+- [x] Create `src/components/market/PriceChart.tsx`
+- [x] Use Recharts LineChart
+- [x] Two lines: YES price (green), NO price (red)
+- [x] X-axis: timestamps
+- [x] Y-axis: 0-100% scale
+- [x] Tooltip with date and prices
+- [x] Responsive container
 
 **References:** FRONTEND_COMPONENTS.md Section 4.3
 
@@ -112,12 +112,12 @@
 **So that** I understand the market context
 
 **Acceptance Criteria:**
-- [ ] Display close time with countdown
-- [ ] Display total volume
-- [ ] Display unique traders count
-- [ ] Display trade count
-- [ ] Display resolution criteria from description
-- [ ] Display category badge
+- [x] Display close time with countdown
+- [x] Display total volume
+- [x] Display unique traders count
+- [x] Display trade count
+- [x] Display resolution criteria from description
+- [x] Display category badge
 
 ---
 

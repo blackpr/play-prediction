@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/Card'
-import { cn } from '../../utils'
+import { ProbabilityBar } from './ProbabilityBar'
 
 interface MarketCardProps {
   market: Market
@@ -58,24 +58,15 @@ export function MarketCard({ market }: MarketCardProps) {
 
         <CardContent className="pb-3">
           {/* Probability Bar */}
-          <div className="mt-4 flex h-8 w-full overflow-hidden rounded-md text-sm font-medium">
-            <div
-              className={cn(
-                "flex items-center justify-start pl-2 text-primary-foreground transition-all",
-                "bg-emerald-500/80 text-white"
-              )}
-              style={{ width: `${displayYes}%` }}
-            >
-              YES {displayYes}%
-            </div>
-            <div
-              className={cn(
-                "flex items-center justify-end pr-2 transition-all",
-                "bg-rose-500/80 text-white"
-              )}
-              style={{ width: `${100 - displayYes}%` }} // Fill remaining space
-            >
-              NO {displayNo}%
+          <div className="mt-4">
+            <ProbabilityBar
+              yesPercent={displayYes}
+              size="lg"
+              className="h-8" // Override default height for card view if needed, or stick to sizes
+            />
+            <div className="flex justify-between mt-1 text-xs font-medium text-gray-400">
+              <span className="text-emerald-400">YES {displayYes}%</span>
+              <span className="text-rose-400">NO {displayNo}%</span>
             </div>
           </div>
         </CardContent>

@@ -651,11 +651,13 @@ function StatusBadge({ status }: { status: Market['status'] }) {
 ```tsx
 // src/components/market/ProbabilityBar.tsx
 import { clsx } from 'clsx'
+import { cn } from '../../lib/utils'
 
 interface ProbabilityBarProps {
   yesPercent: number
   showLabels?: boolean
   size?: 'sm' | 'md' | 'lg'
+  className?: string
 }
 
 const sizeStyles = {
@@ -668,38 +670,43 @@ export function ProbabilityBar({
   yesPercent,
   showLabels = false,
   size = 'md',
+  className,
 }: ProbabilityBarProps) {
-  const noPercent = 100 - yesPercent
+  const saneYesPercent = isNaN(yesPercent) ? 50 : Math.min(100, Math.max(0, yesPercent))
+  const saneNoPercent = 100 - saneYesPercent
   
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', className)}>
       {showLabels && (
-        <div className="flex justify-between text-sm">
-          <span className="text-green-400 font-medium">
-            Yes {yesPercent.toFixed(1)}%
+        <div className="flex justify-between text-sm font-medium">
+          <span className="text-emerald-400">
+            Yes {saneYesPercent.toFixed(0)}%
           </span>
-          <span className="text-red-400 font-medium">
-            No {noPercent.toFixed(1)}%
+          <span className="text-rose-400">
+            No {saneNoPercent.toFixed(0)}%
           </span>
         </div>
       )}
+      
       <div
         className={clsx(
-          'w-full rounded-full overflow-hidden bg-red-600',
+          'w-full flex overflow-hidden rounded-full bg-rose-500/20',
           sizeStyles[size]
         )}
       >
         <div
-          className="h-full bg-green-500 transition-all duration-500"
-          style={{ width: `${yesPercent}%` }}
+          className="bg-emerald-500 transition-all duration-500"
+          style={{ width: `${saneYesPercent}%` }}
+        />
+        <div
+          className="bg-rose-500 transition-all duration-500"
+          style={{ width: `${saneNoPercent}%` }}
         />
       </div>
     </div>
   )
 }
 ```
-
-### 4.3 Price Chart
 
 ```tsx
 // src/components/market/PriceChart.tsx
@@ -712,22 +719,104 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { Card, CardHeader, CardTitle } from '../ui/Card'
-
-interface PricePoint {
-  timestamp: string
-  yesPrice: number
-  noPrice: number
-}
+import type { PricePoint } from '../../api/types'
 
 interface PriceChartProps {
-  data: PricePoint[]
+  data: PricePoint[]  // OHLC candle data from backend
   height?: number
+  className?: string
 }
 
-export function PriceChart({ data, height = 300 }: PriceChartProps) {
+export function PriceChart({ data, height = 300, className }: PriceChartProps) {
+  const hasData = data && data.length > 0
+
+  // Transform OHLC candle data to simple price points for the chart
+  // We use the close prices for both YES and NO (NO = 1 - YES)
+  const chartData = hasData ? data.map(candle => ({
+    timestamp: candle.timestamp,
+    yesPrice: parseFloat(candle.yesClose),
+    noPrice: 1 - parseFloat(candle.yesClose),
+  })) : []
+
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
+        <CardTitle>Price History</CardTitle>
+      </CardHeader>
+
+      <div className="p-4 pt-0 w-full" style={{ height }}>
+        {hasData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <XAxis
+                dataKey="timestamp"
+                stroke="#606070"
+                fontSize={12}
+                tickFormatter={(value) => {
+                  const date = new Date(value)
+                  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }}
+                minTickGap={50}
+              />
+              <YAxis
+                stroke="#606070"
+                fontSize={12}
+                domain={[0, 1]}
+                tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1a1a24',
+                  border: '1px solid #2a2a36',
+                  borderRadius: '8px',
+                  color: '#fff'
+                }}
+                labelFormatter={(value) => new Date(value).toLocaleString()}
+                formatter={(value: number, name: string) => [
+                  `${(value * 100).toFixed(1)}%`,
+                  name === 'yesPrice' ? 'Yes' : 'No',
+                ]}
+              />
+              <Line
+                type="monotone"
+                dataKey="yesPrice"
+                stroke="#10b981" // emerald-500
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+                name="yesPrice"
+                animationDuration={500}
+              />
+              <Line
+                type="monotone"
+                dataKey="noPrice"
+                stroke="#f43f5e" // rose-500
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+                name="noPrice"
+                animationDuration={500}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center text-gray-400">
+            No price history available
+          </div>
+        )}
+      </div>
+    </Card>
+  )
+}
+```
+
+**Key Features:**
+- Transforms OHLC candle data from backend to chart-ready format
+- Uses close prices (`yesClose`) for visualization
+- Displays green line for YES prices, red line for NO prices
+- Handles empty state gracefully
+- Responsive container with configurable height
+- Formatted tooltips showing percentages and timestamps
         <CardTitle>Price History</CardTitle>
       </CardHeader>
       
