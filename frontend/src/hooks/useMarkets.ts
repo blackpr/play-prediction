@@ -14,7 +14,7 @@ export const marketQueryOptions = (id: string) => queryOptions({
 
 export const priceHistoryQueryOptions = (
   id: string,
-  interval: '1m' | '5m' | '1h' | '1d' = '1h'
+  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h'
 ) => queryOptions({
   queryKey: ['markets', id, 'history', interval],
   queryFn: () => getMarketPriceHistory(id, interval),
@@ -30,7 +30,7 @@ export function useMarket(id: string) {
 
 export function useMarketPriceHistory(
   id: string,
-  interval: '1m' | '5m' | '1h' | '1d' = '1h'
+  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h'
 ) {
   return useQuery(priceHistoryQueryOptions(id, interval))
 }

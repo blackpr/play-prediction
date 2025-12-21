@@ -13,9 +13,11 @@ interface PriceChartProps {
   data: PricePoint[]
   height?: number
   className?: string
+  interval?: string
+  isLoading?: boolean
 }
 
-export function PriceChart({ data, height = 300, className }: PriceChartProps) {
+export function PriceChart({ data, height = 300, className, interval, isLoading = false }: PriceChartProps) {
   // Check if we have data to avoid rendering empty chart glitches
   const hasData = data && data.length > 0
 
@@ -30,10 +32,22 @@ export function PriceChart({ data, height = 300, className }: PriceChartProps) {
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Price History</CardTitle>
+        <CardTitle>
+          Price History{interval ? ` (${interval})` : ''}
+        </CardTitle>
       </CardHeader>
 
-      <div className="p-4 pt-0 w-full" style={{ height }}>
+      <div className="p-4 pt-0 w-full relative" style={{ height }}>
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-gray-950/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-gray-400">Loading chart data...</span>
+            </div>
+          </div>
+        )}
+
         {hasData ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>

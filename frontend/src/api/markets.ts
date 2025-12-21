@@ -42,7 +42,7 @@ export const getMarket = async (id: string): Promise<Market> => {
 
 export const getMarketPriceHistory = async (
   id: string,
-  interval: '1m' | '5m' | '1h' | '1d' = '1h',
+  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h',
   from?: string,
   to?: string
 ): Promise<PriceHistoryResponse> => {

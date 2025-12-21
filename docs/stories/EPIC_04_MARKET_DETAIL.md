@@ -128,11 +128,11 @@
 **So that** I can analyze short-term and long-term trends
 
 **Acceptance Criteria:**
-- [ ] Interval buttons: 1H, 24H, 7D, 30D, All
-- [ ] Update chart data when interval changes
-- [ ] Remember user preference (localStorage)
-- [ ] Loading state while fetching new data
-- [ ] Disable intervals with insufficient data
+- [x] Interval buttons: 1H, 24H, 7D, 30D, All
+- [x] Update chart data when interval changes
+- [x] Remember user preference (localStorage)
+- [x] Loading state while fetching new data
+- [x] Disable intervals with insufficient data
 
 **References:** API_SPECIFICATION.md Section 4.3.3
 
