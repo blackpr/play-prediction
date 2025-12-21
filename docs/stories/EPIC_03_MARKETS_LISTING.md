@@ -19,13 +19,13 @@
 - `order` (default: desc) - asc, desc
 
 **Acceptance Criteria:**
-- [ ] Public endpoint (no auth required)
-- [ ] Query markets table with filters
-- [ ] Join with liquidity_pools for price data
-- [ ] Calculate yesPrice, noPrice from pool quantities
-- [ ] Calculate 24h volume from trade_ledger
-- [ ] Return paginated response
-- [ ] Cache results (5 second TTL)
+- [x] Public endpoint (no auth required)
+- [x] Query markets table with filters
+- [x] Join with liquidity_pools for price data
+- [x] Calculate yesPrice, noPrice from pool quantities
+- [x] Calculate 24h volume from trade_ledger
+- [x] Return paginated response
+- [x] Cache results (5 second TTL)
 
 **Response includes per market:**
 ```json

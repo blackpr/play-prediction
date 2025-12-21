@@ -7,6 +7,7 @@ import { authMiddleware } from './presentation/fastify/middleware/auth';
 import healthRoutes from './presentation/fastify/routes/health';
 import { authRoutes } from './presentation/fastify/routes/auth';
 import { usersRoutes } from './presentation/fastify/routes/users';
+import { marketsRoutes } from './presentation/fastify/routes/markets';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import { loggerConfig } from './shared/logger/index';
 import { registerContainer } from './shared/container/index';
@@ -58,6 +59,7 @@ async function buildServer() {
   server.register(healthRoutes, { prefix: '/api' });
   server.register(authRoutes, { prefix: '/api' });
   server.register(usersRoutes, { prefix: '/api' });
+  server.register(marketsRoutes, { prefix: '/api/v1/markets' });
 
   // Test route for rate limiting (can be removed in production)
   server.get('/test-rate-limit', withRateLimit(RateLimitType.PUBLIC), async () => {

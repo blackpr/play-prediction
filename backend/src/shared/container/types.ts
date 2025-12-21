@@ -21,6 +21,8 @@ import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
 import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
 import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-points-history.use-case';
+import { MarketRepository } from '../../application/ports/repositories/market.repository';
+import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
 
 
 /**
@@ -37,6 +39,7 @@ export interface AppCradle {
   // Repositories
   userRepository: UserRepository;
   pointGrantRepository: PointGrantRepository;
+  marketRepository: MarketRepository;
 
   // Domain Services
   circuitBreakerService: CircuitBreakerService;
@@ -50,6 +53,7 @@ export interface AppCradle {
   forgotPasswordUseCase: ForgotPasswordUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
   getPointsHistoryUseCase: GetPointsHistoryUseCase;
+  getMarketsUseCase: GetMarketsUseCase;
 }
 
 

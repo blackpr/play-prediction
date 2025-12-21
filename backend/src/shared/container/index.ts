@@ -28,6 +28,8 @@ import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-p
 import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
 import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-points-history.use-case';
 import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
+import { PostgresMarketRepository } from '../../infrastructure/database/repositories/postgres-market.repository';
+import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
 
 
 // Import types for module augmentation
@@ -66,6 +68,7 @@ export function registerDependencies(): void {
   diContainer.register({
     userRepository: asClass(PostgresUserRepository).singleton(),
     pointGrantRepository: asClass(PostgresPointGrantRepository).singleton(),
+    marketRepository: asClass(PostgresMarketRepository).singleton(),
   });
 
   // ========================================
@@ -98,6 +101,7 @@ export function registerDependencies(): void {
     forgotPasswordUseCase: asClass(ForgotPasswordUseCase).scoped(),
     resetPasswordUseCase: asClass(ResetPasswordUseCase).scoped(),
     getPointsHistoryUseCase: asClass(GetPointsHistoryUseCase).scoped(),
+    getMarketsUseCase: asClass(GetMarketsUseCase).scoped(),
   });
 }
 
