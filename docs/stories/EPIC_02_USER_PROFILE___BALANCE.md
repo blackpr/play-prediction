@@ -213,13 +213,13 @@ toast.error('Insufficient balance')
 **So that** the app doesn't crash completely on errors
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/ErrorBoundary.tsx`
-- [ ] Catch JavaScript errors in component tree
-- [ ] Display friendly error message
-- [ ] Provide "Try Again" / "Go Home" buttons
-- [ ] Log errors to monitoring service (optional)
-- [ ] Preserve navigation ability
-- [ ] Different styles for different error types
+- [x] Create `src/components/ErrorBoundary.tsx`
+- [x] Catch JavaScript errors in component tree
+- [x] Display friendly error message
+- [x] Provide "Try Again" / "Go Home" buttons
+- [x] Log errors to monitoring service (optional)
+- [x] Preserve navigation ability
+- [x] Different styles for different error types
 
 **References:** FRONTEND_STATE.md Section 8
 

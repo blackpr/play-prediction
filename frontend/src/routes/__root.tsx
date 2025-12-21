@@ -20,6 +20,7 @@ import { queryClient } from '../lib/queryClient'
 import type { QueryClient } from '@tanstack/react-query'
 
 import { NotFoundPage } from '../components/NotFoundPage'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -69,7 +70,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <Header />
               <SessionManager />
               <main className="flex-1">
-                {children}
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
               </main>
               <Footer />
             </div>
