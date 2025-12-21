@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, sql, gt } from 'drizzle-orm';
+import { and, asc, count, desc, eq, sql, gt, ilike, or } from 'drizzle-orm';
 import { MarketRepository, GetMarketsParams, MarketWithDetails } from '../../../application/ports/repositories/market.repository';
 import { DrizzleDB } from '..';
 import { markets, liquidityPools, tradeLedger } from '../drizzle/schema';
@@ -11,7 +11,7 @@ export class PostgresMarketRepository implements MarketRepository {
   }
 
   async findAll(params: GetMarketsParams): Promise<{ items: MarketWithDetails[]; total: number }> {
-    const { status, category, page, pageSize, sort, order } = params;
+    const { status, category, page, pageSize, sort, order, search } = params;
     const offset = (page - 1) * pageSize;
 
     // Base query conditions
@@ -21,6 +21,12 @@ export class PostgresMarketRepository implements MarketRepository {
     }
     if (category && category !== 'all') {
       conditions.push(eq(markets.category, category));
+    }
+    if (search) {
+      conditions.push(or(
+        ilike(markets.title, `%${search}%`),
+        ilike(markets.description, `%${search}%`)
+      ));
     }
 
     // 1. Get total count

@@ -10,6 +10,7 @@ const getMarketsQuerySchema = z.object({
   pageSize: z.coerce.number().min(1).max(100).default(20),
   sort: z.enum(['createdAt', 'closesAt', 'volume']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
+  search: z.string().optional(),
 });
 
 export async function listMarkets(request: FastifyRequest, reply: FastifyReply) {
@@ -23,6 +24,7 @@ export async function listMarkets(request: FastifyRequest, reply: FastifyReply) 
     pageSize: query.pageSize,
     sort: query.sort,
     order: query.order,
+    search: query.search,
   });
 
   const totalPages = Math.ceil(total / query.pageSize);

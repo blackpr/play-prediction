@@ -78,13 +78,13 @@
 **Route:** `/markets`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/markets/index.tsx`
-- [ ] Use type-safe search params with Zod
-- [ ] Use `useMarkets()` hook with TanStack Query
-- [ ] Display grid of MarketCard components
-- [ ] Loading state with skeletons
-- [ ] Empty state message
-- [ ] Pagination controls
+- [x] Create route at `src/routes/markets/index.tsx`
+- [x] Use type-safe search params with Zod
+- [x] Use `useMarkets()` hook with TanStack Query
+- [x] Display grid of MarketCard components
+- [x] Loading state with skeletons
+- [x] Empty state message
+- [x] Pagination controls
 
 **References:** FRONTEND_ARCHITECTURE.md Section 5.4
 
@@ -97,14 +97,14 @@
 **So that** I can see market info at a glance
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/market/MarketCard.tsx`
-- [ ] Status badge (colored by status)
-- [ ] Time until close (using date-fns)
-- [ ] Market title (2 line clamp)
-- [ ] Probability bar showing YES/NO %
-- [ ] Volume stat
-- [ ] YES/NO percentages
-- [ ] Link to market detail
+- [x] Create `src/components/market/MarketCard.tsx`
+- [x] Status badge (colored by status)
+- [x] Time until close (using date-fns)
+- [x] Market title (2 line clamp)
+- [x] Probability bar showing YES/NO %
+- [x] Volume stat
+- [x] YES/NO percentages
+- [x] Link to market detail
 
 **References:** FRONTEND_COMPONENTS.md Section 4.1
 
@@ -117,10 +117,10 @@
 **So that** I can find active or resolved markets
 
 **Acceptance Criteria:**
-- [ ] Tab buttons: All, Active, Resolved
-- [ ] Update URL search params on change
-- [ ] Highlight active tab
-- [ ] Reset to page 1 on filter change
+- [x] Tab buttons: All, Active, Resolved
+- [x] Update URL search params on change
+- [x] Highlight active tab
+- [x] Reset to page 1 on filter change
 
 ---
 
@@ -131,9 +131,9 @@
 **So that** I can find relevant ones
 
 **Acceptance Criteria:**
-- [ ] Sort dropdown: Newest, Most Volume, Ending Soon
-- [ ] Update URL search params on change
-- [ ] Reset to page 1 on sort change
+- [x] Sort dropdown: Newest, Most Volume, Ending Soon
+- [x] Update URL search params on change
+- [x] Reset to page 1 on sort change
 
 ---
 
@@ -144,12 +144,12 @@
 **So that** I can find specific markets quickly
 
 **Acceptance Criteria:**
-- [ ] Search input in markets page header
-- [ ] Debounce search input (300ms)
-- [ ] Update URL search params with query
-- [ ] Search server-side (not client filter)
-- [ ] Clear search button
-- [ ] Show "No results" message when empty
+- [x] Search input in markets page header
+- [x] Debounce search input (300ms)
+- [x] Update URL search params with query
+- [x] Search server-side (not client filter)
+- [x] Clear search button
+- [x] Show "No results" message when empty
 
 ---
 
@@ -160,11 +160,11 @@
 **So that** I can browse specific topics
 
 **Acceptance Criteria:**
-- [ ] Category chips/pills below search
-- [ ] "All" option to clear filter
-- [ ] Combine with status filter
-- [ ] Update URL search params
-- [ ] Categories fetched from backend or defined in config
+- [x] Category chips/pills below search
+- [x] "All" option to clear filter
+- [x] Combine with status filter
+- [x] Update URL search params
+- [x] Categories fetched from backend or defined in config
 
 **Default Categories:**
 - Sports, Politics, Crypto, Technology, Entertainment, Weather, Other

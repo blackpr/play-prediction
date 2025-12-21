@@ -23,6 +23,7 @@ export interface GetMarketsParams {
   pageSize: number;
   sort?: string;
   order?: 'asc' | 'desc';
+  search?: string;
 }
 
 export interface MarketRepository {
