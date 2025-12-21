@@ -197,12 +197,12 @@ toast.error('Insufficient balance')
 **So that** I can navigate on small screens
 
 **Acceptance Criteria:**
-- [ ] Hamburger menu icon on mobile
-- [ ] Slide-out drawer or dropdown menu
-- [ ] All navigation links accessible
-- [ ] Balance displayed in mobile nav
-- [ ] Close on navigation
-- [ ] Close on outside click
+- [x] Hamburger menu icon on mobile
+- [x] Slide-out drawer or dropdown menu
+- [x] All navigation links accessible
+- [x] Balance displayed in mobile nav
+- [x] Close on navigation
+- [x] Close on outside click
 
 ---
 

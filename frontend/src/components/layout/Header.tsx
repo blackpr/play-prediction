@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { UserSection } from './UserSection'
 import { PortfolioLink } from './PortfolioLink'
+import { MobileNav } from './MobileNav'
 
 export function Header() {
   return (
@@ -31,7 +32,10 @@ export function Header() {
           </nav>
 
           {/* User Status (Balance, Sign In/Out) */}
-          <UserSection />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <UserSection />
+            <MobileNav />
+          </div>
         </div>
       </div>
     </header>
