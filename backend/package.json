@@ -22,7 +22,8 @@
     "db:studio": "drizzle-kit studio",
     "job:trigger": "tsx src/cli/jobs.ts trigger",
     "job:stats": "tsx src/cli/jobs.ts stats",
-    "job:clear": "tsx src/cli/jobs.ts clear"
+    "job:clear": "tsx src/cli/jobs.ts clear",
+    "db:seed": "tsx src/infrastructure/database/seed.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.15.0",
