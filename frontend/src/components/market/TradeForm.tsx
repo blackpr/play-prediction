@@ -139,7 +139,21 @@ export function TradeForm({ market }: TradeFormProps) {
             minSharesOut: (trade.minOut ?? 0n).toString(),
           },
         })
-        toast.success(`Bought ${formatPoints(result.sharesOut)} ${side} shares`)
+
+        // Check if netting occurred (opposite position was cleared)
+        const oppositeSide = side === 'YES' ? 'NO' : 'YES'
+        const oppositeQtyBefore = oppositeSide === 'YES'
+          ? BigInt(position?.yesQty ?? '0')
+          : BigInt(position?.noQty ?? '0')
+
+        if (oppositeQtyBefore > 0n) {
+          toast.success(
+            `Netting: Sold ${formatPoints(oppositeQtyBefore)} ${oppositeSide} shares (fee-free), then bought ${formatPoints(result.sharesOut)} ${side} shares`
+          )
+        } else {
+          toast.success(`Bought ${formatPoints(result.sharesOut)} ${side} shares`)
+        }
+
         queryClient.setQueryData(['portfolio', market.id], {
           ...result.newPosition,
           marketId: market.id,
@@ -558,6 +572,56 @@ export function TradeForm({ market }: TradeFormProps) {
               </p>
             )}
           </div>
+
+          {/* Netting Preview - Show when user holds opposite shares */}
+          {tab === 'buy' && position && amount && parseFloat(amount) > 0 && (() => {
+            const oppositeSide = side === 'YES' ? 'NO' : 'YES'
+            const oppositeQty = oppositeSide === 'YES'
+              ? BigInt(position.yesQty ?? '0')
+              : BigInt(position.noQty ?? '0')
+
+            if (oppositeQty > 0n) {
+              // User holds opposite shares - netting will occur
+              return (
+                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-200">
+                        Automatic Position Netting
+                      </p>
+                      <p className="text-xs text-blue-300/80 mt-1">
+                        You hold {formatPoints(oppositeQty.toString())} {oppositeSide} shares.
+                        These will be sold fee-free before buying {side}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-blue-500/20">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-blue-300/70">Fee-free exit</span>
+                      <span className="font-mono text-blue-200">
+                        {formatPoints(oppositeQty.toString())} {oppositeSide} shares
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-blue-300/70">Your buy amount</span>
+                      <span className="font-mono text-blue-200">
+                        {amount} points
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs font-medium pt-1 border-t border-blue-500/20">
+                      <span className="text-blue-200">Total buying power</span>
+                      <span className="font-mono text-blue-100">
+                        ~{amount} + exit proceeds
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+            return null
+          })()}
 
           {/* Estimated Output for Buy/Sell */}
           {quote && (tab === 'buy' || tab === 'sell') && amount && parseFloat(amount) > 0 && (
