@@ -31,6 +31,7 @@
     "@fastify/awilix": "^8.2.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
+    "@fastify/multipart": "^9.3.0",
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/websocket": "^11.2.0",
     "@supabase/ssr": "^0.8.0",

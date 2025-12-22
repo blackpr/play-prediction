@@ -3,6 +3,7 @@ import {
   parseCookieHeader,
   serializeCookieHeader,
 } from '@supabase/ssr';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { requireEnv, getEnv } from '../../shared/config/env';
 
@@ -48,6 +49,23 @@ export function createClient(request: FastifyRequest, reply: FastifyReply) {
             reply.header('Set-Cookie', header);
           });
         },
+      },
+    }
+  );
+}
+
+/**
+ * Creates a Supabase client with Service Role privileges.
+ * WARNING: This bypasses all RLS policies. Use only for admin operations.
+ */
+export function createAdminClient() {
+  return createSupabaseJsClient(
+    requireEnv('SUPABASE_URL'),
+    requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   );

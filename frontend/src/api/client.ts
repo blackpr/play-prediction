@@ -42,14 +42,16 @@ async function request<T>(
     ...options?.headers,
   }
 
-  if (options?.body !== undefined) {
+  if (options?.body !== undefined && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json'
   }
 
   const response = await fetch(url, {
     method,
     headers,
-    body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: options?.body instanceof FormData
+      ? options.body
+      : (options?.body !== undefined ? JSON.stringify(options.body) : undefined),
     credentials: 'include', // Important: include cookies for auth
   })
 

@@ -13,7 +13,7 @@ import { api } from '../../api/client';
 import { useState, useRef } from 'react';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar, Upload, Loader2 } from 'lucide-react';
 
 const MIN_SEED_LIQUIDITY = 1_000_000;
 
@@ -39,7 +39,9 @@ export function CreateMarketForm() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
+  const [isUploadingIdx, setIsUploadingIdx] = useState(false); // Renamed to avoid collision if needed, or just isUploading
   const closesAtInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createMarketMut = useMutation({
     mutationFn: async (data: any) => {
@@ -58,7 +60,7 @@ export function CreateMarketForm() {
     },
     onSuccess: () => {
       toast.success('Market created successfully');
-      queryClient.invalidateQueries({ queryKey: ['markets'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-markets'] });
       setModalOpen(false);
       navigate({ to: '/admin/markets' });
     },
@@ -67,6 +69,31 @@ export function CreateMarketForm() {
       setModalOpen(false);
     },
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, setValue: (val: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingIdx(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post<{ url: string }>('/admin/upload/image', formData);
+      setValue(res.data.url);
+      toast.success('Image uploaded successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload image');
+    } finally {
+      setIsUploadingIdx(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const form = useForm({
     defaultValues: {
@@ -202,19 +229,73 @@ export function CreateMarketForm() {
                 onChange: ({ value }) => value && !z.string().url().safeParse(value).success ? 'Invalid URL' : undefined
               }}
             >
-              {(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Image URL (Optional)</Label>
-                  <Input
-                    id="imageUrl"
-                    placeholder="https://..."
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors.join(', ')}
-                  />
-                </div>
-              )}
+              {(field) => {
+                return (
+                  <div className="space-y-4">
+                    <Label htmlFor="imageUrl">Market Image</Label>
+
+                    <div className="flex gap-4 items-start">
+                      {/* Preview */}
+                      <div className="relative w-32 h-32 bg-gray-900 rounded-lg border border-gray-800 overflow-hidden flex items-center justify-center group">
+                        {field.state.value ? (
+                          <img
+                            src={field.state.value}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-gray-600 text-xs text-center p-2">
+                            No image
+                          </div>
+                        )}
+                        {isUploadingIdx && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 space-y-4">
+                        {/* URL Input */}
+                        <Input
+                          id="imageUrl"
+                          placeholder="https://..."
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                          error={field.state.meta.errors.join(', ')}
+                          disabled={isUploadingIdx}
+                        />
+
+                        {/* Upload Button */}
+                        <div>
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => handleFileUpload(e, field.handleChange)}
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploadingIdx}
+                            className="w-full sm:w-auto"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload Image
+                          </Button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Max 5MB. JPEG, PNG, WebP.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
             </form.Field>
 
             {/* Closes At */}

@@ -13,6 +13,7 @@ import { portfolioRoutes } from './presentation/fastify/routes/portfolio';
 import adminRoutes from './presentation/fastify/routes/admin';
 import { websocketHandler } from './presentation/websocket/websocket.route';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
+import multipart from '@fastify/multipart';
 import { loggerConfig } from './shared/logger/index';
 import { registerContainer } from './shared/container/index';
 import { circuitBreakerPlugin } from './presentation/fastify/plugins/circuit-breaker';
@@ -23,6 +24,12 @@ const server = Fastify({
 
 async function buildServer() {
   // Register plugins first
+  await server.register(multipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    }
+  });
+
   await server.register(cors, {
     origin: true, // Allow all for dev
     credentials: true,

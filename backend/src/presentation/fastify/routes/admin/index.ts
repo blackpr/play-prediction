@@ -6,6 +6,7 @@ import { pauseMarket } from './pause-market';
 import { resumeMarket } from './resume-market';
 import { getAdminStats } from './get-stats';
 import { listAdminMarkets } from './list-markets';
+import { uploadRoutes } from './upload';
 
 export default async function adminRoutes(server: FastifyInstance) {
   // Apply admin middleware to all routes in this module
@@ -28,4 +29,7 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // GET /admin/stats - Get admin dashboard stats
   server.get('/stats', getAdminStats);
+
+  // File Uploads
+  server.register(uploadRoutes);
 }

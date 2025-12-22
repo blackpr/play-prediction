@@ -274,12 +274,25 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **So that** markets have visual appeal
 
 **Acceptance Criteria:**
-- [ ] Image upload component in market creation form
-- [ ] Accept JPEG, PNG, WebP formats
-- [ ] Max file size: 5MB
-- [ ] Image preview before upload
-- [ ] Store in Supabase Storage
-- [ ] Generate and store public URL
+- [x] Image upload component in market creation form
+- [x] Accept JPEG, PNG, WebP formats
+- [x] Max file size: 5MB
+- [x] Image preview before upload
+- [x] Store in Supabase Storage
+- [x] Generate and store public URL
 - [ ] Image optimization/resize (optional)
+
+**Implementation Notes:**
+- Installed `@fastify/multipart` for file handling.
+- Created `UploadMarketImageUseCase` uploading to `markets` bucket in Supabase.
+- Added `POST /admin/upload/image` endpoint.
+- Updated `CreateMarketForm` with file input and preview.
+- Updated `api/client.ts` to support `FormData`.
+
+**UI Implementations:**
+- Refactored `CreateMarketForm` to invalidate correct query key (`admin-markets`) on success.
+- Updated `MarketsTable` to display thumbnail images.
+- Refactored `MarketCard` to match Polymarket style (Flex Row: Icon + Title).
+- Refactored `MarketDetailPage` header to match Polymarket style (Icon + Title, removal of large banner).
 
 ---

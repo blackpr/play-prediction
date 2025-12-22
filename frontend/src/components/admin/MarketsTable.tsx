@@ -15,6 +15,7 @@ interface Market {
   status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'RESOLVED' | 'CANCELLED';
   volume24h: string;
   createdAt: string;
+  imageUrl?: string | null;
 }
 
 interface MarketsResponse {
@@ -128,6 +129,7 @@ export function MarketsTable() {
         <table className="w-full text-sm text-left">
           <thead className="bg-surface-highlight text-text-muted uppercase text-xs">
             <tr>
+              <th className="px-6 py-3 w-16">Image</th>
               <th className="px-6 py-3">Title</th>
               <th className="px-6 py-3 text-center">Status</th>
               <th className="px-6 py-3 text-right">Volume</th>
@@ -139,6 +141,7 @@ export function MarketsTable() {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
+                  <td className="px-6 py-4"><div className="h-8 w-8 bg-white/5 rounded-full"></div></td>
                   <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-3/4"></div></td>
                   <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-16 mx-auto"></div></td>
                   <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-12 ml-auto"></div></td>
@@ -148,13 +151,26 @@ export function MarketsTable() {
               ))
             ) : !marketsData?.items || marketsData.items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-text-dim">
+                <td colSpan={6} className="px-6 py-12 text-center text-text-dim">
                   No markets found
                 </td>
               </tr>
             ) : (
               marketsData.items.map((market) => (
                 <tr key={market.id} className="hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    {market.imageUrl ? (
+                      <img
+                        src={market.imageUrl}
+                        alt=""
+                        className="w-10 h-10 rounded object-cover bg-white/5"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center text-white/20">
+                        <span className="text-xs">No Img</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 font-medium text-white max-w-sm truncate" title={market.title}>
                     {market.title}
                   </td>

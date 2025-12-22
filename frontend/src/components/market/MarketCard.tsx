@@ -5,10 +5,7 @@ import { formatCompactPoints } from '../../lib/format'
 import { Badge, type BadgeVariant } from '../ui/Badge'
 import {
   Card,
-  CardContent,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from '../ui/Card'
 import { ProbabilityBar } from './ProbabilityBar'
 
@@ -45,40 +42,57 @@ export function MarketCard({ market }: MarketCardProps) {
       params={{ marketId: market.id }}
       className="block transition-transform hover:-translate-y-1"
     >
-      <Card className="h-full overflow-hidden border-white/5 bg-white/5 backdrop-blur-sm transition-colors hover:bg-white/10">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <Badge variant={badgeVariant}>{market.status}</Badge>
-            <span className="text-xs text-gray-400">{timeLabel}</span>
+      <Card className="h-full overflow-hidden border-white/5 bg-white/5 backdrop-blur-sm transition-colors hover:bg-white/10 flex flex-col p-4 group">
+        <div className="flex gap-3 mb-3">
+          {/* Image Icon */}
+          <div className="flex-shrink-0">
+            {market.imageUrl ? (
+              <img
+                src={market.imageUrl}
+                alt={market.title}
+                className="w-12 h-12 rounded bg-white/5 object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center text-white/20">
+                <span className="text-xs">No Img</span>
+              </div>
+            )}
           </div>
-          <CardTitle className="line-clamp-2 text-lg leading-tight">
-            {market.title}
-          </CardTitle>
-        </CardHeader>
 
-        <CardContent className="pb-3">
-          {/* Probability Bar */}
-          <div className="mt-4">
-            <ProbabilityBar
-              yesPercent={displayYes}
-              size="lg"
-              className="h-8" // Override default height for card view if needed, or stick to sizes
-            />
-            <div className="flex justify-between mt-1 text-xs font-medium text-gray-400">
-              <span className="text-emerald-400">YES {displayYes}%</span>
-              <span className="text-rose-400">NO {displayNo}%</span>
+          {/* Title */}
+          <div className="flex-grow min-w-0">
+            <h3 className="line-clamp-2 text-base font-semibold text-white leading-tight mb-1 group-hover:text-primary transition-colors">
+              {market.title}
+            </h3>
+            <div className="flex items-center gap-2">
+              <Badge variant={badgeVariant} className="text-[10px] px-1.5 h-5">{market.status}</Badge>
+              <span className="text-xs text-gray-500">{timeLabel}</span>
             </div>
           </div>
-        </CardContent>
+        </div>
 
-        <CardFooter className="flex justify-between border-t border-white/5 pt-4 text-xs text-gray-400">
-          <div>
-            <span className="mr-1">Vol:</span>
-            <span className="font-mono text-gray-300">
-              {formatCompactPoints(market.volume24h)}
-            </span>
+        <div className="mt-auto px-4 pb-4">
+          <ProbabilityBar
+            yesPercent={displayYes}
+            size="lg"
+            className="h-8"
+          />
+          <div className="flex justify-between mt-1 text-xs font-medium text-gray-400">
+            <span className="text-emerald-400">YES {displayYes}%</span>
+            <span className="text-rose-400">NO {displayNo}%</span>
           </div>
-          <div>{market.category}</div>
+        </div>
+
+        <CardFooter className="flex justify-between border-t border-white/5 pt-3 pb-3 px-4 text-xs text-gray-400 mt-2 bg-white/5">
+          <div className="flex items-center gap-4">
+            <div>
+              <span className="mr-1 text-gray-500">Vol:</span>
+              <span className="font-mono text-gray-300">
+                {formatCompactPoints(market.volume24h)}
+              </span>
+            </div>
+            <div>{market.category}</div>
+          </div>
         </CardFooter>
       </Card>
     </Link>
