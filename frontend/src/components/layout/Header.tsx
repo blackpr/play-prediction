@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { UserSection } from './UserSection'
 import { PortfolioLink } from './PortfolioLink'
 import { MobileNav } from './MobileNav'
+import { AdminLink } from './AdminLink'
 
 export function Header() {
   return (
@@ -23,12 +24,15 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-6">
             <Link
               to="/markets"
+              search={{ page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}
               className="text-text-muted hover:text-text transition-colors"
               activeProps={{ className: 'text-text font-medium' }}
             >
               Markets
             </Link>
             <PortfolioLink />
+
+            <AdminLink />
           </nav>
 
           {/* User Status (Balance, Sign In/Out) */}

@@ -128,11 +128,11 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **Route:** `/admin`
 
 **Acceptance Criteria:**
-- [ ] Protected route (require admin)
-- [ ] Sidebar navigation
-- [ ] Dashboard overview
-- [ ] Markets management link
-- [ ] Users management link
+- [x] Protected route (require admin)
+- [x] Sidebar navigation
+- [x] Dashboard overview
+- [x] Markets management link
+- [x] Users management link
 
 ---
 
