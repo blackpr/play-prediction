@@ -55,13 +55,13 @@
 ```
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] No fee charged
-- [ ] Require equal YES and NO shares
-- [ ] Destroy equal amounts of both
-- [ ] Credit points to user (1 Point per pair)
-- [ ] Update portfolio
-- [ ] Log to trade_ledger
+- [x] Require authentication
+- [x] No fee charged
+- [x] Require equal YES and NO shares
+- [x] Destroy equal amounts of both
+- [x] Credit points to user (1 Point per pair)
+- [x] Update portfolio
+- [x] Log to trade_ledger
 
 **Error:** INSUFFICIENT_SHARES if user doesn't have equal amounts
 

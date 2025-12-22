@@ -39,6 +39,7 @@ import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares
 import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shares.use-case';
 import { GetQuoteUseCase } from '../../application/use-cases/trading/get-quote.use-case';
 import { MintSharesUseCase } from '../../application/use-cases/trading/mint-shares.use-case';
+import { MergeSharesUseCase } from '../../application/use-cases/trading/merge-shares.use-case';
 
 
 
@@ -121,6 +122,7 @@ export function registerDependencies(): void {
     sellSharesUseCase: asClass(SellSharesUseCase).scoped(),
     getQuoteUseCase: asClass(GetQuoteUseCase).scoped(),
     mintSharesUseCase: asClass(MintSharesUseCase).scoped(),
+    mergeSharesUseCase: asClass(MergeSharesUseCase).scoped(),
   });
 }
 
