@@ -26,8 +26,8 @@ export function MarketCard({ market }: MarketCardProps) {
   if (isResolved) badgeVariant = 'info'
   if (isCancelled) badgeVariant = 'error'
 
-  const yesPercent = Math.round(Number(market.pool.yesPrice) * 100)
-  const noPercent = Math.round(Number(market.pool.noPrice) * 100)
+  const yesPercent = Math.round(Number(market.yesPrice ?? 0) * 100)
+  const noPercent = Math.round(Number(market.noPrice ?? 0) * 100)
 
   // Ensure they sum to 100 visually if active, or handles 0/0 edge cases
   const displayYes = isNaN(yesPercent) ? 50 : yesPercent

@@ -31,13 +31,13 @@ export interface Market {
     displayName: string | null
     role: string
   }
+  yesPrice: string // Decimal string
+  noPrice: string // Decimal string
 }
 
 export interface MarketPool {
   yesQty: MicroPoints
   noQty: MicroPoints
-  yesPrice: string // Decimal string
-  noPrice: string // Decimal string
 }
 
 export type PointGrantType =

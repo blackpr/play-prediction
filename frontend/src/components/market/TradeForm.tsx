@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useForm } from '@tanstack/react-form'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useBuyShares, useSellShares, useQuote } from '../../hooks/useTrading'
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
 import { Button } from '../ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { formatPoints, parsePoints } from '../../lib/format'
+import { Modal } from '../ui/Modal'
 import { clsx } from 'clsx'
 import type { Market, TradeSide, QuoteRequest } from '../../api/types'
-import { AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { AlertCircle, TrendingUp, TrendingDown, Settings } from 'lucide-react'
 
 interface TradeFormProps {
   market: Market
@@ -48,9 +51,35 @@ function getUserFriendlyError(errorMessage: string): string {
 
 export function TradeForm({ market }: TradeFormProps) {
   const [tab, setTab] = useState<TradeTab>('buy')
+  const queryClient = useQueryClient()
   const [side, setSide] = useState<TradeSide>('YES')
   const [amount, setAmount] = useState('')
   const [debouncedAmount, setDebouncedAmount] = useState('')
+
+  // Slippage State
+  const [slippage, setSlippage] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('trade-slippage')
+      return saved ? parseFloat(saved) : 0.5
+    }
+    return 0.5
+  })
+  const [showSettings, setShowSettings] = useState(false)
+
+
+  // Confirmation State
+  const [skipConfirmation, setSkipConfirmation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('skip-trade-confirmation') === 'true'
+    }
+    return false
+  })
+  // Checkbox state for modal
+  const [dontAskAgain, setDontAskAgain] = useState(false)
+  // Save slippage preference
+  useEffect(() => {
+    localStorage.setItem('trade-slippage', slippage.toString())
+  }, [slippage])
 
   const { user } = useAuth()
   const { data: position } = usePosition(market.id)
@@ -77,6 +106,60 @@ export function TradeForm({ market }: TradeFormProps) {
 
   const { data: quote, isLoading: isQuoteLoading } = useQuote(market.id, quoteParams)
 
+  // Constants
+  const CONFIRMATION_THRESHOLD = 100_000_000n // 100 points
+
+  // Pending Trade State for Modal
+  const [pendingTrade, setPendingTrade] = useState<{
+    action: 'buy' | 'sell'
+    amountMicro: bigint
+    minOut: bigint
+    estOut: bigint
+    fee: bigint
+    impact: string
+  } | null>(null)
+
+  // Confirmation State
+  const [showConfirmation, setShowConfirmation] = useState(false)
+
+  const executeTrade = async (trade: {
+    action: 'buy' | 'sell'
+    amountMicro: bigint
+    minOut: bigint
+  }) => {
+    if (trade.action === 'buy') {
+      const result = await buyMutation.mutateAsync({
+        marketId: market.id,
+        request: {
+          side,
+          amount: trade.amountMicro.toString(),
+          minSharesOut: trade.minOut.toString(),
+        },
+      })
+      toast.success(`Bought ${formatPoints(result.sharesOut)} ${side} shares`)
+      queryClient.setQueryData(['portfolio', market.id], {
+        ...result.newPosition,
+        marketId: market.id,
+      })
+    } else {
+      const result = await sellMutation.mutateAsync({
+        marketId: market.id,
+        request: {
+          side,
+          shares: trade.amountMicro.toString(),
+          minAmountOut: trade.minOut.toString(),
+        },
+      })
+      toast.success(
+        `Sold ${formatPoints(result.sharesIn)} ${side} shares for ${formatPoints(result.amountOut)} points`
+      )
+      queryClient.setQueryData(['portfolio', market.id], {
+        ...result.newPosition,
+        marketId: market.id,
+      })
+    }
+  }
+
   const form = useForm({
     defaultValues: {
       amount: '',
@@ -87,41 +170,82 @@ export function TradeForm({ market }: TradeFormProps) {
 
       try {
         if (tab === 'buy') {
-          // Calculate minSharesOut with 0.5% slippage tolerance
+          // Calculate minSharesOut with configured slippage tolerance
+          const slippageBps = BigInt(Math.round(slippage * 100))
+          const factor = 10000n - slippageBps
+
           const minSharesOut = quote?.estimatedSharesOut
-            ? (BigInt(quote.estimatedSharesOut) * 995n) / 1000n
+            ? (BigInt(quote.estimatedSharesOut) * factor) / 10000n
             : 0n
 
-          await buyMutation.mutateAsync({
-            marketId: market.id,
-            request: {
-              side,
-              amount: amountMicro.toString(),
-              minSharesOut: minSharesOut.toString(),
-            },
+          // Check threshold for confirmation (Amount > 100 or Impact > 10%)
+          const amountBigInt = BigInt(amountMicro)
+          const impact = quote?.priceImpact ? parseFloat(quote.priceImpact) : 0
+          if ((amountBigInt >= CONFIRMATION_THRESHOLD || impact > 0.1) && !skipConfirmation) {
+            setPendingTrade({
+              action: 'buy',
+              amountMicro: amountBigInt,
+              minOut: minSharesOut,
+              estOut: quote?.estimatedSharesOut ? BigInt(quote.estimatedSharesOut) : 0n,
+              fee: quote?.estimatedFee ? BigInt(quote.estimatedFee) : 0n,
+              impact: quote?.priceImpact || '0',
+            })
+            setShowConfirmation(true)
+            return
+          }
+
+          await executeTrade({
+            action: 'buy',
+            amountMicro: amountBigInt,
+            minOut: minSharesOut,
           })
+
+          // Reset form on success
+          setAmount('')
+          form.reset()
         } else {
-          // Calculate minAmountOut with 0.5% slippage tolerance
+          // Calculate minAmountOut with configured slippage tolerance
+          const slippageBps = BigInt(Math.round(slippage * 100))
+          const factor = 10000n - slippageBps
+
           const minAmountOut = quote?.estimatedAmountOut
-            ? (BigInt(quote.estimatedAmountOut) * 995n) / 1000n
+            ? (BigInt(quote.estimatedAmountOut) * factor) / 10000n
             : 0n
 
-          await sellMutation.mutateAsync({
-            marketId: market.id,
-            request: {
-              side,
-              shares: amountMicro.toString(),
-              minAmountOut: minAmountOut.toString(),
-            },
-          })
-        }
+          // Check threshold (Estimated Output Value > Threshold)
+          const estValue = quote?.estimatedAmountOut
+            ? BigInt(quote.estimatedAmountOut)
+            : 0n
 
-        // Reset form on success
-        setAmount('')
-        form.reset()
+          // Check threshold (Estimated Output Value > 100 or Impact > 10%)
+          const impact = quote?.priceImpact ? parseFloat(quote.priceImpact) : 0
+          if ((estValue >= CONFIRMATION_THRESHOLD || impact > 0.1) && !skipConfirmation) {
+            setPendingTrade({
+              action: 'sell',
+              amountMicro: amountMicro,
+              minOut: minAmountOut,
+              estOut: quote?.estimatedAmountOut ? BigInt(quote.estimatedAmountOut) : 0n,
+              fee: quote?.estimatedFee ? BigInt(quote.estimatedFee) : 0n,
+              impact: quote?.priceImpact || '0',
+            })
+            setShowConfirmation(true)
+            return
+          }
+
+          await executeTrade({
+            action: 'sell',
+            amountMicro,
+            minOut: minAmountOut,
+          })
+
+          // Reset form on success
+          setAmount('')
+          form.reset()
+        }
       } catch (error) {
         // Error handling is done by mutation
         console.error('Trade failed:', error)
+        toast.error('Trade failed. Please try again.')
       }
     },
   })
@@ -131,7 +255,8 @@ export function TradeForm({ market }: TradeFormProps) {
       ? BigInt(position?.yesQty ?? '0')
       : BigInt(position?.noQty ?? '0')
 
-  const isMarketActive = market.status === 'ACTIVE'
+  const isClosed = market.closesAt ? new Date(market.closesAt) < new Date() : false
+  const isMarketActive = market.status === 'ACTIVE' && !isClosed
   const mutation = tab === 'buy' ? buyMutation : sellMutation
 
   // Validation
@@ -141,7 +266,8 @@ export function TradeForm({ market }: TradeFormProps) {
     const amountMicro = BigInt(parsePoints(amount))
 
     if (tab === 'buy') {
-      if (amountMicro > BigInt(user?.balance ?? '0')) {
+      const balance = user?.balance ? BigInt(user.balance) : 0n
+      if (amountMicro > balance) {
         return "You don't have enough points"
       }
       if (amountMicro < 1000n) {
@@ -164,9 +290,60 @@ export function TradeForm({ market }: TradeFormProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Trade</CardTitle>
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className={clsx(
+            "p-2 rounded-lg transition-colors",
+            showSettings ? "bg-gray-800 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"
+          )}
+          type="button"
+          aria-label="Settings"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
       </CardHeader>
+
+      {showSettings && (
+        <div className="px-6 pb-6 border-b border-gray-800 mb-4 animate-in slide-in-from-top-2 duration-200">
+          <label className="block text-xs font-medium text-gray-400 mb-3">
+            Slippage Tolerance
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {[0.1, 0.5, 1.0].map((val) => (
+              <button
+                key={val}
+                onClick={() => setSlippage(val)}
+                className={clsx(
+                  'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  slippage === val
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-600/50'
+                    : 'bg-gray-800 text-gray-400 border border-transparent hover:bg-gray-700'
+                )}
+                type="button"
+              >
+                {val}%
+              </button>
+            ))}
+            <div className="relative flex items-center">
+              <input
+                type="number"
+                value={slippage}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value)
+                  if (!isNaN(val) && val >= 0) setSlippage(val)
+                }}
+                className="w-24 px-3 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-white placeholder-gray-500"
+                step="0.1"
+                min="0.1"
+                placeholder="Custom"
+              />
+              <span className="absolute right-3 text-xs text-gray-500 pointer-events-none">%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CardContent className="space-y-4">
         {/* Market Status Warning */}
@@ -232,7 +409,7 @@ export function TradeForm({ market }: TradeFormProps) {
             <span className="text-lg">YES</span>
             <span className="text-xs opacity-80">
               {(() => {
-                const price = parseFloat(market.pool?.yesPrice || '0')
+                const price = parseFloat(market.yesPrice ?? '0')
                 return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
               })()}
             </span>
@@ -252,7 +429,7 @@ export function TradeForm({ market }: TradeFormProps) {
             <span className="text-lg">NO</span>
             <span className="text-xs opacity-80">
               {(() => {
-                const price = parseFloat(market.pool?.noPrice || '0')
+                const price = parseFloat(market.noPrice ?? '0')
                 return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
               })()}
             </span>
@@ -340,7 +517,21 @@ export function TradeForm({ market }: TradeFormProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Avg. price</span>
                 <span className="font-mono text-white">
-                  {(parseFloat(quote.avgExecutionPrice) * 100).toFixed(2)}¢
+                  {(() => {
+                    const amountIn = parsePoints(amount)
+                    const out = tab === 'buy'
+                      ? BigInt(quote.estimatedSharesOut ?? '0')
+                      : BigInt(quote.estimatedAmountOut ?? '0')
+
+                    if (out === 0n) return '0.00¢'
+
+                    // Implied price = Cost / Shares
+                    const displayPrice = tab === 'buy'
+                      ? Number(amountIn) / Number(out)
+                      : Number(out) / Number(amountIn)
+
+                    return `${(displayPrice * 100).toFixed(2)}¢`
+                  })()}
                 </span>
               </div>
 
@@ -420,6 +611,138 @@ export function TradeForm({ market }: TradeFormProps) {
           </Button>
         </form>
       </CardContent>
-    </Card>
+
+      <Modal
+        isOpen={showConfirmation}
+        onClose={() => {
+          setShowConfirmation(false)
+          setPendingTrade(null)
+        }}
+        title="Confirm Trade"
+      >
+        <div className="space-y-4">
+          <div className="flex justify-between items-center pb-2 border-b border-gray-700/50">
+            <span className="text-gray-400">Action</span>
+            <span
+              className={clsx(
+                'font-bold',
+                pendingTrade?.action === 'buy' ? 'text-green-400' : 'text-red-400'
+              )}
+            >
+              {pendingTrade?.action === 'buy' ? 'BUY' : 'SELL'} {side}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Amount</span>
+            <span className="font-mono text-white">
+              {pendingTrade && formatPoints(pendingTrade.amountMicro)}{' '}
+              {pendingTrade?.action === 'buy' ? 'points' : 'shares'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Est. Output</span>
+            <span className="font-mono text-white">
+              {pendingTrade && formatPoints(pendingTrade.estOut)}{' '}
+              {pendingTrade?.action === 'buy' ? 'shares' : 'points'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Min. Output</span>
+            <span className="font-mono text-gray-400">
+              {pendingTrade && formatPoints(pendingTrade.minOut)}{' '}
+              {pendingTrade?.action === 'buy' ? 'shares' : 'points'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Price Impact</span>
+            <span
+              className={clsx(
+                'font-mono',
+                pendingTrade && parseFloat(pendingTrade.impact) > 0.05
+                  ? 'text-red-400'
+                  : pendingTrade && parseFloat(pendingTrade.impact) > 0.01
+                    ? 'text-yellow-400'
+                    : 'text-white'
+              )}
+            >
+              {pendingTrade
+                ? `${(parseFloat(pendingTrade.impact) * 100).toFixed(2)}%`
+                : '0.00%'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Fee</span>
+            <span className="font-mono text-white">
+              {pendingTrade && formatPoints(pendingTrade.fee)} points
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <input
+              type="checkbox"
+              id="dont-show-again"
+              className="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500 w-4 h-4"
+              checked={dontAskAgain}
+              onChange={(e) => setDontAskAgain(e.target.checked)}
+            />
+            <label
+              htmlFor="dont-show-again"
+              className="text-sm text-gray-400 select-none cursor-pointer"
+            >
+              Don't ask me again for this session
+            </label>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setShowConfirmation(false)
+                setPendingTrade(null)
+                setDontAskAgain(false)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className={clsx(
+                'w-full',
+                pendingTrade?.action === 'buy'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-red-600 hover:bg-red-700'
+              )}
+              onClick={async () => {
+                if (pendingTrade) {
+                  try {
+                    await executeTrade({
+                      action: pendingTrade.action,
+                      amountMicro: pendingTrade.amountMicro,
+                      minOut: pendingTrade.minOut,
+                    })
+
+                    if (dontAskAgain) {
+                      setSkipConfirmation(true)
+                      if (typeof window !== 'undefined') {
+                        sessionStorage.setItem('skip-trade-confirmation', 'true')
+                      }
+                    }
+                  } catch (e) {
+                    // Error handled by executeTrade/toast
+                  }
+                }
+              }}
+            >
+              Confirm Trade
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </Card >
   )
 }
