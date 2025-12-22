@@ -168,23 +168,23 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **So that** I can add new events
 
 **Acceptance Criteria:**
-- [ ] Title input (required)
-- [ ] Description textarea (required)
-- [ ] Category select (affects default close behavior)
-- [ ] Image URL input
-- [ ] Closes at date picker
-- [ ] Seed liquidity input
-- [ ] **Close Behavior Section:**
-  - [ ] Close behavior radio buttons: Auto / Manual / Auto with Buffer
-  - [ ] Show helper text explaining each option:
+- [x] Title input (required)
+- [x] Description textarea (required)
+- [x] Category select (affects default close behavior)
+- [x] Image URL input
+- [x] Closes at date picker
+- [x] Seed Liquidity input
+- [x] **Close Behavior Section:**
+  - [x] Close behavior radio buttons: Auto / Manual / Auto with Buffer
+  - [x] Show helper text explaining each option:
     - Auto: "Market will automatically pause for trading when close time passes"
     - Manual: "Trading continues until admin manually closes (use for sports with added time)"
     - Auto with Buffer: "Market pauses after close time + buffer period"
-  - [ ] Buffer minutes input (only visible when "Auto with Buffer" selected)
-  - [ ] Auto-populate defaults based on selected category
-  - [ ] Show warning for sports categories if "Auto" is selected
-- [ ] Preview before submit
-- [ ] Success/error feedback
+  - [x] Buffer minutes input (only visible when "Auto with Buffer" selected)
+  - [x] Auto-populate defaults based on selected category
+  - [x] Show warning for sports categories if "Auto" is selected
+- [x] Preview before submit
+- [x] Success/error feedback
 
 **Close Behavior UI:**
 ```

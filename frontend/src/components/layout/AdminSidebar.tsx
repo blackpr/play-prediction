@@ -1,9 +1,11 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { LayoutDashboard, Users, Store } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { cn } from '../../utils'
 
 export function AdminSidebar() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
   const isTreasury = user?.role === 'treasury'
 
   const navItems = [
@@ -12,18 +14,21 @@ export function AdminSidebar() {
       to: '/admin',
       icon: LayoutDashboard,
       show: true,
+      isActive: pathname === '/admin',
     },
     {
       label: 'Markets',
       to: '/admin/markets',
       icon: Store,
       show: true,
+      isActive: pathname.startsWith('/admin/markets') || pathname.startsWith('/admin/market-create'),
     },
     {
       label: 'Users',
       to: '/admin/users',
       icon: Users,
       show: !isTreasury, // Hidden for treasury
+      isActive: pathname.startsWith('/admin/users'),
     },
   ]
 
@@ -40,10 +45,12 @@ export function AdminSidebar() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-text-muted rounded-lg hover:bg-surface-highlight hover:text-text transition-colors"
-                activeProps={{
-                  className: 'bg-surface-highlight text-primary',
-                }}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  item.isActive
+                    ? "bg-surface-highlight text-primary"
+                    : "text-text-muted hover:bg-surface-highlight hover:text-text"
+                )}
               >
                 <item.icon className="w-5 h-5" />
                 {item.label}
