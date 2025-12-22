@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '../../components/ui/Button'
 import { Plus } from 'lucide-react'
+import { MarketsTable } from '../../components/admin/MarketsTable'
 
 export const Route = createFileRoute('/admin/markets')({
   component: AdminMarkets,
@@ -8,20 +9,20 @@ export const Route = createFileRoute('/admin/markets')({
 
 function AdminMarkets() {
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Markets</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Markets</h1>
+          <p className="text-text-dim mt-1">Create and manage prediction markets.</p>
+        </div>
         <Link to="/admin/market-create">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button leftIcon={<Plus className="h-4 w-4" />}>
             Create Market
           </Button>
         </Link>
       </div>
 
-      <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-8 text-center text-gray-400">
-        <p>Market list will be implemented here.</p>
-      </div>
+      <MarketsTable />
     </div>
   )
 }

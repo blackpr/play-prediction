@@ -218,12 +218,18 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **So that** I can manage all markets
 
 **Acceptance Criteria:**
-- [ ] Table with all markets
-- [ ] Columns: Title, Status, Volume, Created, Actions
-- [ ] Action buttons: Activate, Pause, Resume, Resolve
-- [ ] Filter by status
-- [ ] Search by title
-- [ ] Pagination
+- [x] Table with all markets
+- [x] Columns: Title, Status, Volume, Created, Actions
+- [x] Action buttons: Activate, Pause, Resume, Resolve
+  - Note: Resolve button added but functionality is pending separate story.
+- [x] Filter by status
+- [x] Search by title
+- [x] Pagination
+
+**Implementation Notes:**
+- Created `GET /admin/markets` endpoint handling pagination and filtering.
+- Created `MarketsTable` component using HTML table logic.
+- Integrated into `/admin/markets` route.
 
 ---
 
