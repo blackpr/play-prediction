@@ -17,10 +17,10 @@ export interface PointsHistoryParams {
 export const authQueryOptions = {
   queryKey: ['auth', 'me'],
   queryFn: async (): Promise<User | null> => {
-    // Return null immediately on server to prevent build hangs
     if (typeof window === 'undefined') return null
     try {
-      const response = await api.get<User>('/auth/me')
+      // Use skipNotify: true to prevent session expired modal for initial check
+      const response = await api.get<User>('/auth/me', { skipNotify: true })
       return response.data
     } catch {
       return null
@@ -28,6 +28,7 @@ export const authQueryOptions = {
   },
   staleTime: 1000 * 60 * 5,
   retry: false,
+  refetchOnMount: 'always' as const,
 }
 
 export function useAuth(): AuthState {
@@ -80,8 +81,11 @@ export function useLogin() {
       )
       return response.data.user
     },
-    onSuccess: (user) => {
+    onSuccess: async (user) => {
+      // Update cache immediately with the user from login response
       queryClient.setQueryData(['auth', 'me'], user)
+      // Mark as stale to trigger background refresh, but KEEP the data
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
     },
   })
 }
@@ -92,13 +96,15 @@ export function useLogout() {
     mutationFn: async () => {
       await api.post('/auth/logout')
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.clear()
+      await queryClient.refetchQueries({ queryKey: ['auth', 'me'] })
     },
   })
 }
 
 export function useRegister() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
       const response = await api.post<{ user: User; message: string }>(
@@ -106,6 +112,10 @@ export function useRegister() {
         data,
       )
       return response.data
+    },
+    onSuccess: async () => {
+      // After registration, we should force a check, but we don't have user data yet
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
     },
   })
 }

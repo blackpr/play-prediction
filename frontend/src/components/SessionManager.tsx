@@ -35,7 +35,7 @@ export function SessionManager() {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={() => {}} title="Session Expired">
+    <Modal isOpen={isOpen} onClose={handleLogin} title="Session Expired">
       <div className="space-y-4">
         <p className="text-text-muted">
           Your session has expired. Please log in again to continue.

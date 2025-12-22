@@ -33,24 +33,30 @@ async function request<T>(
   options?: {
     body?: unknown
     headers?: Record<string, string>
+    skipNotify?: boolean
   },
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE}${path}`
 
+  const headers: Record<string, string> = {
+    ...options?.headers,
+  }
+
+  if (options?.body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
+
   const response = await fetch(url, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    body: options?.body ? JSON.stringify(options.body) : undefined,
+    headers,
+    body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
     credentials: 'include', // Important: include cookies for auth
   })
 
   const json = await response.json()
 
   if (!response.ok || !json.success) {
-    if (response.status === 401) {
+    if (response.status === 401 && !options?.skipNotify) {
       notifySessionExpired()
     }
 
@@ -71,6 +77,7 @@ export const api = {
     options?: {
       headers?: Record<string, string>
       params?: Record<string, any>
+      skipNotify?: boolean
     },
   ) => {
     let url = path
@@ -88,11 +95,17 @@ export const api = {
     }
     return request<T>('GET', url, options)
   },
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
-  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
-  patch: <T>(path: string, body?: unknown) =>
-    request<T>('PATCH', path, { body }),
-  delete: <T>(path: string) => request<T>('DELETE', path),
+  post: <T>(path: string, body?: unknown, options?: { skipNotify?: boolean }) =>
+    request<T>('POST', path, { body, ...options }),
+  put: <T>(path: string, body?: unknown, options?: { skipNotify?: boolean }) =>
+    request<T>('PUT', path, { body, ...options }),
+  patch: <T>(
+    path: string,
+    body?: unknown,
+    options?: { skipNotify?: boolean },
+  ) => request<T>('PATCH', path, { body, ...options }),
+  delete: <T>(path: string, options?: { skipNotify?: boolean }) =>
+    request<T>('DELETE', path, options),
 }
 
 export { ApiError }
