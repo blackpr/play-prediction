@@ -33,6 +33,9 @@ import { GetMarketsUseCase } from '../../application/use-cases/markets/get-marke
 import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
 import { GetMarketPriceHistoryUseCase } from '../../application/use-cases/markets/get-market-price-history.use-case';
 import { GetMarketTradesUseCase } from '../../application/use-cases/get-market-trades.use-case';
+import { PostgresPortfolioRepository } from '../../infrastructure/database/repositories/postgres-portfolio.repository';
+import { PostgresTradeLedgerRepository } from '../../infrastructure/database/repositories/postgres-trade-ledger.repository';
+import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
 
 
 // Import types for module augmentation
@@ -72,6 +75,8 @@ export function registerDependencies(): void {
     userRepository: asClass(PostgresUserRepository).singleton(),
     pointGrantRepository: asClass(PostgresPointGrantRepository).singleton(),
     marketRepository: asClass(PostgresMarketRepository).singleton(),
+    portfolioRepository: asClass(PostgresPortfolioRepository).singleton(),
+    tradeLedgerRepository: asClass(PostgresTradeLedgerRepository).singleton(),
   });
 
   // ========================================
@@ -108,6 +113,7 @@ export function registerDependencies(): void {
     getMarketUseCase: asClass(GetMarketUseCase).scoped(),
     getMarketPriceHistoryUseCase: asClass(GetMarketPriceHistoryUseCase).scoped(),
     getMarketTradesUseCase: asClass(GetMarketTradesUseCase).scoped(),
+    buySharesUseCase: asClass(BuySharesUseCase).scoped(),
   });
 }
 

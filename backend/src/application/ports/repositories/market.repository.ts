@@ -54,11 +54,41 @@ export interface RecentTrade {
   createdAt: Date;
 }
 
+export interface MarketWithPool {
+  id: string;
+  title: string;
+  status: string;
+  closesAt: Date | null;
+  pool: {
+    yesQty: bigint;
+    noQty: bigint;
+    versionId: number;
+  };
+}
+
+export interface UpdatePoolResult {
+  success: boolean;
+  newYesQty: bigint;
+  newNoQty: bigint;
+  newVersionId: number;
+}
+
 export interface MarketRepository {
   findAll(params: GetMarketsParams): Promise<{ items: MarketWithDetails[]; total: number }>;
   findById(id: string): Promise<MarketExtendedDetails | null>;
   getPriceHistory(marketId: string, interval: string, from: Date, to: Date): Promise<PriceCandle[]>;
   getRecentTrades(marketId: string, limit: number): Promise<RecentTrade[]>;
+
+  // Trading operations
+  findByIdWithPool(id: string, tx?: unknown): Promise<MarketWithPool | null>;
+  updatePoolWithLock(
+    marketId: string,
+    newYesQty: bigint,
+    newNoQty: bigint,
+    expectedVersion: number,
+    tx?: unknown
+  ): Promise<UpdatePoolResult>;
+  updateUserBalance(userId: string, newBalance: bigint, tx?: unknown): Promise<void>;
 }
 
 export interface PriceCandle {

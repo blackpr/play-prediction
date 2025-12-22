@@ -100,21 +100,21 @@ Selling Δx YES shares:
 ```
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Validate minimum trade size (1000 MicroPoints)
-- [ ] Check market is ACTIVE
-- [ ] Check market not past closesAt
-- [ ] Check user has sufficient balance
-- [ ] Check idempotency key not already used
-- [ ] Apply fees to input
-- [ ] Calculate shares via CPMM
-- [ ] Check slippage (shares >= minSharesOut)
-- [ ] Inject LP fee into pool
-- [ ] Update pool with optimistic lock
-- [ ] Deduct user balance
-- [ ] Update/create portfolio
-- [ ] Log to trade_ledger
-- [ ] Return transaction details
+- [x] Require authentication
+- [x] Validate minimum trade size (1000 MicroPoints)
+- [x] Check market is ACTIVE
+- [x] Check market not past closesAt
+- [x] Check user has sufficient balance
+- [x] Check idempotency key not already used
+- [x] Apply fees to input
+- [x] Calculate shares via CPMM
+- [x] Check slippage (shares >= minSharesOut)
+- [x] Inject LP fee into pool
+- [x] Update pool with optimistic lock
+- [x] Deduct user balance
+- [x] Update/create portfolio
+- [x] Log to trade_ledger
+- [x] Return transaction details
 
 **Errors:**
 - INSUFFICIENT_BALANCE (400)
@@ -125,6 +125,14 @@ Selling Δx YES shares:
 - OPTIMISTIC_LOCK_FAIL (409) - retry
 
 **References:** API_SPECIFICATION.md Section 4.4.1, ENGINE_LOGIC.md Section 6.1
+
+**Implementation Notes:**
+- Created `BuySharesUseCase` with complete transaction logic
+- Implemented `PortfolioRepository` and `TradeLedgerRepository` with PostgreSQL
+- Extended `MarketRepository` with trading methods
+- Created buy route handler with Zod validation
+- All 75 unit tests passing
+- Verified with curl: successful trades, idempotency, slippage protection, minimum trade size, insufficient balance
 
 ---
 

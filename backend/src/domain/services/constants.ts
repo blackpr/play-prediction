@@ -34,6 +34,11 @@ export const FEE_VAULT_SHARE_BP = 5_000n;
 export const FEE_LP_SHARE_BP = 5_000n;
 
 /**
+ * Minimum trade size in MicroPoints ($0.001)
+ */
+export const MIN_TRADE_SIZE = 1_000n;
+
+/**
  * Trade sides for binary markets
  */
 export type Side = 'YES' | 'NO';

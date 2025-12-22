@@ -292,4 +292,85 @@ export class PostgresMarketRepository implements MarketRepository {
       createdAt: trade.createdAt,
     }));
   }
+
+  async findByIdWithPool(id: string, tx?: unknown): Promise<import('../../../application/ports/repositories/market.repository').MarketWithPool | null> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const result = await db
+      .select()
+      .from(markets)
+      .leftJoin(liquidityPools, eq(liquidityPools.id, markets.id))
+      .where(eq(markets.id, id))
+      .limit(1);
+
+    if (result.length === 0 || !result[0].liquidity_pools) {
+      return null;
+    }
+
+    const { markets: market, liquidity_pools: pool } = result[0];
+
+    return {
+      id: market.id,
+      title: market.title,
+      status: market.status,
+      closesAt: market.closesAt,
+      pool: {
+        yesQty: pool.yesQty,
+        noQty: pool.noQty,
+        versionId: pool.versionId,
+      },
+    };
+  }
+
+  async updatePoolWithLock(
+    marketId: string,
+    newYesQty: bigint,
+    newNoQty: bigint,
+    expectedVersion: number,
+    tx?: unknown
+  ): Promise<import('../../../application/ports/repositories/market.repository').UpdatePoolResult> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const result = await db
+      .update(liquidityPools)
+      .set({
+        yesQty: newYesQty,
+        noQty: newNoQty,
+        versionId: expectedVersion + 1,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(liquidityPools.id, marketId),
+        eq(liquidityPools.versionId, expectedVersion)
+      ))
+      .returning();
+
+    if (result.length === 0) {
+      return {
+        success: false,
+        newYesQty: 0n,
+        newNoQty: 0n,
+        newVersionId: 0,
+      };
+    }
+
+    return {
+      success: true,
+      newYesQty: result[0].yesQty,
+      newNoQty: result[0].noQty,
+      newVersionId: result[0].versionId,
+    };
+  }
+
+  async updateUserBalance(userId: string, newBalance: bigint, tx?: unknown): Promise<void> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    await db
+      .update(users)
+      .set({
+        balance: newBalance,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
 }

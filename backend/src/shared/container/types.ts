@@ -26,6 +26,9 @@ import { GetMarketsUseCase } from '../../application/use-cases/markets/get-marke
 import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
 import { GetMarketPriceHistoryUseCase } from '../../application/use-cases/markets/get-market-price-history.use-case';
 import { GetMarketTradesUseCase } from '../../application/use-cases/get-market-trades.use-case';
+import { PortfolioRepository } from '../../application/ports/repositories/portfolio.repository';
+import { TradeLedgerRepository } from '../../application/ports/repositories/trade-ledger.repository';
+import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
 
 
 /**
@@ -43,6 +46,8 @@ export interface AppCradle {
   userRepository: UserRepository;
   pointGrantRepository: PointGrantRepository;
   marketRepository: MarketRepository;
+  portfolioRepository: PortfolioRepository;
+  tradeLedgerRepository: TradeLedgerRepository;
 
   // Domain Services
   circuitBreakerService: CircuitBreakerService;
@@ -60,6 +65,7 @@ export interface AppCradle {
   getMarketUseCase: GetMarketUseCase;
   getMarketPriceHistoryUseCase: GetMarketPriceHistoryUseCase;
   getMarketTradesUseCase: GetMarketTradesUseCase;
+  buySharesUseCase: BuySharesUseCase;
 }
 
 
