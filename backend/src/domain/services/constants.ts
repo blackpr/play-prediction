@@ -14,6 +14,26 @@
 export const PRICE_PRECISION = 1_000_000n;
 
 /**
+ * Fee rate in basis points (200 = 2.00%)
+ */
+export const FEE_RATE_BP = 200n;
+
+/**
+ * Basis points divisor (10,000 basis points = 100%)
+ */
+export const BP_DIVISOR = 10_000n;
+
+/**
+ * Fee split: 50% to vault
+ */
+export const FEE_VAULT_SHARE_BP = 5_000n;
+
+/**
+ * Fee split: 50% to liquidity pool
+ */
+export const FEE_LP_SHARE_BP = 5_000n;
+
+/**
  * Trade sides for binary markets
  */
 export type Side = 'YES' | 'NO';

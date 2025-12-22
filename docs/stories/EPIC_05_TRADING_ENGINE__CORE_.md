@@ -52,14 +52,14 @@ Selling Δx YES shares:
 **So that** fees are properly deducted
 
 **Acceptance Criteria:**
-- [ ] Create `src/domain/services/fee-calculator.ts`
-- [ ] Fee rate: 2.0% (200 basis points)
-- [ ] Fee split: 50% vault, 50% LP injection
-- [ ] `calculateFee(amount)` - ceiling rounding
-- [ ] `splitFee(totalFee)` - returns { vaultFee, lpFee }
-- [ ] `calculateNetAfterFee(grossAmount)` - for buying (fee from input)
-- [ ] `calculateNetPayout(grossPayout)` - for selling (fee from output)
-- [ ] No fee on mint, merge, or netting exit
+- [x] Create `src/domain/services/fee-calculator.ts`
+- [x] Fee rate: 2.0% (200 basis points)
+- [x] Fee split: 50% vault, 50% LP injection
+- [x] `calculateFee(amount)` - ceiling rounding
+- [x] `splitFee(totalFee)` - returns { vaultFee, lpFee }
+- [x] `calculateNetAfterFee(grossAmount)` - for buying (fee from input)
+- [x] `calculateNetPayout(grossPayout)` - for selling (fee from output)
+- [x] No fee on mint, merge, or netting exit
 
 **Fee Application:**
 | Operation | Fee Timing |
@@ -70,6 +70,14 @@ Selling Δx YES shares:
 | Merge | No fee |
 
 **References:** ENGINE_LOGIC.md Section 4, SYSTEM_DESIGN.md Section 3.2
+
+**Implementation Notes:**
+- Created `src/domain/services/fee-calculator.ts` with all core functions
+- Added fee constants to `src/domain/services/constants.ts`
+- Comprehensive unit tests in `test/unit/domain/fee-calculator.test.ts` (30 tests, all passing)
+- Verified ceiling rounding for fees (favors house)
+- Verified 50/50 vault/LP split with proper remainder handling
+- All 75 backend tests passing
 
 ---
 
