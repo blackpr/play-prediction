@@ -182,3 +182,25 @@ export const getPortfolio = async (): Promise<PortfolioResponse> => {
   const response = await api.get<PortfolioResponse>('/portfolio')
   return response.data
 }
+
+export interface GetTradeHistoryParams {
+  marketId?: string
+  action?: 'BUY' | 'SELL' | 'MINT' | 'MERGE'
+  page?: number
+  pageSize?: number
+}
+
+export const getTradeHistory = async (
+  params: GetTradeHistoryParams
+): Promise<import('./types').TradeHistoryResponse> => {
+  const query = new URLSearchParams()
+  if (params.marketId) query.append('marketId', params.marketId)
+  if (params.action) query.append('action', params.action)
+  if (params.page) query.append('page', params.page.toString())
+  if (params.pageSize) query.append('pageSize', params.pageSize.toString())
+
+  const response = await api.get<import('./types').TradeHistoryResponse>(
+    `/portfolio/history?${query.toString()}`
+  )
+  return response.data
+}

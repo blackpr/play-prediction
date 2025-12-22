@@ -212,3 +212,26 @@ export interface Position {
   currentNoPrice?: string
   unrealizedPnL?: MicroPoints
 }
+
+export interface TradeHistoryItem {
+  id: string
+  marketId: string
+  marketTitle: string
+  action: 'BUY' | 'SELL' | 'MINT' | 'MERGE'
+  side: 'YES' | 'NO' | null
+  amountIn: MicroPoints
+  amountOut: MicroPoints
+  feePaid: MicroPoints
+  priceAtExecution: string
+  createdAt: string
+}
+
+export interface TradeHistoryResponse {
+  items: TradeHistoryItem[]
+  pagination: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+  }
+}

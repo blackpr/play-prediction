@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { requireAuth } from '../../utils/auth'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { PositionCard } from '../../components/portfolio/PositionCard'
+import { TradeHistory } from '../../components/portfolio/TradeHistory'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { formatPoints } from '../../lib/format'
 import { Loader2, TrendingUp, Wallet } from 'lucide-react'
 
@@ -37,24 +39,22 @@ function PortfolioIndex() {
 
   if (!portfolio || portfolio.positions.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center">
-        <div className="bg-gray-900/50 rounded-xl p-12 border border-gray-800">
-          <Wallet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">You don't have any positions yet</h2>
-          <p className="text-gray-400 mb-8">Start trading to build your portfolio</p>
-          <Link
-            to="/markets"
-            search={{
+      <div className="max-w-4xl mx-auto p-6">
+        <EmptyState
+          icon={<Wallet className="w-full h-full" />}
+          title="You don't have any positions yet"
+          description="Start trading to build your portfolio"
+          action={{
+            label: 'Explore Markets',
+            to: '/markets',
+            search: {
               page: 1,
               pageSize: 20,
               sort: 'createdAt',
               order: 'desc',
-            }}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
-          >
-            Explore Markets
-          </Link>
-        </div>
+            },
+          }}
+        />
       </div>
     )
   }
@@ -91,6 +91,12 @@ function PortfolioIndex() {
             <PositionCard key={position.market.id} position={position} />
           ))}
         </div>
+      </div>
+
+      {/* Trade History */}
+      <div>
+        <h2 className="text-xl font-bold mb-4">Trade History</h2>
+        <TradeHistory />
       </div>
     </div>
   )

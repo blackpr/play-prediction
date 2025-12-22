@@ -130,13 +130,34 @@
 **So that** I can review past activity
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/portfolio/TradeHistory.tsx`
-- [ ] Use infinite scroll with useInfiniteQuery
-- [ ] Show action type, side, amounts, fees
-- [ ] Show market title
-- [ ] Timestamp formatting
+- [x] Create `src/components/portfolio/TradeHistory.tsx`
+- [x] Use infinite scroll with useInfiniteQuery
+- [x] Show action type, side, amounts, fees
+- [x] Show market title
+- [x] Timestamp formatting
 
 **References:** FRONTEND_STATE.md Section 3.4
+
+**Implementation Notes:**
+- Created `TradeHistory.tsx` component with infinite scroll pagination
+- Created `useTradeHistory` hook using TanStack Query's `useInfiniteQuery`
+- Action badges color-coded: BUY (green), SELL (red), MINT (blue), MERGE (purple)
+- Side badges: YES (green), NO (red)
+- Relative timestamps (e.g., "2h ago", "21m ago")
+- "Load More" button for pagination
+- Empty state integration using reusable `EmptyState` component
+- Displays: Amount In, Amount Out, Fee, Price at Execution
+- Market titles are clickable links to market detail pages
+
+**Files Created:**
+- `frontend/src/components/portfolio/TradeHistory.tsx`
+- `frontend/src/hooks/useTradeHistory.ts`
+- `frontend/src/components/ui/EmptyState.tsx`
+
+**Files Modified:**
+- `frontend/src/api/types.ts` - Added `TradeHistoryItem` and `TradeHistoryResponse` types
+- `frontend/src/api/markets.ts` - Added `getTradeHistory` function
+- `frontend/src/routes/portfolio/index.tsx` - Integrated TradeHistory component
 
 ---
 
@@ -147,10 +168,26 @@
 **So that** I know what to do when I have no data
 
 **Acceptance Criteria:**
-- [ ] Empty portfolio: "You don't have any positions yet"
-- [ ] Empty trade history: "No trades yet"
-- [ ] CTA button linking to markets page
-- [ ] Illustration/icon for visual appeal
-- [ ] Different message for filtered empty results
+- [x] Empty portfolio: "You don't have any positions yet"
+- [x] Empty trade history: "No trades yet"
+- [x] CTA button linking to markets page
+- [x] Illustration/icon for visual appeal
+- [x] Different message for filtered empty results
+
+**Implementation Notes:**
+- Created reusable `EmptyState` component in `frontend/src/components/ui/EmptyState.tsx`
+- Supports custom icon, title, description, and optional action button
+- Used in portfolio page for empty positions
+- Used in TradeHistory component for empty trade history
+- Consistent styling with dark theme and border
+- Icons from lucide-react (Wallet, History)
+- CTA button links to markets page with proper search params
+
+**Files Created:**
+- `frontend/src/components/ui/EmptyState.tsx`
+
+**Files Modified:**
+- `frontend/src/routes/portfolio/index.tsx` - Refactored to use EmptyState component
+- `frontend/src/components/portfolio/TradeHistory.tsx` - Uses EmptyState for no trades
 
 ---
