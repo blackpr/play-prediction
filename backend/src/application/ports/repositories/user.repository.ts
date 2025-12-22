@@ -22,4 +22,5 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findByRole(role: string): Promise<User | null>;
   create(user: CreateUserDTO, tx?: Transaction): Promise<User>;
+  count(): Promise<number>;
 }

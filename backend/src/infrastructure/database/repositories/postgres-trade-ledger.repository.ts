@@ -1,4 +1,4 @@
-import { eq, and, desc, count } from 'drizzle-orm';
+import { eq, and, desc, count, sql, gt } from 'drizzle-orm';
 import {
   TradeLedgerRepository,
   TradeLedgerEntry,
@@ -51,7 +51,11 @@ export class PostgresTradeLedgerRepository implements TradeLedgerRepository {
     const { userId, marketId, action, page, pageSize } = params;
     const offset = (page - 1) * pageSize;
 
-    const conditions = [eq(tradeLedger.userId, userId)];
+    const conditions = [];
+
+    if (userId) {
+      conditions.push(eq(tradeLedger.userId, userId));
+    }
 
     if (marketId) {
       conditions.push(eq(tradeLedger.marketId, marketId));
@@ -151,5 +155,14 @@ export class PostgresTradeLedgerRepository implements TradeLedgerRepository {
       idempotencyKey: entry.idempotencyKey,
       createdAt: entry.createdAt,
     };
+  }
+
+  async getVolume24h(): Promise<string> {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [result] = await this.db
+      .select({ volume: sql<string>`coalesce(sum(${tradeLedger.amountIn}), '0')` })
+      .from(tradeLedger)
+      .where(gt(tradeLedger.createdAt, oneDayAgo));
+    return result.volume.toString();
   }
 }

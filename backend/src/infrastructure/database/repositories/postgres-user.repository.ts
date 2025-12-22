@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { UserRepository, User } from '../../../application/ports/repositories/user.repository';
 import { DrizzleDB } from '../../database'; // Assuming DrizzleDB type wraps the drizzle instance
 import { users } from '../drizzle/schema';
@@ -79,5 +79,10 @@ export class PostgresUserRepository implements UserRepository {
       isActive: user.isActive,
       createdAt: user.createdAt,
     };
+  }
+
+  async count(): Promise<number> {
+    const [result] = await this.db.select({ count: count() }).from(users);
+    return Number(result.count);
   }
 }

@@ -145,13 +145,13 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **Route:** `/admin` (dashboard section)
 
 **Acceptance Criteria:**
-- [ ] Total users count
-- [ ] Active markets count
-- [ ] 24h trading volume
-- [ ] Recent trades list (last 10)
-- [ ] Markets pending resolution
+- [x] Total users count
+- [x] Active markets count
+- [x] 24h trading volume
+- [x] Recent trades list (last 10)
+- [x] Markets pending resolution
 - [ ] Quick action buttons (Create Market, Grant Points)
-- [ ] Auto-refresh data every 60 seconds
+- [x] Auto-refresh data every 60 seconds
 
 **Metrics Cards:**
 ```

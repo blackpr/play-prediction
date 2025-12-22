@@ -94,6 +94,7 @@ export interface MarketRepository {
   create(market: NewMarket, tx?: unknown): Promise<Market>;
   createPool(pool: NewLiquidityPool, tx?: unknown): Promise<void>;
   updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<Market>;
+  count(status?: string): Promise<number>;
 }
 
 export interface PriceCandle {

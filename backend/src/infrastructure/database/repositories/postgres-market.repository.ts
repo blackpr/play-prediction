@@ -407,4 +407,16 @@ export class PostgresMarketRepository implements MarketRepository {
 
     return updated;
   }
+
+  async count(status?: string): Promise<number> {
+    const conditions = [];
+    if (status) {
+      conditions.push(eq(markets.status, status));
+    }
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(markets)
+      .where(and(...conditions));
+    return Number(result.count);
+  }
 }

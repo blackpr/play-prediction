@@ -43,7 +43,7 @@ export interface CreateTradeLedgerEntryDTO {
 }
 
 export interface FindTradesParams {
-  userId: string;
+  userId?: string;
   marketId?: string;
   action?: string;
   page: number;
@@ -54,4 +54,5 @@ export interface TradeLedgerRepository {
   findByIdempotencyKey(key: string, tx?: Transaction): Promise<TradeLedgerEntry | null>;
   create(entry: CreateTradeLedgerEntryDTO, tx?: Transaction): Promise<TradeLedgerEntry>;
   findAll(params: FindTradesParams): Promise<{ items: TradeLedgerEntry[]; total: number }>;
+  getVolume24h(): Promise<string>;
 }
