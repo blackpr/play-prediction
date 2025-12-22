@@ -37,6 +37,7 @@ import { PostgresPortfolioRepository } from '../../infrastructure/database/repos
 import { PostgresTradeLedgerRepository } from '../../infrastructure/database/repositories/postgres-trade-ledger.repository';
 import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
 import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shares.use-case';
+import { GetQuoteUseCase } from '../../application/use-cases/trading/get-quote.use-case';
 
 
 
@@ -117,6 +118,7 @@ export function registerDependencies(): void {
     getMarketTradesUseCase: asClass(GetMarketTradesUseCase).scoped(),
     buySharesUseCase: asClass(BuySharesUseCase).scoped(),
     sellSharesUseCase: asClass(SellSharesUseCase).scoped(),
+    getQuoteUseCase: asClass(GetQuoteUseCase).scoped(),
   });
 }
 

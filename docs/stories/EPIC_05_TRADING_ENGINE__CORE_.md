@@ -196,13 +196,13 @@ Selling Δx YES shares:
 - `amount`: MicroPoints (buy) or shares (sell)
 
 **Acceptance Criteria:**
-- [ ] Public endpoint
-- [ ] Calculate estimated output
-- [ ] Calculate fee
-- [ ] Calculate price impact
-- [ ] Calculate average execution price
-- [ ] Calculate recommended minimum (5% slippage)
-- [ ] Include quote expiry time (30 seconds)
+- [x] Public endpoint
+- [x] Calculate estimated output
+- [x] Calculate fee
+- [x] Calculate price impact
+- [x] Calculate average execution price
+- [x] Calculate recommended minimum (5% slippage)
+- [x] Include quote expiry time (30 seconds)
 
 **Response:**
 ```json
@@ -221,6 +221,18 @@ Selling Δx YES shares:
 ```
 
 **References:** API_SPECIFICATION.md Section 4.4.5
+
+**Implementation Notes:**
+- Created `GetQuoteUseCase` in `src/application/use-cases/trading/get-quote.use-case.ts`
+- Created route handler in `src/presentation/fastify/routes/markets/quote.ts`
+- Registered in DI container (`src/shared/container/index.ts` and `types.ts`)
+- Comprehensive unit tests in `test/unit/use-cases/get-quote.use-case.test.ts` (17 tests, all passing)
+- All 127 backend tests passing
+- Verified with curl: BUY/SELL quotes for YES/NO sides
+- Price impact calculated using CPMM engine's built-in calculation
+- Average execution price: `(amountIn × PRICE_PRECISION) / sharesOut` for BUY, `(netPayout × PRICE_PRECISION) / sharesIn` for SELL
+- Recommended minimum: 95% of estimated output (5% slippage tolerance)
+- Quote expiry: 30 seconds from request time
 
 ---
 
