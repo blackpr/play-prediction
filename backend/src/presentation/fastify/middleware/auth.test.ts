@@ -38,6 +38,11 @@ describe('Auth Middleware', () => {
         error: vi.fn(),
         info: vi.fn(),
         debug: vi.fn(),
+        fatal: vi.fn(),
+        trace: vi.fn(),
+        silent: vi.fn(),
+        child: vi.fn().mockReturnThis(),
+        level: 'info',
       },
       diScope: {
         resolve: vi.fn((name: string) => {
@@ -49,7 +54,7 @@ describe('Auth Middleware', () => {
           return null;
         }),
       },
-    };
+    } as any;
     reply = {
       status: vi.fn().mockReturnThis(),
       send: vi.fn(),
