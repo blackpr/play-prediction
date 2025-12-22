@@ -875,248 +875,138 @@ export function PriceChart({ data, height = 300, className }: PriceChartProps) {
 
 ```tsx
 // src/components/market/TradeForm.tsx
-import { useState } from 'react'
-import { useForm } from '@tanstack/react-form'
-import { useBuyShares, useSellShares } from '../../hooks/useTrading'
+import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useBuyShares, useSellShares, useQuote } from '../../hooks/useTrading'
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
 import { Button } from '../ui/Button'
-import { Card, CardHeader, CardTitle } from '../ui/Card'
-import { formatPoints, parsePoints, calculateEstimatedShares } from '../../lib/format'
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
+import { Modal } from '../ui/Modal'
+import { formatPoints, parsePoints } from '../../lib/format'
 import { clsx } from 'clsx'
+import { Settings, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import type { Market } from '../../api/types'
 
-interface TradeFormProps {
-  market: Market
-}
+// Helper to calculate slippage-adjusted minimum output
+// Helper to convert backend errors to user-friendly messages
 
-type TradeTab = 'buy' | 'sell'
-type TradeSide = 'YES' | 'NO'
-
-export function TradeForm({ market }: TradeFormProps) {
-  const [tab, setTab] = useState<TradeTab>('buy')
-  const [side, setSide] = useState<TradeSide>('YES')
+export function TradeForm({ market }: { market: Market }) {
+  const [tab, setTab] = useState<'buy' | 'sell'>('buy')
+  const [side, setSide] = useState<'YES' | 'NO'>('YES')
+  const [amount, setAmount] = useState('')
+  const [debouncedAmount, setDebouncedAmount] = useState('')
   
+  // Settings & State
+  const [slippage, setSlippage] = useState(0.5) // Persisted in localStorage
+  const [showSettings, setShowSettings] = useState(false)
+  const [skipConfirmation, setSkipConfirmation] = useState(false) // Persisted in sessionStorage
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [pendingTrade, setPendingTrade] = useState<any>(null)
+
+  // Hooks
   const { user } = useAuth()
   const { data: position } = usePosition(market.id)
   const buyMutation = useBuyShares()
   const sellMutation = useSellShares()
   
-  const form = useForm({
-    defaultValues: {
-      amount: '',
-    },
-    onSubmit: async ({ value }) => {
-      const amountMicro = parsePoints(value.amount)
-      
-      if (tab === 'buy') {
-        await buyMutation.mutateAsync({
-          marketId: market.id,
-          side,
-          amount: amountMicro,
-        })
-      } else {
-        await sellMutation.mutateAsync({
-          marketId: market.id,
-          side,
-          shares: amountMicro,
-        })
-      }
-      
-      form.reset()
-    },
+  // Quote Fetching
+  const { data: quote } = useQuote(market.id, {
+    side,
+    action: tab === 'buy' ? 'BUY' : 'SELL',
+    amount: parsePoints(debouncedAmount || '0')
   })
-  
-  const currentPrice = side === 'YES' ? market.pool.yesPrice : market.pool.noPrice
-  const availableShares = side === 'YES'
-    ? BigInt(position?.yesShares ?? '0')
-    : BigInt(position?.noShares ?? '0')
-  
+
+  // 1. Execute Trade Logic
+  const executeTrade = async (tradeParams: any) => {
+    try {
+      const result = tab === 'buy' 
+        ? await buyMutation.mutateAsync({ ... }) 
+        : await sellMutation.mutateAsync({ ... })
+        
+      toast.success(`Trade Executed: ${side} shares`)
+      // Optimistic Update
+      queryClient.setQueryData(['portfolio', market.id], { ...result.newPosition, marketId: market.id })
+    } catch (error) {
+      toast.error('Trade Failed')
+    }
+  }
+
+  // 2. Form Submission Handler
+  const onSubmit = async () => {
+    const amountMicro = parsePoints(amount)
+    const slippageBps = BigInt(Math.round(slippage * 100))
+    // Calculate Min Output...
+    
+    // Check Confirmation Thresholds (Amount > 100 pts OR Impact > 10%)
+    if ((amountBigInt >= 100_000_000n || impact > 0.1) && !skipConfirmation) {
+      setPendingTrade({ ... })
+      setShowConfirmation(true)
+      return
+    }
+
+    await executeTrade({ amountMicro, minOut })
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row justify-between">
         <CardTitle>Trade</CardTitle>
+        <button onClick={() => setShowSettings(!showSettings)}>
+          <Settings className="w-5 h-5" />
+        </button>
       </CardHeader>
       
-      {/* Buy/Sell tabs */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setTab('buy')}
-          className={clsx(
-            'flex-1 py-2 rounded-lg font-medium transition-colors',
-            tab === 'buy'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          )}
-        >
-          Buy
-        </button>
-        <button
-          onClick={() => setTab('sell')}
-          className={clsx(
-            'flex-1 py-2 rounded-lg font-medium transition-colors',
-            tab === 'sell'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          )}
-        >
-          Sell
-        </button>
-      </div>
-      
-      {/* Side selection */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setSide('YES')}
-          className={clsx(
-            'flex-1 py-3 rounded-lg font-medium transition-colors',
-            side === 'YES'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-green-600/20'
-          )}
-        >
-          Yes {(market.pool.yesPrice * 100).toFixed(0)}¢
-        </button>
-        <button
-          onClick={() => setSide('NO')}
-          className={clsx(
-            'flex-1 py-3 rounded-lg font-medium transition-colors',
-            side === 'NO'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-red-600/20'
-          )}
-        >
-          No {(market.pool.noPrice * 100).toFixed(0)}¢
-        </button>
-      </div>
-      
-      {/* Amount input */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          form.handleSubmit()
-        }}
-      >
-        <form.Field
-          name="amount"
-          validators={{
-            onChange: ({ value }) => {
-              if (!value) return 'Amount is required'
-              const num = parseFloat(value)
-              if (isNaN(num) || num <= 0) return 'Invalid amount'
-              if (tab === 'buy') {
-                const micro = parsePoints(value)
-                if (BigInt(micro) > BigInt(user?.balance ?? '0')) {
-                  return 'Insufficient balance'
-                }
-              }
-              return undefined
-            },
-          }}
-        >
-          {(field) => (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-400 mb-1">
-                {tab === 'buy' ? 'Amount (Points)' : 'Shares to Sell'}
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  className={clsx(
-                    'w-full px-4 py-3 bg-gray-800 border rounded-lg',
-                    'text-white text-lg font-mono',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    field.state.meta.errors.length
-                      ? 'border-red-500'
-                      : 'border-gray-700'
-                  )}
-                />
-                {tab === 'buy' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const max = formatPoints(user?.balance ?? '0')
-                      field.handleChange(max)
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    MAX
-                  </button>
-                )}
-              </div>
-              {field.state.meta.errors.length > 0 && (
-                <p className="mt-1 text-sm text-red-400">
-                  {field.state.meta.errors.join(', ')}
-                </p>
-              )}
-            </div>
-          )}
-        </form.Field>
+      {showSettings && (
+         /* Slippage Selector (0.1%, 0.5%, 1%, Custom) */
+         <div>...</div>
+      )}
+
+      <CardContent>
+        {/* Tabs & Side Selection */}
+        {/* Amount Input with MAX button */}
         
-        {/* Estimate */}
-        <form.Subscribe selector={(state) => state.values.amount}>
-          {(amount) => {
-            if (!amount) return null
-            const estimated = calculateEstimatedShares(
-              parsePoints(amount),
-              market.pool,
-              side
-            )
-            return (
-              <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Estimated shares</span>
-                  <span className="font-mono">{formatPoints(estimated)}</span>
-                </div>
-                <div className="flex justify-between text-sm mt-1">
-                  <span className="text-gray-400">Avg. price</span>
-                  <span className="font-mono">
-                    {(currentPrice * 100).toFixed(1)}¢
-                  </span>
-                </div>
-              </div>
-            )
-          }}
-        </form.Subscribe>
-        
-        {/* Submit */}
-        <form.Subscribe
-          selector={(state) => [state.isSubmitting, state.canSubmit]}
-        >
-          {([isSubmitting, canSubmit]) => (
-            <Button
-              type="submit"
-              variant={side === 'YES' ? 'yes' : 'no'}
-              size="lg"
-              className="w-full"
-              isLoading={isSubmitting}
-              disabled={!canSubmit}
-            >
-              {tab === 'buy' ? 'Buy' : 'Sell'} {side}
-            </Button>
-          )}
-        </form.Subscribe>
-      </form>
-      
-      {/* Balance info */}
-      <div className="mt-4 pt-4 border-t border-gray-700">
-        <div className="flex justify-between text-sm text-gray-400">
-          <span>Balance</span>
-          <span className="font-mono">{formatPoints(user?.balance ?? '0')} pts</span>
-        </div>
-        {position && (
-          <div className="flex justify-between text-sm text-gray-400 mt-1">
-            <span>Your {side} shares</span>
-            <span className="font-mono">
-              {formatPoints(side === 'YES' ? position.yesShares : position.noShares)}
-            </span>
+        {/* Quote Preview */}
+        {quote && (
+          <div className="p-4 bg-gray-800/50 rounded-lg">
+             <div className="flex justify-between">
+               <span>Est. Output</span>
+               <span>{formatPoints(quote.estimatedSharesOut)}</span>
+             </div>
+             <div className="flex justify-between">
+               <span>Price Impact</span>
+               <span className={quote.priceImpact > 0.05 ? 'text-red-400' : 'text-green-400'}>
+                 {quote.priceImpact}%
+               </span>
+             </div>
+             {quote.priceImpact > 0.01 && <div className="text-yellow-400">High Impact</div>}
           </div>
         )}
-      </div>
+
+        <Button onClick={onSubmit} isLoading={buyMutation.isPending || sellMutation.isPending}>
+          {tab === 'buy' ? 'Buy' : 'Sell'} {side}
+        </Button>
+      </CardContent>
+
+      <Modal isOpen={showConfirmation} title="Confirm Trade">
+         {/* Trade Details Snapshot */}
+         <div className="space-y-4">
+            <div>Amount: {formatPoints(pendingTrade?.amountMicro)}</div>
+            <div>Est. Output: {formatPoints(pendingTrade?.estOut)}</div>
+            <div>Min. Output: {formatPoints(pendingTrade?.minOut)}</div>
+            
+            {/* Don't ask again checkbox */}
+            <label>
+              <input type="checkbox" onChange={...} /> Don't ask again
+            </label>
+            
+            <div className="flex gap-2">
+               <Button variant="secondary" onClick={() => setShowConfirmation(false)}>Cancel</Button>
+               <Button onClick={() => executeTrade(pendingTrade)}>Confirm</Button>
+            </div>
+         </div>
+      </Modal>
     </Card>
   )
 }
