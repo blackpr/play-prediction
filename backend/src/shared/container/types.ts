@@ -29,6 +29,8 @@ import { GetMarketTradesUseCase } from '../../application/use-cases/get-market-t
 import { PortfolioRepository } from '../../application/ports/repositories/portfolio.repository';
 import { TradeLedgerRepository } from '../../application/ports/repositories/trade-ledger.repository';
 import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
+import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shares.use-case';
+
 
 
 /**
@@ -66,6 +68,7 @@ export interface AppCradle {
   getMarketPriceHistoryUseCase: GetMarketPriceHistoryUseCase;
   getMarketTradesUseCase: GetMarketTradesUseCase;
   buySharesUseCase: BuySharesUseCase;
+  sellSharesUseCase: SellSharesUseCase;
 }
 
 

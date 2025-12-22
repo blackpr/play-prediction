@@ -155,20 +155,30 @@ Selling Δx YES shares:
 ```
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Check market is ACTIVE
-- [ ] Check user has sufficient shares
-- [ ] Calculate points via CPMM
-- [ ] Apply fees to output
-- [ ] Check slippage (points >= minAmountOut)
-- [ ] Inject LP fee into pool
-- [ ] Update pool with optimistic lock
-- [ ] Credit user balance
-- [ ] Reduce portfolio (proportional cost basis)
-- [ ] Log to trade_ledger
-- [ ] Return transaction details
+- [x] Require authentication
+- [x] Check market is ACTIVE
+- [x] Check user has sufficient shares
+- [x] Calculate points via CPMM
+- [x] Apply fees to output
+- [x] Check slippage (points >= minAmountOut)
+- [x] Inject LP fee into pool
+- [x] Update pool with optimistic lock
+- [x] Credit user balance
+- [x] Reduce portfolio (proportional cost basis)
+- [x] Log to trade_ledger
+- [x] Return transaction details
 
 **References:** API_SPECIFICATION.md Section 4.4.2, ENGINE_LOGIC.md Section 6.2
+
+**Implementation Notes:**
+- Created `SellSharesUseCase` with complete transaction logic
+- Implemented sell route handler with Zod validation
+- Comprehensive unit tests (19 test cases, all passing)
+- All 110 backend tests passing
+- Verified with curl: successful sell, insufficient shares, slippage protection, idempotency
+- Proportional cost basis reduction: `basisReduction = (currentBasis × sharesIn) / sharesBefore`
+- Fees deducted from OUTPUT (after swap) using `calculateNetPayout`
+- User balance credited (not debited) with net payout
 
 ---
 
