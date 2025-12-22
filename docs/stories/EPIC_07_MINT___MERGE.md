@@ -18,13 +18,13 @@
 ```
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] No fee charged
-- [ ] Create equal YES and NO shares
-- [ ] 1 Point = 1 YES + 1 NO
-- [ ] Deduct points from user
-- [ ] Add shares to portfolio
-- [ ] Log to trade_ledger
+- [x] Require authentication
+- [x] No fee charged
+- [x] Create equal YES and NO shares
+- [x] 1 Point = 1 YES + 1 NO
+- [x] Deduct points from user
+- [x] Add shares to portfolio
+- [x] Log to trade_ledger
 
 **Response:**
 ```json

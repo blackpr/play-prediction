@@ -31,6 +31,7 @@ import { TradeLedgerRepository } from '../../application/ports/repositories/trad
 import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
 import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shares.use-case';
 import { GetQuoteUseCase } from '../../application/use-cases/trading/get-quote.use-case';
+import { MintSharesUseCase } from '../../application/use-cases/trading/mint-shares.use-case';
 
 
 
@@ -71,6 +72,7 @@ export interface AppCradle {
   buySharesUseCase: BuySharesUseCase;
   sellSharesUseCase: SellSharesUseCase;
   getQuoteUseCase: GetQuoteUseCase;
+  mintSharesUseCase: MintSharesUseCase;
 }
 
 

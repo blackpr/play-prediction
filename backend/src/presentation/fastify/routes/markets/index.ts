@@ -6,6 +6,7 @@ import { getMarketTrades } from './trades';
 import { buyShares } from './buy';
 import { sellShares } from './sell';
 import { getQuote } from './quote';
+import { mintShares } from './mint';
 
 export async function marketsRoutes(fastify: FastifyInstance) {
   fastify.get('/', listMarkets);
@@ -15,4 +16,5 @@ export async function marketsRoutes(fastify: FastifyInstance) {
   fastify.get('/:id/quote', getQuote);
   fastify.post('/:id/buy', buyShares);
   fastify.post('/:id/sell', sellShares);
+  fastify.post('/:id/mint', mintShares);
 }

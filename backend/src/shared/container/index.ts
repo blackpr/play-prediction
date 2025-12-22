@@ -38,6 +38,7 @@ import { PostgresTradeLedgerRepository } from '../../infrastructure/database/rep
 import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
 import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shares.use-case';
 import { GetQuoteUseCase } from '../../application/use-cases/trading/get-quote.use-case';
+import { MintSharesUseCase } from '../../application/use-cases/trading/mint-shares.use-case';
 
 
 
@@ -119,6 +120,7 @@ export function registerDependencies(): void {
     buySharesUseCase: asClass(BuySharesUseCase).scoped(),
     sellSharesUseCase: asClass(SellSharesUseCase).scoped(),
     getQuoteUseCase: asClass(GetQuoteUseCase).scoped(),
+    mintSharesUseCase: asClass(MintSharesUseCase).scoped(),
   });
 }
 
