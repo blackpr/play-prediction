@@ -1,4 +1,4 @@
-import { Market } from '../../../infrastructure/database/drizzle/schema';
+import { Market, NewMarket, NewLiquidityPool } from '../../../infrastructure/database/drizzle/schema';
 
 // Define a pool shape with strings for BigInts
 export interface LiquidityPoolDetails {
@@ -89,6 +89,10 @@ export interface MarketRepository {
     tx?: unknown
   ): Promise<UpdatePoolResult>;
   updateUserBalance(userId: string, newBalance: bigint, tx?: unknown): Promise<void>;
+
+  // Admin operations
+  create(market: NewMarket, tx?: unknown): Promise<Market>;
+  createPool(pool: NewLiquidityPool, tx?: unknown): Promise<void>;
 }
 
 export interface PriceCandle {

@@ -43,6 +43,7 @@ import { MergeSharesUseCase } from '../../application/use-cases/trading/merge-sh
 import { GetPositionUseCase } from '../../application/use-cases/portfolio/get-position.use-case';
 import { GetPortfolioUseCase } from '../../application/use-cases/portfolio/get-portfolio.use-case';
 import { GetPortfolioHistoryUseCase } from '../../application/use-cases/portfolio/get-portfolio-history.use-case';
+import { CreateMarketUseCase } from '../../application/use-cases/admin/create-market.use-case';
 
 
 
@@ -129,6 +130,7 @@ export function registerDependencies(): void {
     getPositionUseCase: asClass(GetPositionUseCase).scoped(),
     getPortfolioUseCase: asClass(GetPortfolioUseCase).scoped(),
     getPortfolioHistoryUseCase: asClass(GetPortfolioHistoryUseCase).scoped(),
+    createMarketUseCase: asClass(CreateMarketUseCase).scoped(),
   });
 }
 

@@ -44,6 +44,23 @@ export class PostgresUserRepository implements UserRepository {
     };
   }
 
+  async findByRole(role: string): Promise<User | null> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(users.role, role),
+    });
+
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      balance: user.balance,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    };
+  }
+
   async create(dto: import('../../../application/ports/repositories/user.repository').CreateUserDTO, tx?: unknown): Promise<User> {
     const db = tx ? (tx as DrizzleDB) : this.db;
 

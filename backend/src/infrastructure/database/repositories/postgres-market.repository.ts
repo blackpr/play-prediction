@@ -373,4 +373,23 @@ export class PostgresMarketRepository implements MarketRepository {
       })
       .where(eq(users.id, userId));
   }
+
+  async create(market: import('../drizzle/schema').NewMarket, tx?: unknown): Promise<import('../drizzle/schema').Market> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const [created] = await db
+      .insert(markets)
+      .values(market)
+      .returning();
+
+    return created;
+  }
+
+  async createPool(pool: import('../drizzle/schema').NewLiquidityPool, tx?: unknown): Promise<void> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    await db
+      .insert(liquidityPools)
+      .values(pool);
+  }
 }

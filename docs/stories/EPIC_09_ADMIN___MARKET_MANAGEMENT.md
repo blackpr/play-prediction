@@ -9,13 +9,18 @@
 **So that** admin endpoints are protected
 
 **Acceptance Criteria:**
-- [ ] Check user.role === 'admin'
-- [ ] Return 403 FORBIDDEN if not admin
-- [ ] Apply to all /admin routes
-- [ ] Verify protection of sensitive sidecars:
-  - [ ] BullMQ Board (`/admin/queues`)
+- [x] Check user.role === 'admin'
+- [x] Return 403 FORBIDDEN if not admin
+- [x] Apply to all /admin routes
+- [x] Verify protection of sensitive sidecars:
+  - [x] BullMQ Board (`/admin/queues`)
 
 **References:** API_SPECIFICATION.md Section 2.5
+
+**Implementation Notes:**
+- `requireAdmin` middleware already existed in `backend/src/presentation/fastify/middleware/auth.ts`
+- Applied to all admin routes via `onRequest` hook in `backend/src/presentation/fastify/routes/admin/index.ts`
+- Verified with curl: non-admin users receive 403 FORBIDDEN
 
 ---
 
@@ -50,17 +55,17 @@
 | `"auto_with_buffer"` | Events with predictable extensions | Basketball (30 min for OT) |
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Validate minimum seed liquidity
-- [ ] Validate `closeBehavior` is one of: `auto`, `manual`, `auto_with_buffer`
-- [ ] If `closeBehavior = 'auto_with_buffer'`, require `bufferMinutes > 0`
-- [ ] If `closeBehavior != 'auto_with_buffer'`, reject `bufferMinutes`
-- [ ] Inherit default `closeBehavior` from category if not specified
-- [ ] Create market record (status: DRAFT)
-- [ ] Create liquidity_pool with 50/50 split
-- [ ] Grant seed shares to treasury account
-- [ ] Log GENESIS_MINT to trade_ledger
-- [ ] Return created market
+- [x] Require admin role
+- [x] Validate minimum seed liquidity
+- [x] Validate `closeBehavior` is one of: `auto`, `manual`, `auto_with_buffer`
+- [x] If `closeBehavior = 'auto_with_buffer'`, require `bufferMinutes > 0`
+- [x] If `closeBehavior != 'auto_with_buffer'`, reject `bufferMinutes`
+- [x] Inherit default `closeBehavior` from category if not specified
+- [x] Create market record (status: DRAFT)
+- [x] Create liquidity_pool with 50/50 split
+- [x] Grant seed shares to treasury account
+- [x] Log GENESIS_MINT to trade_ledger
+- [x] Return created market
 
 **Category Close Behavior Defaults:**
 

@@ -10,6 +10,7 @@ import { authRoutes } from './presentation/fastify/routes/auth';
 import { usersRoutes } from './presentation/fastify/routes/users';
 import { marketsRoutes } from './presentation/fastify/routes/markets';
 import { portfolioRoutes } from './presentation/fastify/routes/portfolio';
+import adminRoutes from './presentation/fastify/routes/admin';
 import { websocketHandler } from './presentation/websocket/websocket.route';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import { loggerConfig } from './shared/logger/index';
@@ -72,6 +73,7 @@ async function buildServer() {
   server.register(usersRoutes, { prefix: '/api/v1/users' });
   server.register(marketsRoutes, { prefix: '/api/v1/markets' });
   server.register(portfolioRoutes, { prefix: '/api/v1/portfolio' });
+  server.register(adminRoutes, { prefix: '/api/v1/admin' });
 
   // Test route for rate limiting (can be removed in production)
   server.get('/test-rate-limit', withRateLimit(RateLimitType.PUBLIC), async () => {
