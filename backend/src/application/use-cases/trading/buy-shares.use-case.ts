@@ -126,16 +126,120 @@ export class BuySharesUseCase {
       const poolNoBefore = market.pool.noQty;
       const versionBefore = market.pool.versionId;
 
-      // 6. Calculate fees
-      const { netAmount, fee, vaultFee, lpFee } = calculateNetAfterFee(amount);
+      // 6. Deduct user balance (original amount, not aggregated)
+      const newBalance = user.balance - amount;
+      await this.marketRepository.updateUserBalance(userId, newBalance, tx);
 
-      // 7. Calculate swap using CPMM engine
-      const swapResult = calculateBuyShares(netAmount, {
+      // 7. Update or create portfolio
+      const existingPortfolio = await this.portfolioRepository.findByUserAndMarket(
+        userId,
+        marketId,
+        tx
+      );
+
+      const sharesBefore = side === 'YES'
+        ? (existingPortfolio?.yesQty ?? 0n)
+        : (existingPortfolio?.noQty ?? 0n);
+
+      // ============================================================================
+      // NETTING PROTOCOL (MINT-4)
+      // ============================================================================
+      // If user holds opposite shares, execute fee-free netting sell first
+      // This maintains Rule 2: No conflicting positions
+      // See ENGINE_LOGIC.md Section 7 for details
+
+      const oppositeSide: Side = side === 'YES' ? 'NO' : 'YES';
+      const oppositeQty = oppositeSide === 'YES'
+        ? (existingPortfolio?.yesQty ?? 0n)
+        : (existingPortfolio?.noQty ?? 0n);
+
+      let nettingProceeds = 0n;
+      let poolStateAfterNetting = {
         yesQty: market.pool.yesQty,
         noQty: market.pool.noQty,
-      }, side);
+      };
 
-      // 8. Verify slippage protection
+      if (oppositeQty > 0n) {
+        // Execute fee-free netting sell
+        const { calculateSellPoints } = await import('../../../domain/services/cpmm-engine');
+
+        const nettingSellResult = calculateSellPoints(
+          oppositeQty,
+          poolStateAfterNetting,
+          oppositeSide
+        );
+
+        nettingProceeds = nettingSellResult.pointsOut;
+        poolStateAfterNetting = {
+          yesQty: nettingSellResult.newYesQty,
+          noQty: nettingSellResult.newNoQty,
+        };
+
+        // Log NET_SELL to trade ledger (fee-free)
+        await this.tradeLedgerRepository.create(
+          {
+            userId,
+            marketId,
+            action: 'NET_SELL',
+            side: oppositeSide,
+            amountIn: oppositeQty,
+            amountOut: nettingProceeds,
+            sharesBefore: oppositeQty,
+            sharesAfter: 0n,
+            feePaid: 0n, // Fee-free for netting!
+            feeVault: 0n,
+            feeLp: 0n,
+            poolYesBefore,
+            poolNoBefore,
+            poolYesAfter: poolStateAfterNetting.yesQty,
+            poolNoAfter: poolStateAfterNetting.noQty,
+            priceAtExecution: oppositeQty > 0n
+              ? (nettingProceeds * 1_000_000n) / oppositeQty
+              : 0n,
+          },
+          tx
+        );
+
+        // Clear opposite position in portfolio
+        if (existingPortfolio) {
+          if (oppositeSide === 'YES') {
+            await this.portfolioRepository.update(
+              userId,
+              marketId,
+              {
+                yesQty: 0n,
+                yesCostBasis: 0n,
+              },
+              tx
+            );
+          } else {
+            await this.portfolioRepository.update(
+              userId,
+              marketId,
+              {
+                noQty: 0n,
+                noCostBasis: 0n,
+              },
+              tx
+            );
+          }
+        }
+      }
+
+      // ============================================================================
+      // END NETTING PROTOCOL
+      // ============================================================================
+
+      // Calculate fees on original amount (not aggregated amount)
+      const { netAmount, fee, vaultFee, lpFee } = calculateNetAfterFee(amount);
+
+      // Calculate swap using CPMM engine with pool state after netting
+      // Use aggregated capital: net amount + netting proceeds
+      const totalBuyingPower = netAmount + nettingProceeds;
+
+      const swapResult = calculateBuyShares(totalBuyingPower, poolStateAfterNetting, side);
+
+      // Verify slippage protection
       if (swapResult.sharesOut < minSharesOut) {
         throw new BusinessLogicError(
           `Slippage exceeded: expected minimum ${minSharesOut}, got ${swapResult.sharesOut}`,
@@ -147,7 +251,7 @@ export class BuySharesUseCase {
         );
       }
 
-      // 9. Inject LP fee into pool
+      // Inject LP fee into pool
       let finalYesQty = swapResult.newYesQty;
       let finalNoQty = swapResult.newNoQty;
 
@@ -157,7 +261,7 @@ export class BuySharesUseCase {
         finalYesQty += lpFee; // LP fee goes to input pool (YES side for NO buy)
       }
 
-      // 10. Update pool with optimistic lock
+      // Update pool with optimistic lock
       const updateResult = await this.marketRepository.updatePoolWithLock(
         marketId,
         finalYesQty,
@@ -174,20 +278,7 @@ export class BuySharesUseCase {
         );
       }
 
-      // 11. Deduct user balance
-      const newBalance = user.balance - amount;
-      await this.marketRepository.updateUserBalance(userId, newBalance, tx);
-
-      // 12. Update or create portfolio
-      const existingPortfolio = await this.portfolioRepository.findByUserAndMarket(
-        userId,
-        marketId,
-        tx
-      );
-
-      const sharesBefore = side === 'YES'
-        ? (existingPortfolio?.yesQty ?? 0n)
-        : (existingPortfolio?.noQty ?? 0n);
+      // Calculate sharesAfter for the desired side
       const sharesAfter = sharesBefore + swapResult.sharesOut;
 
       if (existingPortfolio) {
