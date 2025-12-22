@@ -68,8 +68,8 @@ async function buildServer() {
 
   // Routes
   server.register(healthRoutes, { prefix: '/api' });
-  server.register(authRoutes, { prefix: '/api' });
-  server.register(usersRoutes, { prefix: '/api' });
+  server.register(authRoutes, { prefix: '/api/v1/auth' });
+  server.register(usersRoutes, { prefix: '/api/v1/users' });
   server.register(marketsRoutes, { prefix: '/api/v1/markets' });
   server.register(portfolioRoutes, { prefix: '/api/v1/portfolio' });
 
