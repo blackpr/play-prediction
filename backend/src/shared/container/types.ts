@@ -37,6 +37,9 @@ import { GetPositionUseCase } from '../../application/use-cases/portfolio/get-po
 import { GetPortfolioUseCase } from '../../application/use-cases/portfolio/get-portfolio.use-case';
 import { GetPortfolioHistoryUseCase } from '../../application/use-cases/portfolio/get-portfolio-history.use-case';
 import { CreateMarketUseCase } from '../../application/use-cases/admin/create-market.use-case';
+import { ActivateMarketUseCase } from '../../application/use-cases/admin/activate-market.use-case';
+import { PauseMarketUseCase } from '../../application/use-cases/admin/pause-market.use-case';
+import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-market.use-case';
 
 
 /**
@@ -82,6 +85,9 @@ export interface AppCradle {
   getPortfolioUseCase: GetPortfolioUseCase;
   getPortfolioHistoryUseCase: GetPortfolioHistoryUseCase;
   createMarketUseCase: CreateMarketUseCase;
+  activateMarketUseCase: ActivateMarketUseCase;
+  pauseMarketUseCase: PauseMarketUseCase;
+  resumeMarketUseCase: ResumeMarketUseCase;
 }
 
 

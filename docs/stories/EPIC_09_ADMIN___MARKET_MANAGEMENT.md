@@ -96,12 +96,19 @@
 - `POST /v1/admin/markets/:id/resume`
 
 **Acceptance Criteria:**
-- [ ] Activate: DRAFT → ACTIVE
-- [ ] Pause: ACTIVE → PAUSED (with optional reason)
-- [ ] Resume: PAUSED → ACTIVE
-- [ ] Validate state transitions
-- [ ] Update market record
-- [ ] Log actions
+- [x] Activate: DRAFT → ACTIVE
+- [x] Pause: ACTIVE → PAUSED (with optional reason)
+- [x] Resume: PAUSED → ACTIVE
+- [x] Validate state transitions
+- [x] Update market record
+- [x] Log actions (via updated_at timestamp and reason)
+
+**Implementation Notes:**
+- Added `updateStatus` method to MarketRepository and Postgres implementation
+- Created `ActivateMarketUseCase`, `PauseMarketUseCase`, and `ResumeMarketUseCase`
+- Implemented state validation logic (e.g., prevent activating already active markets)
+- Registered endpoints: `POST /admin/markets/:id/{activate,pause,resume}`
+- Verified with unit tests and curl commands (invalid transitions return 400 Bad Request)
 
 **State Machine:**
 ```

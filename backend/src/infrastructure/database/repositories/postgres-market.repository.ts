@@ -392,4 +392,19 @@ export class PostgresMarketRepository implements MarketRepository {
       .insert(liquidityPools)
       .values(pool);
   }
+
+  async updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<import('../drizzle/schema').Market> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const [updated] = await db
+      .update(markets)
+      .set({
+        status: newStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(markets.id, marketId))
+      .returning();
+
+    return updated;
+  }
 }
