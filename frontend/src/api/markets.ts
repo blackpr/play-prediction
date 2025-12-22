@@ -1,5 +1,16 @@
 import { api } from './client'
-import type { Market, PriceHistoryResponse, RecentTrade } from './types'
+import type {
+  Market,
+  PriceHistoryResponse,
+  RecentTrade,
+  QuoteRequest,
+  QuoteResponse,
+  BuySharesRequest,
+  BuySharesResponse,
+  SellSharesRequest,
+  SellSharesResponse,
+  Position,
+} from './types'
 
 export interface GetMarketsParams {
   status?: 'ACTIVE' | 'RESOLVED' | 'CANCELLED'
@@ -68,4 +79,53 @@ export const getMarketTrades = async (
     `/markets/${id}/trades?${query.toString()}`
   )
   return response.data
+}
+
+// Trading API
+
+export const getQuote = async (
+  marketId: string,
+  params: QuoteRequest
+): Promise<QuoteResponse> => {
+  const query = new URLSearchParams()
+  query.append('side', params.side)
+  query.append('action', params.action)
+  query.append('amount', params.amount)
+
+  const response = await api.get<QuoteResponse>(
+    `/markets/${marketId}/quote?${query.toString()}`
+  )
+  return response.data
+}
+
+export const buyShares = async (
+  marketId: string,
+  request: BuySharesRequest
+): Promise<BuySharesResponse> => {
+  const response = await api.post<BuySharesResponse>(
+    `/markets/${marketId}/buy`,
+    request
+  )
+  return response.data
+}
+
+export const sellShares = async (
+  marketId: string,
+  request: SellSharesRequest
+): Promise<SellSharesResponse> => {
+  const response = await api.post<SellSharesResponse>(
+    `/markets/${marketId}/sell`,
+    request
+  )
+  return response.data
+}
+
+export const getPosition = async (marketId: string): Promise<Position | null> => {
+  try {
+    const response = await api.get<Position>(`/portfolio/${marketId}`)
+    return response.data
+  } catch (error) {
+    // Return null if no position exists (404)
+    return null
+  }
 }

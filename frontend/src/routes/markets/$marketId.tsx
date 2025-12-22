@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { ProbabilityBar } from '../../components/market/ProbabilityBar'
 import { PriceChart } from '../../components/market/PriceChart'
 import { RecentTrades } from '../../components/market/RecentTrades'
+import { TradeForm } from '../../components/market/TradeForm'
 import { IntervalSelector, type ChartInterval } from '../../components/market/IntervalSelector'
 import { formatCompactPoints } from '../../lib/format'
 import { ArrowLeft, Clock, TrendingUp, BarChart2, Users, Activity, User } from 'lucide-react'
@@ -288,12 +289,8 @@ function MarketDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Placeholder for TradeForm (Detail-6 implementation usually) */}
-          <Card className="border-blue-500/20 bg-blue-500/5">
-            <CardContent className="py-8 text-center">
-              <p className="text-blue-200">Trading functionality coming soon</p>
-            </CardContent>
-          </Card>
+          {/* Trade Form */}
+          <TradeForm market={market} />
         </div>
       </div>
     </div>

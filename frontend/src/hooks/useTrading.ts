@@ -1,0 +1,84 @@
+import { useMutation, useQuery, useQueryClient, queryOptions } from '@tanstack/react-query'
+import { getQuote, buyShares, sellShares } from '../api/markets'
+import type {
+  QuoteRequest,
+  BuySharesRequest,
+  SellSharesRequest,
+  BuySharesResponse,
+  SellSharesResponse,
+} from '../api/types'
+
+// Quote query hook with debouncing handled at component level
+export const quoteQueryOptions = (marketId: string, params: QuoteRequest | null) =>
+  queryOptions({
+    queryKey: ['quote', marketId, params],
+    queryFn: () => {
+      if (!params) throw new Error('Quote params required')
+      return getQuote(marketId, params)
+    },
+    enabled: !!params && !!params.amount && BigInt(params.amount) > 0n,
+    staleTime: 5_000, // 5 seconds
+    gcTime: 10_000, // 10 seconds
+  })
+
+export const useQuote = (marketId: string, params: QuoteRequest | null) => {
+  return useQuery(quoteQueryOptions(marketId, params))
+}
+
+// Buy shares mutation
+export const useBuyShares = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      marketId,
+      request,
+    }: {
+      marketId: string
+      request: BuySharesRequest
+    }) => {
+      // Generate idempotency key if not provided
+      const requestWithKey = {
+        ...request,
+        idempotencyKey: request.idempotencyKey || crypto.randomUUID(),
+      }
+      return buyShares(marketId, requestWithKey)
+    },
+    onSuccess: (_data: BuySharesResponse, variables) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['portfolio', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets'] })
+    },
+  })
+}
+
+// Sell shares mutation
+export const useSellShares = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      marketId,
+      request,
+    }: {
+      marketId: string
+      request: SellSharesRequest
+    }) => {
+      // Generate idempotency key if not provided
+      const requestWithKey = {
+        ...request,
+        idempotencyKey: request.idempotencyKey || crypto.randomUUID(),
+      }
+      return sellShares(marketId, requestWithKey)
+    },
+    onSuccess: (_data: SellSharesResponse, variables) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['portfolio', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets'] })
+    },
+  })
+}

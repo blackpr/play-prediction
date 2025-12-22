@@ -327,13 +327,13 @@ async function seed() {
       return market;
     };
 
-    // ACTIVE MARKETS - Mix of creators
+    // ACTIVE MARKETS - Mix of creators with future close dates
     await createMarket('Will Bitcoin hit $100k in 2025?', 'Crypto', MarketStatus.ACTIVE, 24 * 30, 5_000_000_000n, 0.6, treasuryId);
-    await createMarket('Will SpaceX launch Starship in March?', 'Space', MarketStatus.ACTIVE, 24 * 5, 2_000_000_000n, 0.8, adminId);
-    await createMarket('Who will win the Super Bowl?', 'Sports', MarketStatus.ACTIVE, 24 * 2, 10_000_000_000n, 0.5, user2Id);
+    await createMarket('Will SpaceX launch Starship in March?', 'Space', MarketStatus.ACTIVE, 24 * 15, 2_000_000_000n, 0.8, adminId);
+    await createMarket('Who will win the Super Bowl?', 'Sports', MarketStatus.ACTIVE, 24 * 7, 10_000_000_000n, 0.5, user2Id);
     await createMarket('Will GPT-5 be released this year?', 'AI', MarketStatus.ACTIVE, 24 * 180, 1_000_000_000n, 0.3, treasuryId);
     await createMarket('Will ETH flip BTC market cap?', 'Crypto', MarketStatus.ACTIVE, 24 * 365, 500_000_000n, 0.1, adminId);
-    await createMarket('Will it rain in London tomorrow?', 'Weather', MarketStatus.ACTIVE, 20, 100_000_000n, 0.7, user2Id);
+    await createMarket('Will it rain in London tomorrow?', 'Weather', MarketStatus.ACTIVE, 48, 100_000_000n, 0.7, user2Id);
 
     // RESOLVED
     const [resolvedMkt] = await db.insert(markets).values({

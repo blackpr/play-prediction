@@ -91,3 +91,105 @@ export interface RecentTrade {
   createdAt: string
 }
 
+// Trading Types
+
+export type TradeSide = 'YES' | 'NO'
+export type TradeAction = 'BUY' | 'SELL'
+
+export interface QuoteRequest {
+  side: TradeSide
+  action: TradeAction
+  amount: MicroPoints
+}
+
+export interface QuoteResponse {
+  side: TradeSide
+  action: TradeAction
+  amountIn: MicroPoints
+  estimatedSharesOut?: MicroPoints // For BUY
+  estimatedAmountOut?: MicroPoints // For SELL
+  estimatedFee: MicroPoints
+  priceImpact: string // Decimal string (percentage)
+  spotPrice: string // Decimal string
+  avgExecutionPrice: string // Decimal string
+  minimumRecommended: MicroPoints
+  expiresAt: string
+}
+
+export interface BuySharesRequest {
+  side: TradeSide
+  amount: MicroPoints
+  minSharesOut: MicroPoints
+  idempotencyKey?: string
+}
+
+export interface BuySharesResponse {
+  transactionId: string
+  action: 'BUY'
+  side: TradeSide
+  amountIn: MicroPoints
+  sharesOut: MicroPoints
+  feePaid: MicroPoints
+  feeBreakdown: {
+    vault: MicroPoints
+    liquidity: MicroPoints
+  }
+  pricePerShare: string
+  avgExecutionPrice: string
+  newPosition: {
+    yesQty: MicroPoints
+    noQty: MicroPoints
+    yesCostBasis: MicroPoints
+    noCostBasis: MicroPoints
+  }
+  newBalance: MicroPoints
+  pool: {
+    yesQty: MicroPoints
+    noQty: MicroPoints
+    yesPrice: string
+    noPrice: string
+  }
+}
+
+export interface SellSharesRequest {
+  side: TradeSide
+  shares: MicroPoints
+  minAmountOut: MicroPoints
+  idempotencyKey?: string
+}
+
+export interface SellSharesResponse {
+  transactionId: string
+  action: 'SELL'
+  side: TradeSide
+  sharesIn: MicroPoints
+  amountOut: MicroPoints
+  feePaid: MicroPoints
+  avgExecutionPrice: string
+  newPosition: {
+    yesQty: MicroPoints
+    noQty: MicroPoints
+    yesCostBasis: MicroPoints
+    noCostBasis: MicroPoints
+  }
+  newBalance: MicroPoints
+  pool: {
+    yesQty: MicroPoints
+    noQty: MicroPoints
+    yesPrice: string
+    noPrice: string
+  }
+}
+
+export interface Position {
+  marketId: string
+  yesQty: MicroPoints
+  noQty: MicroPoints
+  yesCostBasis: MicroPoints
+  noCostBasis: MicroPoints
+  avgYesBuyPrice?: string
+  avgNoBuyPrice?: string
+  currentYesPrice?: string
+  currentNoPrice?: string
+  unrealizedPnL?: MicroPoints
+}

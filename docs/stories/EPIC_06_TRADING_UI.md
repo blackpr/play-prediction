@@ -2,20 +2,44 @@
 
 **Goal:** User can buy/sell shares from the market detail page.
 
-### TRADEUI-1: Create TradeForm Component
+### TRADEUI-1: Create TradeForm Component ✅
 
 **As a** user  
 **I want** a trade form  
 **So that** I can buy and sell shares
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/market/TradeForm.tsx`
-- [ ] Buy/Sell tab toggle
-- [ ] Render inside Card component
-- [ ] Use TanStack Form for state
-- [ ] Disabled when market not ACTIVE
+- [x] Create `src/components/market/TradeForm.tsx`
+- [x] Buy/Sell tab toggle
+- [x] Render inside Card component
+- [x] Use TanStack Form for state
+- [x] Disabled when market not ACTIVE
 
 **References:** FRONTEND_COMPONENTS.md Section 5.1
+
+**Implementation Notes:**
+- Created comprehensive TradeForm component with TanStack Form
+- Implemented Buy/Sell tabs with proper state management
+- Added YES/NO side selection buttons showing current prices
+- Integrated real-time quote fetching with 300ms debounce
+- Added amount input with MAX button for balance/shares
+- Displays estimated output, fees, and price impact
+- Proper validation for minimum amounts and sufficient balance/shares
+- Error handling with user-friendly messages
+- Market status checking - form disabled when not ACTIVE
+- Created supporting hooks: `useTrading.ts` and `usePortfolio.ts`
+- Added all necessary types to `api/types.ts`
+- Implemented API methods in `api/markets.ts`
+- Integrated into MarketDetailPage replacing placeholder
+
+**Files Changed:**
+- `frontend/src/components/market/TradeForm.tsx` (new)
+- `frontend/src/hooks/useTrading.ts` (new)
+- `frontend/src/hooks/usePortfolio.ts` (new)
+- `frontend/src/api/types.ts` (updated)
+- `frontend/src/api/markets.ts` (updated)
+- `frontend/src/routes/markets/$marketId.tsx` (updated)
+- `backend/src/infrastructure/database/seed.ts` (updated - extended market close times)
 
 ---
 
