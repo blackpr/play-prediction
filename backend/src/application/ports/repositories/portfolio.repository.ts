@@ -28,6 +28,7 @@ export interface UpdatePortfolioDTO {
 
 export interface PortfolioRepository {
   findByUserAndMarket(userId: string, marketId: string, tx?: Transaction): Promise<Portfolio | null>;
+  findByUser(userId: string, tx?: Transaction): Promise<Portfolio[]>;
   create(portfolio: CreatePortfolioDTO, tx?: Transaction): Promise<Portfolio>;
   update(userId: string, marketId: string, updates: UpdatePortfolioDTO, tx?: Transaction): Promise<Portfolio>;
 }

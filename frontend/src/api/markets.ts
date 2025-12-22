@@ -156,3 +156,29 @@ export const getPosition = async (marketId: string): Promise<Position | null> =>
     return null
   }
 }
+
+export interface PortfolioResponse {
+  totalValue: string
+  totalCostBasis: string
+  unrealizedPnL: string
+  positions: Array<{
+    market: {
+      id: string
+      title: string
+      status: string
+      yesPrice: string
+      noPrice: string
+    }
+    yesQty: string
+    noQty: string
+    yesCostBasis: string
+    noCostBasis: string
+    currentValue: string
+    unrealizedPnL: string
+  }>
+}
+
+export const getPortfolio = async (): Promise<PortfolioResponse> => {
+  const response = await api.get<PortfolioResponse>('/portfolio')
+  return response.data
+}

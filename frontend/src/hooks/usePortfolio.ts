@@ -11,3 +11,14 @@ export const positionQueryOptions = (marketId: string) =>
 export const usePosition = (marketId: string) => {
   return useQuery(positionQueryOptions(marketId))
 }
+
+import { getPortfolio } from '../api/markets'
+
+export const portfolioQueryOptions = queryOptions({
+  queryKey: ['portfolio', 'all'],
+  queryFn: () => getPortfolio(),
+})
+
+export const usePortfolio = () => {
+  return useQuery(portfolioQueryOptions)
+}

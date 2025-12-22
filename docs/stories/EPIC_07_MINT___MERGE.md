@@ -76,11 +76,11 @@
 **So that** I can use these operations
 
 **Acceptance Criteria:**
-- [ ] Add Mint/Merge tabs to TradeForm
-- [ ] Mint: single amount input, show output preview
-- [ ] Merge: single amount input, show both share types
-- [ ] Validate user has sufficient balance/shares
-- [ ] Create mutations for mint/merge
+- [x] Add Mint/Merge tabs to TradeForm
+- [x] Mint: single amount input, show output preview
+- [x] Merge: single amount input, show both share types
+- [x] Validate user has sufficient balance/shares
+- [x] Create mutations for mint/merge
 
 ---
 

@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 import {
   TradeLedgerRepository,
   TradeLedgerEntry,
   CreateTradeLedgerEntryDTO,
+  FindTradesParams,
 } from '../../../application/ports/repositories/trade-ledger.repository';
 import { DrizzleDB } from '../../database';
 import { tradeLedger } from '../drizzle/schema';
@@ -44,6 +45,63 @@ export class PostgresTradeLedgerRepository implements TradeLedgerRepository {
       idempotencyKey: entry.idempotencyKey,
       createdAt: entry.createdAt,
     };
+  }
+
+  async findAll(params: FindTradesParams): Promise<{ items: TradeLedgerEntry[]; total: number }> {
+    const { userId, marketId, action, page, pageSize } = params;
+    const offset = (page - 1) * pageSize;
+
+    const conditions = [eq(tradeLedger.userId, userId)];
+
+    if (marketId) {
+      conditions.push(eq(tradeLedger.marketId, marketId));
+    }
+
+    if (action) {
+      conditions.push(eq(tradeLedger.action, action));
+    }
+
+    const whereClause = and(...conditions);
+
+    // Get total count
+    const [countResult] = await this.db
+      .select({ count: count() })
+      .from(tradeLedger)
+      .where(whereClause);
+
+    const total = countResult?.count ?? 0;
+
+    // Get items
+    const rows = await this.db.query.tradeLedger.findMany({
+      where: whereClause,
+      limit: pageSize,
+      offset: offset,
+      orderBy: [desc(tradeLedger.createdAt)],
+    });
+
+    const items = rows.map(entry => ({
+      id: entry.id,
+      userId: entry.userId,
+      marketId: entry.marketId,
+      action: entry.action,
+      side: entry.side,
+      amountIn: entry.amountIn,
+      amountOut: entry.amountOut,
+      sharesBefore: entry.sharesBefore,
+      sharesAfter: entry.sharesAfter,
+      feePaid: entry.feePaid,
+      feeVault: entry.feeVault,
+      feeLp: entry.feeLp,
+      poolYesBefore: entry.poolYesBefore,
+      poolNoBefore: entry.poolNoBefore,
+      poolYesAfter: entry.poolYesAfter,
+      poolNoAfter: entry.poolNoAfter,
+      priceAtExecution: entry.priceAtExecution,
+      idempotencyKey: entry.idempotencyKey,
+      createdAt: entry.createdAt,
+    }));
+
+    return { items, total };
   }
 
   async create(dto: CreateTradeLedgerEntryDTO, tx?: unknown): Promise<TradeLedgerEntry> {

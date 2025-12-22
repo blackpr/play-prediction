@@ -33,7 +33,9 @@ import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shar
 import { GetQuoteUseCase } from '../../application/use-cases/trading/get-quote.use-case';
 import { MintSharesUseCase } from '../../application/use-cases/trading/mint-shares.use-case';
 import { MergeSharesUseCase } from '../../application/use-cases/trading/merge-shares.use-case';
-
+import { GetPositionUseCase } from '../../application/use-cases/portfolio/get-position.use-case';
+import { GetPortfolioUseCase } from '../../application/use-cases/portfolio/get-portfolio.use-case';
+import { GetPortfolioHistoryUseCase } from '../../application/use-cases/portfolio/get-portfolio-history.use-case';
 
 
 /**
@@ -75,6 +77,9 @@ export interface AppCradle {
   getQuoteUseCase: GetQuoteUseCase;
   mintSharesUseCase: MintSharesUseCase;
   mergeSharesUseCase: MergeSharesUseCase;
+  getPositionUseCase: GetPositionUseCase;
+  getPortfolioUseCase: GetPortfolioUseCase;
+  getPortfolioHistoryUseCase: GetPortfolioHistoryUseCase;
 }
 
 

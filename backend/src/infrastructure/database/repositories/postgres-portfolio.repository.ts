@@ -39,6 +39,24 @@ export class PostgresPortfolioRepository implements PortfolioRepository {
     };
   }
 
+  async findByUser(userId: string, tx?: unknown): Promise<Portfolio[]> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const results = await db.query.portfolios.findMany({
+      where: eq(portfolios.userId, userId),
+    });
+
+    return results.map((portfolio) => ({
+      userId: portfolio.userId,
+      marketId: portfolio.marketId,
+      yesQty: portfolio.yesQty,
+      noQty: portfolio.noQty,
+      yesCostBasis: portfolio.yesCostBasis,
+      noCostBasis: portfolio.noCostBasis,
+      updatedAt: portfolio.updatedAt,
+    }));
+  }
+
   async create(dto: CreatePortfolioDTO, tx?: unknown): Promise<Portfolio> {
     const db = tx ? (tx as DrizzleDB) : this.db;
 

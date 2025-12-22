@@ -15,13 +15,13 @@
 - `hasPosition` - only markets with holdings (default: true)
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Query portfolios for user
-- [ ] Join with markets for market info
-- [ ] Calculate current value: shares × currentPrice
-- [ ] Calculate unrealized P&L: currentValue - costBasis
-- [ ] Calculate total portfolio value
-- [ ] Return positions list
+- [x] Require authentication
+- [x] Query portfolios for user
+- [x] Join with markets for market info
+- [x] Calculate current value: shares × currentPrice
+- [x] Calculate unrealized P&L: currentValue - costBasis
+- [x] Calculate total portfolio value
+- [x] Return positions list
 
 **Response:**
 ```json
@@ -56,10 +56,10 @@
 **Endpoint:** `GET /v1/portfolio/:marketId`
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Return position or empty if none
-- [ ] Calculate average buy price
-- [ ] Calculate unrealized P&L
+- [x] Require authentication
+- [x] Return position or empty if none
+- [x] Calculate average buy price
+- [x] Calculate unrealized P&L
 
 **References:** API_SPECIFICATION.md Section 4.5.2
 
@@ -79,11 +79,11 @@
 - `page`, `pageSize`
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Query trade_ledger for user
-- [ ] Join market title
-- [ ] Paginate results
-- [ ] Order by created_at DESC
+- [x] Require authentication
+- [x] Query trade_ledger for user
+- [x] Join market title
+- [x] Paginate results
+- [x] Order by created_at DESC
 
 **References:** API_SPECIFICATION.md Section 4.5.3
 
@@ -98,11 +98,11 @@
 **Route:** `/portfolio`
 
 **Acceptance Criteria:**
-- [ ] Protected route (require auth)
-- [ ] Show total value and P&L summary
-- [ ] Grid of PositionCard components
-- [ ] Empty state if no positions
-- [ ] Link to markets to start trading
+- [x] Protected route (require auth)
+- [x] Show total value and P&L summary
+- [x] Grid of PositionCard components
+- [x] Empty state if no positions
+- [x] Link to markets to start trading
 
 ---
 
@@ -113,11 +113,11 @@
 **So that** I can see position details
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/portfolio/PositionCard.tsx`
-- [ ] Market title
-- [ ] YES/NO holdings with current price
-- [ ] Unrealized P&L with trend icon
-- [ ] Link to market detail
+- [x] Create `src/components/portfolio/PositionCard.tsx`
+- [x] Market title
+- [x] YES/NO holdings with current price
+- [x] Unrealized P&L with trend icon
+- [x] Link to market detail
 
 **References:** FRONTEND_COMPONENTS.md Section 6.1
 

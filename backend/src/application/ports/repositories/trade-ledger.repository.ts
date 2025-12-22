@@ -42,7 +42,16 @@ export interface CreateTradeLedgerEntryDTO {
   idempotencyKey?: string | null;
 }
 
+export interface FindTradesParams {
+  userId: string;
+  marketId?: string;
+  action?: string;
+  page: number;
+  pageSize: number;
+}
+
 export interface TradeLedgerRepository {
   findByIdempotencyKey(key: string, tx?: Transaction): Promise<TradeLedgerEntry | null>;
   create(entry: CreateTradeLedgerEntryDTO, tx?: Transaction): Promise<TradeLedgerEntry>;
+  findAll(params: FindTradesParams): Promise<{ items: TradeLedgerEntry[]; total: number }>;
 }
