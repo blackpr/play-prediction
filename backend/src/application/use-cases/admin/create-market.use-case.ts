@@ -33,6 +33,7 @@ export interface CreateMarketParams {
   seedLiquidity: bigint;
   closeBehavior?: string;
   bufferMinutes?: number;
+  initialYesPrice?: number;
   createdBy: string; // Admin user ID
 }
 
@@ -93,24 +94,44 @@ export class CreateMarketUseCase {
 
       const market = await this.deps.marketRepository.create(marketData, tx);
 
-      // Create liquidity pool (50/50 split)
+      // Calculate initial pool quantities
+      let yesQty = params.seedLiquidity;
+      let noQty = params.seedLiquidity;
+
+      if (params.initialYesPrice) {
+        // Calculate skewed quantities based on initial price
+        // Formula: noQty = P_yes * Total_Shares
+        // Where Total_Shares = 2 * seedLiquidity (to match standard 50/50 injection value)
+        const totalTokens = params.seedLiquidity * 2n;
+
+        // Use integer math: noQty = (Total * (price * 100)) / 100
+        const priceBp = BigInt(Math.floor(params.initialYesPrice * 10000));
+        noQty = (totalTokens * priceBp) / 10000n;
+        yesQty = totalTokens - noQty;
+      }
+
+      // Create liquidity pool
       const poolData: NewLiquidityPool = {
         id: market.id,
-        yesQty: params.seedLiquidity,
-        noQty: params.seedLiquidity,
+        yesQty,
+        noQty,
         versionId: 1,
       };
 
       await this.deps.marketRepository.createPool(poolData, tx);
 
       // Grant seed shares to treasury account
+      const totalQty = yesQty + noQty;
+      const yesCostBasis = (params.seedLiquidity * yesQty) / totalQty;
+      const noCostBasis = params.seedLiquidity - yesCostBasis;
+
       const portfolioData = {
         userId: treasuryUser.id,
         marketId: market.id,
-        yesQty: params.seedLiquidity,
-        noQty: params.seedLiquidity,
-        yesCostBasis: params.seedLiquidity / 2n,
-        noCostBasis: params.seedLiquidity / 2n,
+        yesQty,
+        noQty,
+        yesCostBasis,
+        noCostBasis,
       };
 
       await this.deps.portfolioRepository.create(portfolioData, tx);
@@ -122,7 +143,7 @@ export class CreateMarketUseCase {
         action: 'GENESIS_MINT',
         side: null,
         amountIn: params.seedLiquidity,
-        amountOut: params.seedLiquidity,
+        amountOut: params.seedLiquidity, // Being used as "value out" roughly
         feePaid: 0n,
         feeVault: 0n,
         feeLp: 0n,
@@ -131,7 +152,7 @@ export class CreateMarketUseCase {
       await this.deps.tradeLedgerRepository.create(ledgerData, tx);
 
       // Calculate k-invariant
-      const k = params.seedLiquidity * params.seedLiquidity;
+      const k = yesQty * noQty;
 
       return {
         marketId: market.id,
@@ -140,8 +161,8 @@ export class CreateMarketUseCase {
         closeBehavior: market.closeBehavior,
         bufferMinutes: market.bufferMinutes,
         pool: {
-          yesQty: params.seedLiquidity.toString(),
-          noQty: params.seedLiquidity.toString(),
+          yesQty: yesQty.toString(),
+          noQty: noQty.toString(),
           k: k.toString(),
         },
       };
@@ -192,6 +213,16 @@ export class CreateMarketUseCase {
         'closesAt must be in the future',
         { provided: params.closesAt.toISOString() }
       );
+    }
+
+    // Validate initialYesPrice
+    if (params.initialYesPrice !== undefined) {
+      if (params.initialYesPrice < 0.01 || params.initialYesPrice > 0.99) {
+        throw new ValidationError(
+          'initialYesPrice must be between 0.01 and 0.99',
+          { provided: params.initialYesPrice }
+        );
+      }
     }
   }
 

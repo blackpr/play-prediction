@@ -12,6 +12,7 @@ const createMarketBodySchema = z.object({
   seedLiquidity: z.string().regex(/^\d+$/, 'Seed liquidity must be a positive integer string'),
   closeBehavior: z.enum(['auto', 'manual', 'auto_with_buffer']).optional(),
   bufferMinutes: z.number().int().positive().optional(),
+  initialYesPrice: z.number().min(0.01).max(0.99).optional(),
 });
 
 export async function createMarket(request: FastifyRequest, reply: FastifyReply) {
@@ -42,6 +43,7 @@ export async function createMarket(request: FastifyRequest, reply: FastifyReply)
       seedLiquidity: BigInt(seedLiquidity),
       closeBehavior,
       bufferMinutes,
+      initialYesPrice: bodyResult.data.initialYesPrice,
       createdBy: (request as any).user.id,
     });
 

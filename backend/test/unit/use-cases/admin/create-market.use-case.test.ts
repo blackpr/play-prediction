@@ -288,5 +288,86 @@ describe('CreateMarketUseCase', () => {
         })
       ).rejects.toThrow(ValidationError);
     });
+    describe('Skewed Genesis', () => {
+      it('should create skewed pool with 75% YES probability', async () => {
+        mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+        mockMarketRepository.create.mockResolvedValue(mockMarket);
+
+        const seedLiquidity = 10_000_000n; // 10M micropoints
+
+        const result = await useCase.execute({
+          title: 'Skewed Market',
+          description: 'Test',
+          category: 'Weather',
+          closesAt: new Date('2025-12-25T00:00:00Z'),
+          seedLiquidity,
+          initialYesPrice: 0.75,
+          createdBy: 'admin-id',
+        });
+
+        expect(result.pool.yesQty).toBe('5000000');
+        expect(result.pool.noQty).toBe('15000000');
+
+        // Verify treasury portfolio
+        expect(mockPortfolioRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            yesQty: 5_000_000n,
+            noQty: 15_000_000n,
+            // Cost basis split proportional to quantity
+            yesCostBasis: 2_500_000n,
+            noCostBasis: 7_500_000n,
+          }),
+          expect.anything()
+        );
+      });
+
+      it('should create skewed pool with 20% YES probability', async () => {
+        mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+        mockMarketRepository.create.mockResolvedValue(mockMarket);
+
+
+
+        const result = await useCase.execute({
+          title: 'Skewed Market',
+          description: 'Test',
+          category: 'Weather',
+          closesAt: new Date('2025-12-25T00:00:00Z'),
+          seedLiquidity: 10_000_000n,
+          initialYesPrice: 0.20,
+          createdBy: 'admin-id',
+        });
+
+        expect(result.pool.yesQty).toBe('16000000');
+        expect(result.pool.noQty).toBe('4000000');
+      });
+
+      it('should throw validation error for invalid initialYesPrice', async () => {
+        mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+
+        await expect(
+          useCase.execute({
+            title: 'Invalid Market',
+            description: 'Test',
+            category: 'Weather',
+            closesAt: new Date('2025-12-25T00:00:00Z'),
+            seedLiquidity: 10_000_000n,
+            initialYesPrice: 1.5, // Invalid > 0.99
+            createdBy: 'admin-id',
+          })
+        ).rejects.toThrow(ValidationError);
+
+        await expect(
+          useCase.execute({
+            title: 'Invalid Market',
+            description: 'Test',
+            category: 'Weather',
+            closesAt: new Date('2025-12-25T00:00:00Z'),
+            seedLiquidity: 10_000_000n,
+            initialYesPrice: 0.005, // Invalid < 0.01
+            createdBy: 'admin-id',
+          })
+        ).rejects.toThrow(ValidationError);
+      });
+    });
   });
 });

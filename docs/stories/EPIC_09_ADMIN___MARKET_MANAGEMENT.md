@@ -249,11 +249,19 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 ```
 
 **Acceptance Criteria:**
-- [ ] Accept optional `initialYesPrice` parameter (0.01-0.99)
-- [ ] Calculate appropriate YES/NO quantities for target price
-- [ ] Validate price is within allowed range
-- [ ] Display initial probability in creation form
-- [ ] Preview shows expected starting prices
+- [x] Accept optional `initialYesPrice` parameter (0.01-0.99)
+- [x] Calculate appropriate YES/NO quantities for target price
+- [x] Validate price is within allowed range
+- [x] Display initial probability in creation form
+- [x] Preview shows expected starting prices
+
+**Implementation Notes:**
+- Updated `POST /admin/markets` schema to accept `initialYesPrice`.
+- Updated `CreateMarketUseCase` to calculate skewed pool quantities:
+  - `noQty = P_yes * (2 * seed)`.
+  - `yesQty = (2 * seed) - noQty`.
+- Added UI control in `CreateMarketForm` with slider and live preview.
+- Verified with unit tests and curl.
 
 **References:** ENGINE_LOGIC.md Section 8 (genesisMarketSkewed)
 

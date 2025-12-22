@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
 import { api } from '../../api/client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { Calendar } from 'lucide-react';
@@ -51,6 +51,8 @@ export function CreateMarketForm() {
 
       if (!payload.imageUrl) delete payload.imageUrl;
       if (payload.closeBehavior !== CloseBehavior.AUTO_WITH_BUFFER) delete payload.bufferMinutes;
+      if (payload.initialYesPrice === 0.5) delete payload.initialYesPrice; // Default behavior
+
 
       return api.post('/admin/markets', payload);
     },
@@ -76,6 +78,7 @@ export function CreateMarketForm() {
       seedLiquidity: 10_000_000,
       closeBehavior: CloseBehavior.AUTO as CloseBehavior,
       bufferMinutes: null as number | null,
+      initialYesPrice: 0.50,
     },
     onSubmit: async ({ value }) => {
       setPendingValues(value);
@@ -275,6 +278,54 @@ export function CreateMarketForm() {
               )}
             </form.Field>
 
+            {/* Initial Probability */}
+            <form.Field
+              name="initialYesPrice"
+              validators={{
+                onChange: ({ value }) => value < 0.01 || value > 0.99 ? 'Must be between 0.01 and 0.99' : undefined
+              }}
+            >
+              {(field) => (
+                <div className="space-y-4 border p-4 rounded-md bg-gray-50/5 dark:bg-gray-800/10">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="initialYesPrice">Initial YES Probability & Price</Label>
+                    <span className="font-mono text-lg font-bold text-emerald-400">
+                      {(field.state.value * 100).toFixed(0)}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="0.01"
+                      max="0.99"
+                      step="0.01"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(Number(e.target.value))}
+                      className="w-full accent-emerald-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="p-3 rounded bg-gray-900/50 border border-gray-800">
+                      <p className="text-gray-400 mb-1">YES Price</p>
+                      <p className="text-white font-mono">{field.state.value.toFixed(2)}</p>
+                    </div>
+                    <div className="p-3 rounded bg-gray-900/50 border border-gray-800">
+                      <p className="text-gray-400 mb-1">NO Price</p>
+                      <p className="text-white font-mono">{(1 - field.state.value).toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {field.state.value !== 0.5 && (
+                    <p className="text-xs text-amber-500">
+                      ⚠️ Market starts with skewed probabilities. Ensure this matches real-world expectations.
+                    </p>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
             {/* Close Behavior */}
             <div className="space-y-4 border p-4 rounded-md bg-gray-50/5 dark:bg-gray-800/10">
               <Label>Close Behavior</Label>
@@ -372,6 +423,10 @@ export function CreateMarketForm() {
             <div>
               <p className="text-sm text-gray-400">Seed Liquidity</p>
               <p className="text-white">{(pendingValues?.seedLiquidity / 1_000_000).toFixed(2)} Points</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Initial YES</p>
+              <p className="text-white">{(pendingValues?.initialYesPrice * 100).toFixed(0)}%</p>
             </div>
             <div>
               <p className="text-sm text-gray-400">Closes At</p>
