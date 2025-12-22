@@ -9,6 +9,10 @@ import type {
   BuySharesResponse,
   SellSharesRequest,
   SellSharesResponse,
+  MintSharesRequest,
+  MintSharesResponse,
+  MergeSharesRequest,
+  MergeSharesResponse,
   Position,
 } from './types'
 
@@ -115,6 +119,29 @@ export const sellShares = async (
 ): Promise<SellSharesResponse> => {
   const response = await api.post<SellSharesResponse>(
     `/markets/${marketId}/sell`,
+    request
+  )
+  return response.data
+}
+
+
+export const mintShares = async (
+  marketId: string,
+  request: MintSharesRequest
+): Promise<MintSharesResponse> => {
+  const response = await api.post<MintSharesResponse>(
+    `/markets/${marketId}/mint`,
+    request
+  )
+  return response.data
+}
+
+export const mergeShares = async (
+  marketId: string,
+  request: MergeSharesRequest
+): Promise<MergeSharesResponse> => {
+  const response = await api.post<MergeSharesResponse>(
+    `/markets/${marketId}/merge`,
     request
   )
   return response.data

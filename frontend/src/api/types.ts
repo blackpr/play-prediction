@@ -181,6 +181,25 @@ export interface SellSharesResponse {
   }
 }
 
+export interface MintSharesRequest {
+  amount: MicroPoints
+}
+
+export interface MintSharesResponse {
+  yesOut: MicroPoints
+  noOut: MicroPoints
+  newBalance: MicroPoints
+}
+
+export interface MergeSharesRequest {
+  amount: MicroPoints
+}
+
+export interface MergeSharesResponse {
+  amountOut: MicroPoints
+  newBalance: MicroPoints
+}
+
 export interface Position {
   marketId: string
   yesQty: MicroPoints

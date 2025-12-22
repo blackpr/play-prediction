@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useBuyShares, useSellShares, useQuote } from '../../hooks/useTrading'
+import { useBuyShares, useSellShares, useMintShares, useMergeShares, useQuote } from '../../hooks/useTrading'
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
 import { Button } from '../ui/Button'
@@ -17,7 +17,7 @@ interface TradeFormProps {
   market: Market
 }
 
-type TradeTab = 'buy' | 'sell'
+type TradeTab = 'buy' | 'sell' | 'mint' | 'merge'
 
 // Helper to convert backend error messages to user-friendly text
 function getUserFriendlyError(errorMessage: string): string {
@@ -85,6 +85,8 @@ export function TradeForm({ market }: TradeFormProps) {
   const { data: position } = usePosition(market.id)
   const buyMutation = useBuyShares()
   const sellMutation = useSellShares()
+  const mintMutation = useMintShares()
+  const mergeMutation = useMergeShares()
 
   // Debounce amount for quote fetching
   useEffect(() => {
@@ -123,40 +125,69 @@ export function TradeForm({ market }: TradeFormProps) {
   const [showConfirmation, setShowConfirmation] = useState(false)
 
   const executeTrade = async (trade: {
-    action: 'buy' | 'sell'
+    action: 'buy' | 'sell' | 'mint' | 'merge'
     amountMicro: bigint
-    minOut: bigint
+    minOut?: bigint
   }) => {
-    if (trade.action === 'buy') {
-      const result = await buyMutation.mutateAsync({
-        marketId: market.id,
-        request: {
-          side,
-          amount: trade.amountMicro.toString(),
-          minSharesOut: trade.minOut.toString(),
-        },
-      })
-      toast.success(`Bought ${formatPoints(result.sharesOut)} ${side} shares`)
-      queryClient.setQueryData(['portfolio', market.id], {
-        ...result.newPosition,
-        marketId: market.id,
-      })
-    } else {
-      const result = await sellMutation.mutateAsync({
-        marketId: market.id,
-        request: {
-          side,
-          shares: trade.amountMicro.toString(),
-          minAmountOut: trade.minOut.toString(),
-        },
-      })
-      toast.success(
-        `Sold ${formatPoints(result.sharesIn)} ${side} shares for ${formatPoints(result.amountOut)} points`
-      )
-      queryClient.setQueryData(['portfolio', market.id], {
-        ...result.newPosition,
-        marketId: market.id,
-      })
+    switch (trade.action) {
+      case 'buy': {
+        const result = await buyMutation.mutateAsync({
+          marketId: market.id,
+          request: {
+            side,
+            amount: trade.amountMicro.toString(),
+            minSharesOut: (trade.minOut ?? 0n).toString(),
+          },
+        })
+        toast.success(`Bought ${formatPoints(result.sharesOut)} ${side} shares`)
+        queryClient.setQueryData(['portfolio', market.id], {
+          ...result.newPosition,
+          marketId: market.id,
+        })
+        break
+      }
+      case 'sell': {
+        const result = await sellMutation.mutateAsync({
+          marketId: market.id,
+          request: {
+            side,
+            shares: trade.amountMicro.toString(),
+            minAmountOut: (trade.minOut ?? 0n).toString(),
+          },
+        })
+        toast.success(
+          `Sold ${formatPoints(result.sharesIn)} ${side} shares for ${formatPoints(result.amountOut)} points`
+        )
+        queryClient.setQueryData(['portfolio', market.id], {
+          ...result.newPosition,
+          marketId: market.id,
+        })
+        break
+      }
+      case 'mint': {
+        const result = await mintMutation.mutateAsync({
+          marketId: market.id,
+          request: {
+            amount: trade.amountMicro.toString(),
+          },
+        })
+        toast.success(`Minted ${formatPoints(result.yesOut)} YES and NO shares`)
+        // Invalidate portfolio to refresh
+        queryClient.invalidateQueries({ queryKey: ['portfolio', market.id] })
+        break
+      }
+      case 'merge': {
+        const result = await mergeMutation.mutateAsync({
+          marketId: market.id,
+          request: {
+            amount: trade.amountMicro.toString(),
+          },
+        })
+        toast.success(`Merged shares for ${formatPoints(result.amountOut)} points`)
+        // Invalidate portfolio to refresh
+        queryClient.invalidateQueries({ queryKey: ['portfolio', market.id] })
+        break
+      }
     }
   }
 
@@ -167,8 +198,31 @@ export function TradeForm({ market }: TradeFormProps) {
     onSubmit: async () => {
       // Use the amount state variable, not form value
       const amountMicro = parsePoints(amount)
+      const amountBigInt = BigInt(amountMicro)
 
       try {
+        if (tab === 'mint') {
+          // Mint logic - no quote/slippage needed
+          await executeTrade({
+            action: 'mint',
+            amountMicro: amountBigInt,
+          })
+          setAmount('')
+          form.reset()
+          return
+        }
+
+        if (tab === 'merge') {
+          // Merge logic - no quote/slippage needed
+          await executeTrade({
+            action: 'merge',
+            amountMicro: amountBigInt,
+          })
+          setAmount('')
+          form.reset()
+          return
+        }
+
         if (tab === 'buy') {
           // Calculate minSharesOut with configured slippage tolerance
           const slippageBps = BigInt(Math.round(slippage * 100))
@@ -179,7 +233,6 @@ export function TradeForm({ market }: TradeFormProps) {
             : 0n
 
           // Check threshold for confirmation (Amount > 100 or Impact > 10%)
-          const amountBigInt = BigInt(amountMicro)
           const impact = quote?.priceImpact ? parseFloat(quote.priceImpact) : 0
           if ((amountBigInt >= CONFIRMATION_THRESHOLD || impact > 0.1) && !skipConfirmation) {
             setPendingTrade({
@@ -200,10 +253,9 @@ export function TradeForm({ market }: TradeFormProps) {
             minOut: minSharesOut,
           })
 
-          // Reset form on success
           setAmount('')
           form.reset()
-        } else {
+        } else if (tab === 'sell') {
           // Calculate minAmountOut with configured slippage tolerance
           const slippageBps = BigInt(Math.round(slippage * 100))
           const factor = 10000n - slippageBps
@@ -238,7 +290,6 @@ export function TradeForm({ market }: TradeFormProps) {
             minOut: minAmountOut,
           })
 
-          // Reset form on success
           setAmount('')
           form.reset()
         }
@@ -250,14 +301,31 @@ export function TradeForm({ market }: TradeFormProps) {
     },
   })
 
-  const availableShares =
-    side === 'YES'
-      ? BigInt(position?.yesQty ?? '0')
-      : BigInt(position?.noQty ?? '0')
+  const availableShares = (() => {
+    if (tab === 'sell') {
+      return side === 'YES'
+        ? BigInt(position?.yesQty ?? '0')
+        : BigInt(position?.noQty ?? '0')
+    }
+    if (tab === 'merge') {
+      const yes = BigInt(position?.yesQty ?? '0')
+      const no = BigInt(position?.noQty ?? '0')
+      return yes < no ? yes : no
+    }
+    return 0n
+  })()
 
   const isClosed = market.closesAt ? new Date(market.closesAt) < new Date() : false
   const isMarketActive = market.status === 'ACTIVE' && !isClosed
-  const mutation = tab === 'buy' ? buyMutation : sellMutation
+
+  const mutation = (() => {
+    switch (tab) {
+      case 'buy': return buyMutation
+      case 'sell': return sellMutation
+      case 'mint': return mintMutation
+      case 'merge': return mergeMutation
+    }
+  })()
 
   // Validation
   const getValidationError = (): string | null => {
@@ -265,20 +333,20 @@ export function TradeForm({ market }: TradeFormProps) {
 
     const amountMicro = BigInt(parsePoints(amount))
 
-    if (tab === 'buy') {
+    if (tab === 'buy' || tab === 'mint') {
       const balance = user?.balance ? BigInt(user.balance) : 0n
       if (amountMicro > balance) {
         return "You don't have enough points"
       }
-      if (amountMicro < 1000n) {
-        return 'Minimum trade size is 0.001 points'
+      if (amountMicro < 1000n) { // 0.001
+        return 'Minimum trade size is 0.001'
       }
-    } else {
+    } else if (tab === 'sell' || tab === 'merge') {
       if (amountMicro > availableShares) {
         return "You don't have enough shares"
       }
       if (amountMicro < 1000n) {
-        return 'Minimum trade size is 0.001 shares'
+        return 'Minimum size is 0.001'
       }
     }
 
@@ -292,20 +360,22 @@ export function TradeForm({ market }: TradeFormProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Trade</CardTitle>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className={clsx(
-            "p-2 rounded-lg transition-colors",
-            showSettings ? "bg-gray-800 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"
-          )}
-          type="button"
-          aria-label="Settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        {(tab === 'buy' || tab === 'sell') && (
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className={clsx(
+              "p-2 rounded-lg transition-colors",
+              showSettings ? "bg-gray-800 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"
+            )}
+            type="button"
+            aria-label="Settings"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        )}
       </CardHeader>
 
-      {showSettings && (
+      {showSettings && (tab === 'buy' || tab === 'sell') && (
         <div className="px-6 pb-6 border-b border-gray-800 mb-4 animate-in slide-in-from-top-2 duration-200">
           <label className="block text-xs font-medium text-gray-400 mb-3">
             Slippage Tolerance
@@ -356,85 +426,74 @@ export function TradeForm({ market }: TradeFormProps) {
           </div>
         )}
 
-        {/* Buy/Sell Tabs */}
+        {/* Trade Type Tabs */}
         <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setTab('buy')
-              setAmount('')
-            }}
-            disabled={!isMarketActive}
-            className={clsx(
-              'flex-1 py-2 rounded-lg font-medium transition-colors',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              tab === 'buy'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
-            )}
-          >
-            Buy
-          </button>
-          <button
-            onClick={() => {
-              setTab('sell')
-              setAmount('')
-            }}
-            disabled={!isMarketActive}
-            className={clsx(
-              'flex-1 py-2 rounded-lg font-medium transition-colors',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              tab === 'sell'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
-            )}
-          >
-            Sell
-          </button>
+          {([{ id: 'buy', label: 'Buy' }, { id: 'sell', label: 'Sell' }, { id: 'mint', label: 'Mint' }, { id: 'merge', label: 'Merge' }] as const).map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => {
+                setTab(id)
+                setAmount('')
+              }}
+              disabled={!isMarketActive}
+              className={clsx(
+                'flex-1 py-2 rounded-lg font-medium transition-colors text-sm',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                tab === id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:text-white'
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {/* YES/NO Side Selection */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSide('YES')}
-            disabled={!isMarketActive}
-            className={clsx(
-              'flex-1 py-3 px-4 rounded-lg font-medium transition-all',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'flex flex-col items-center gap-1',
-              side === 'YES'
-                ? 'bg-green-600 text-white ring-2 ring-green-400'
-                : 'bg-gray-800 text-gray-400 hover:bg-green-600/20'
-            )}
-          >
-            <span className="text-lg">YES</span>
-            <span className="text-xs opacity-80">
-              {(() => {
-                const price = parseFloat(market.yesPrice ?? '0')
-                return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
-              })()}
-            </span>
-          </button>
-          <button
-            onClick={() => setSide('NO')}
-            disabled={!isMarketActive}
-            className={clsx(
-              'flex-1 py-3 px-4 rounded-lg font-medium transition-all',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'flex flex-col items-center gap-1',
-              side === 'NO'
-                ? 'bg-red-600 text-white ring-2 ring-red-400'
-                : 'bg-gray-800 text-gray-400 hover:bg-red-600/20'
-            )}
-          >
-            <span className="text-lg">NO</span>
-            <span className="text-xs opacity-80">
-              {(() => {
-                const price = parseFloat(market.noPrice ?? '0')
-                return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
-              })()}
-            </span>
-          </button>
-        </div>
+        {(tab === 'buy' || tab === 'sell') && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSide('YES')}
+              disabled={!isMarketActive}
+              className={clsx(
+                'flex-1 py-3 px-4 rounded-lg font-medium transition-all',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'flex flex-col items-center gap-1',
+                side === 'YES'
+                  ? 'bg-green-600 text-white ring-2 ring-green-400'
+                  : 'bg-gray-800 text-gray-400 hover:bg-green-600/20'
+              )}
+            >
+              <span className="text-lg">YES</span>
+              <span className="text-xs opacity-80">
+                {(() => {
+                  const price = parseFloat(market.yesPrice ?? '0')
+                  return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
+                })()}
+              </span>
+            </button>
+            <button
+              onClick={() => setSide('NO')}
+              disabled={!isMarketActive}
+              className={clsx(
+                'flex-1 py-3 px-4 rounded-lg font-medium transition-all',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'flex flex-col items-center gap-1',
+                side === 'NO'
+                  ? 'bg-red-600 text-white ring-2 ring-red-400'
+                  : 'bg-gray-800 text-gray-400 hover:bg-red-600/20'
+              )}
+            >
+              <span className="text-lg">NO</span>
+              <span className="text-xs opacity-80">
+                {(() => {
+                  const price = parseFloat(market.noPrice ?? '0')
+                  return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
+                })()}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Amount Input */}
         <form
@@ -446,7 +505,7 @@ export function TradeForm({ market }: TradeFormProps) {
         >
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
-              {tab === 'buy' ? 'Amount (Points)' : 'Shares to Sell'}
+              {tab === 'buy' || tab === 'mint' ? 'Amount (Points)' : tab === 'merge' ? 'Shares to Merge' : 'Shares to Sell'}
             </label>
             <div className="relative">
               <input
@@ -464,7 +523,7 @@ export function TradeForm({ market }: TradeFormProps) {
                   validationError ? 'border-red-500' : 'border-gray-700'
                 )}
               />
-              {tab === 'buy' && isMarketActive && (
+              {(tab === 'buy' || tab === 'mint') && isMarketActive && (
                 <button
                   type="button"
                   onClick={() => {
@@ -476,7 +535,7 @@ export function TradeForm({ market }: TradeFormProps) {
                   MAX
                 </button>
               )}
-              {tab === 'sell' && isMarketActive && (
+              {(tab === 'sell' || tab === 'merge') && isMarketActive && (
                 <button
                   type="button"
                   onClick={() => {
@@ -493,15 +552,15 @@ export function TradeForm({ market }: TradeFormProps) {
             {validationError && (
               <p className="mt-1 text-sm text-red-400">{validationError}</p>
             )}
-            {tab === 'sell' && (
+            {(tab === 'sell' || tab === 'merge') && (
               <p className="mt-1 text-xs text-gray-500">
-                Available: {formatPoints(availableShares.toString())} {side} shares
+                Available: {formatPoints(availableShares.toString())} {tab === 'merge' ? 'pairs' : `${side} shares`}
               </p>
             )}
           </div>
 
-          {/* Estimated Output */}
-          {quote && amount && parseFloat(amount) > 0 && (
+          {/* Estimated Output for Buy/Sell */}
+          {quote && (tab === 'buy' || tab === 'sell') && amount && parseFloat(amount) > 0 && (
             <div className="p-4 bg-gray-800/50 rounded-lg space-y-3 border border-gray-700">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">
@@ -578,8 +637,35 @@ export function TradeForm({ market }: TradeFormProps) {
             </div>
           )}
 
+          {/* Simple Preview for Mint/Merge */}
+          {(tab === 'mint' || tab === 'merge') && amount && parseFloat(amount) > 0 && (
+            <div className="p-4 bg-gray-800/50 rounded-lg space-y-3 border border-gray-700">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">
+                  {tab === 'mint' ? 'You will receive' : 'You will receive'}
+                </span>
+                <span className="font-mono text-white text-right">
+                  {tab === 'mint' ? (
+                    <>
+                      {formatPoints(parsePoints(amount).toString())} YES<br />
+                      + {formatPoints(parsePoints(amount).toString())} NO
+                    </>
+                  ) : (
+                    <>
+                      {formatPoints(parsePoints(amount).toString())} Points
+                    </>
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Fee</span>
+                <span className="font-mono text-white">0</span>
+              </div>
+            </div>
+          )}
+
           {/* Loading state for quote */}
-          {isQuoteLoading && amount && parseFloat(amount) > 0 && (
+          {isQuoteLoading && (tab === 'buy' || tab === 'sell') && amount && parseFloat(amount) > 0 && (
             <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
               <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -601,13 +687,13 @@ export function TradeForm({ market }: TradeFormProps) {
           {/* Submit Button */}
           <Button
             type="submit"
-            variant={side === 'YES' ? 'yes' : 'no'}
+            variant={tab === 'mint' || tab === 'merge' ? 'primary' : side === 'YES' ? 'yes' : 'no'}
             size="lg"
             className="w-full"
             isLoading={mutation.isPending}
             disabled={!canSubmit || mutation.isPending}
           >
-            {tab === 'buy' ? 'Buy' : 'Sell'} {side}
+            {tab === 'buy' ? `Buy ${side}` : tab === 'sell' ? `Sell ${side}` : tab === 'mint' ? 'Mint Shares' : 'Merge Shares'}
           </Button>
         </form>
       </CardContent>

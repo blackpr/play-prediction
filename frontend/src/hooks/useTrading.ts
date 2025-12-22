@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient, queryOptions } from '@tanstack/react-query'
-import { getQuote, buyShares, sellShares } from '../api/markets'
+
 import type {
   QuoteRequest,
   BuySharesRequest,
   SellSharesRequest,
   BuySharesResponse,
   SellSharesResponse,
+  MintSharesRequest,
+  MintSharesResponse,
+  MergeSharesRequest,
+  MergeSharesResponse,
 } from '../api/types'
+import { getQuote, buyShares, sellShares, mintShares, mergeShares } from '../api/markets'
 
 // Quote query hook with debouncing handled at component level
 export const quoteQueryOptions = (marketId: string, params: QuoteRequest | null) =>
@@ -75,6 +80,52 @@ export const useSellShares = () => {
     },
     onSuccess: (_data: SellSharesResponse, variables) => {
       // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['portfolio', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets'] })
+    },
+  })
+}
+
+// Mint shares mutation
+export const useMintShares = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      marketId,
+      request,
+    }: {
+      marketId: string
+      request: MintSharesRequest
+    }) => {
+      return mintShares(marketId, request)
+    },
+    onSuccess: (_data: MintSharesResponse, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['portfolio', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets', variables.marketId] })
+      queryClient.invalidateQueries({ queryKey: ['markets'] })
+    },
+  })
+}
+
+// Merge shares mutation
+export const useMergeShares = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      marketId,
+      request,
+    }: {
+      marketId: string
+      request: MergeSharesRequest
+    }) => {
+      return mergeShares(marketId, request)
+    },
+    onSuccess: (_data: MergeSharesResponse, variables) => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
       queryClient.invalidateQueries({ queryKey: ['portfolio', variables.marketId] })
       queryClient.invalidateQueries({ queryKey: ['markets', variables.marketId] })
