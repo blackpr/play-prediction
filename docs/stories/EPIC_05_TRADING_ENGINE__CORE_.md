@@ -243,10 +243,10 @@ Selling Δx YES shares:
 **So that** concurrent trades don't corrupt state
 
 **Acceptance Criteria:**
-- [ ] Add version_id check in UPDATE WHERE clause
-- [ ] Increment version_id on successful update
-- [ ] Return OPTIMISTIC_LOCK_FAIL if no rows updated
-- [ ] Client should retry on this error
+- [x] Add version_id check in UPDATE WHERE clause
+- [x] Increment version_id on successful update
+- [x] Return OPTIMISTIC_LOCK_FAIL if no rows updated
+- [x] Client should retry on this error
 
 **Implementation:**
 ```sql
@@ -258,6 +258,19 @@ WHERE id = ? AND version_id = ?
 
 **References:** EDGE_CASES.md Section 4.1
 
+**Implementation Notes:**
+- ✅ `version_id` column exists in `liquidity_pools` table (schema.ts:136)
+- ✅ `updatePoolWithLock()` method implemented in `PostgresMarketRepository` (postgres-market.repository.ts:325-363)
+- ✅ Version check in WHERE clause: `eq(liquidityPools.versionId, expectedVersion)`
+- ✅ Version increment on success: `versionId: expectedVersion + 1`
+- ✅ Returns `success: false` when version mismatch (no rows updated)
+- ✅ Use cases throw `OPTIMISTIC_LOCK_FAIL` error (buy-shares.use-case.ts:169-175, sell-shares.use-case.ts:168)
+- ✅ Routes return 409 status code for lock failures (buy.ts:97, sell.ts:97)
+- ✅ Unit tests verify lock failure behavior (buy-shares.use-case.test.ts:357-371, sell-shares.use-case.test.ts:410+)
+- ✅ Integration tests created in `test/integration/optimistic-locking.test.ts`
+- ✅ Verified version increments on each trade (1 → 2 → 3)
+- ✅ All 127 backend tests passing
+
 ---
 
 ### TRADE-7: Add Idempotency Key Support
@@ -267,11 +280,39 @@ WHERE id = ? AND version_id = ?
 **So that** duplicate requests are safe
 
 **Acceptance Criteria:**
-- [ ] Accept optional `idempotencyKey` in trade requests
-- [ ] Check trade_ledger for existing key before processing
-- [ ] Return IDEMPOTENCY_CONFLICT if already used
-- [ ] Store key in trade_ledger entry
+- [x] Accept optional `idempotencyKey` in trade requests
+- [x] Check trade_ledger for existing key before processing
+- [x] Return IDEMPOTENCY_CONFLICT if already used
+- [x] Store key in trade_ledger entry
 
 **References:** EDGE_CASES.md Section 4.2
+
+**Implementation Notes:**
+- ✅ `idempotency_key` column in `trade_ledger` table (schema.ts:185)
+- ✅ Unique index on `idempotency_key` for fast lookups (schema.ts:195)
+- ✅ Use cases check for duplicate keys before processing (buy-shares.use-case.ts:73-84, sell-shares.use-case.ts:73-84)
+- ✅ Throws `IDEMPOTENCY_CONFLICT` error when duplicate found
+- ✅ Routes return 409 status code (buy.ts:97, sell.ts:97)
+- ✅ Unit tests verify idempotency behavior (buy-shares.use-case.test.ts:115-132, sell-shares.use-case.test.ts:115+)
+- ✅ Integration tests created in `test/integration/idempotency.test.ts`
+- ✅ Verified with curl: first request succeeds, second with same key returns 409 IDEMPOTENCY_CONFLICT
+- ✅ Keys are optional - trades without keys are allowed
+- ✅ Different keys allow different trades
+- ✅ All 127 backend tests passing
+
+**Curl Verification:**
+```bash
+# First request - SUCCESS
+curl -X POST http://localhost:4000/api/v1/markets/MARKET_ID/buy \
+  -b cookies.txt -H "Content-Type: application/json" \
+  -d '{"side": "YES", "amount": "100000", "minSharesOut": "1", "idempotencyKey": "test-key-123"}'
+# Response: {"success":true, "data":{"transactionId":"...", "sharesOut":"43281", ...}}
+
+# Second request with same key - CONFLICT
+curl -X POST http://localhost:4000/api/v1/markets/MARKET_ID/buy \
+  -b cookies.txt -H "Content-Type: application/json" \
+  -d '{"side": "YES", "amount": "100000", "minSharesOut": "1", "idempotencyKey": "test-key-123"}'
+# Response: {"success":false, "error":{"code":"IDEMPOTENCY_CONFLICT", ...}}
+```
 
 ---
