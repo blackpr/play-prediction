@@ -26,6 +26,7 @@ export type JobType =
   | 'notification:user'
   | 'notification:admin'
   | 'notification:trade-voided'
+  | 'admin:alert-pending-resolution'
 
   // maintenance
   | 'maintenance:cleanup-tokens'

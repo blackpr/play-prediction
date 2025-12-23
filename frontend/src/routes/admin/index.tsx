@@ -4,6 +4,7 @@ import { useAdminStats } from '../../hooks/useAdminStats'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { GrantPointsModal } from '../../components/admin/GrantPointsModal'
+import { PendingResolutionsWidget } from '../../components/admin/PendingResolutionsWidget'
 import {
   Users,
   TrendingUp,
@@ -92,6 +93,9 @@ function AdminIndex() {
           icon={<Clock className="w-4 h-4 text-red-400" />}
         />
       </div>
+
+      {/* Pending Resolutions Widget */}
+      <PendingResolutionsWidget />
 
       {/* Recent Trades */}
       <Card className="border-gray-800 bg-gray-900/50 backdrop-blur-sm">

@@ -24,6 +24,14 @@ export async function registerRepeatableJobs() {
 
     console.log('[Jobs] Registered market:remind-manual-close (every 15 minutes)');
 
+    // SCHEDULER-3: Alert about pending resolutions every 1 hour
+    await queueService.addRepeatable('notifications', {
+      type: 'admin:alert-pending-resolution',
+      payload: {}
+    }, '0 * * * *'); // Every hour at minute 0
+
+    console.log('[Jobs] Registered admin:alert-pending-resolution (every 1 hour)');
+
     // SCHEDULER-5: Activate scheduled markets (placeholder for future)
     // Commented out until SCHEDULER-5 is implemented
     // await queueService.addRepeatable('market-ops', {
