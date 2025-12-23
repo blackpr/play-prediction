@@ -577,12 +577,25 @@ curl -s -X GET "http://localhost:4000/api/v1/admin/users/{USER_ID}" \
 **So that** I can see all users
 
 **Acceptance Criteria:**
-- [ ] Table with all users
-- [ ] Columns: Email, Role, Balance, Active, Created, Actions
-- [ ] Search by email
-- [ ] Filter by role
-- [ ] Action: Grant Points button
-- [ ] Pagination
+- [x] Table with all users
+- [x] Columns: Email, Role, Balance, Active, Created, Actions
+- [x] Search by email
+- [x] Filter by role
+- [x] Action: Grant Points button
+- [x] Pagination
+
+**Implementation Notes:**
+- ✅ Created `UsersTable` component in `frontend/src/components/admin/UsersTable.tsx`
+- ✅ Created route at `/admin/users` in `frontend/src/routes/admin.users.tsx`
+- ✅ Follows `MarketsTable` pattern with debounced search (500ms)
+- ✅ Role filtering: All, User, Admin, Treasury
+- ✅ Pagination: 10 users per page
+- ✅ Grant Points button opens `GrantPointsModal`
+- ✅ Role badges color-coded: admin (red), treasury (yellow), user (gray)
+- ✅ Balance formatting using `formatPoints()` utility
+- ✅ Uses existing backend endpoints from ADMIN-14
+- ✅ Browser tested and verified - all functionality working
+- ✅ Navigation already existed in `AdminSidebar`
 
 ---
 

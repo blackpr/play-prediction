@@ -20,6 +20,7 @@ import { Route as MarketsIndexRouteImport } from './routes/markets/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PortfolioHistoryRouteImport } from './routes/portfolio/history'
 import { Route as MarketsMarketIdRouteImport } from './routes/markets/$marketId'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminMarketsRouteImport } from './routes/admin/markets'
 import { Route as AdminMarketCreateRouteImport } from './routes/admin/market-create'
 
@@ -78,6 +79,11 @@ const MarketsMarketIdRoute = MarketsMarketIdRouteImport.update({
   path: '/markets/$marketId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMarketsRoute = AdminMarketsRouteImport.update({
   id: '/markets',
   path: '/markets',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/market-create': typeof AdminMarketCreateRoute
   '/admin/markets': typeof AdminMarketsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/markets/$marketId': typeof MarketsMarketIdRoute
   '/portfolio/history': typeof PortfolioHistoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/market-create': typeof AdminMarketCreateRoute
   '/admin/markets': typeof AdminMarketsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/markets/$marketId': typeof MarketsMarketIdRoute
   '/portfolio/history': typeof PortfolioHistoryRoute
   '/admin': typeof AdminIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/market-create': typeof AdminMarketCreateRoute
   '/admin/markets': typeof AdminMarketsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/markets/$marketId': typeof MarketsMarketIdRoute
   '/portfolio/history': typeof PortfolioHistoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/market-create'
     | '/admin/markets'
+    | '/admin/users'
     | '/markets/$marketId'
     | '/portfolio/history'
     | '/admin/'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/market-create'
     | '/admin/markets'
+    | '/admin/users'
     | '/markets/$marketId'
     | '/portfolio/history'
     | '/admin'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/market-create'
     | '/admin/markets'
+    | '/admin/users'
     | '/markets/$marketId'
     | '/portfolio/history'
     | '/admin/'
@@ -273,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketsMarketIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/markets': {
       id: '/admin/markets'
       path: '/markets'
@@ -293,12 +312,14 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminMarketCreateRoute: typeof AdminMarketCreateRoute
   AdminMarketsRoute: typeof AdminMarketsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketCreateRoute: AdminMarketCreateRoute,
   AdminMarketsRoute: AdminMarketsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
