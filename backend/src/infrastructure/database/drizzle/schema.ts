@@ -120,6 +120,7 @@ export const markets = pgTable('markets', {
   category: varchar('category', { length: 100 }), // Keep for migration
   categoryId: uuid('category_id').references(() => categories.id),
   closesAt: timestamp('closes_at', { withTimezone: true }),
+  activatesAt: timestamp('activates_at', { withTimezone: true }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   // When the event actually ended (for voiding post-event trades)
   // See EDGE_CASES.md Section 6.2.2 for details

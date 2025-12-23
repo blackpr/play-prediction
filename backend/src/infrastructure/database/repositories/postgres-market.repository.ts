@@ -531,7 +531,7 @@ export class PostgresMarketRepository implements MarketRepository {
 
   async update(
     marketId: string,
-    updates: Partial<Pick<import('../drizzle/schema').Market, 'title' | 'description' | 'category' | 'categoryId' | 'imageUrl' | 'closesAt' | 'eventEndedAt'>>,
+    updates: Partial<Pick<import('../drizzle/schema').Market, 'title' | 'description' | 'category' | 'categoryId' | 'imageUrl' | 'closesAt' | 'activatesAt' | 'eventEndedAt'>>,
     tx?: unknown
   ): Promise<import('../drizzle/schema').Market> {
     const db = tx ? (tx as DrizzleDB) : this.db;

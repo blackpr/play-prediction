@@ -47,6 +47,7 @@ export function CreateMarketForm() {
       const payload = {
         ...data,
         closesAt: new Date(data.closesAt).toISOString(),
+        activatesAt: data.activatesAt ? new Date(data.activatesAt).toISOString() : undefined,
         seedLiquidity: data.seedLiquidity.toString(),
       };
 
@@ -101,6 +102,7 @@ export function CreateMarketForm() {
       categoryId: '',
       imageUrl: '',
       closesAt: '',
+      activatesAt: '',
       seedLiquidity: 10_000_000,
       closeBehavior: CloseBehavior.AUTO as CloseBehavior,
       bufferMinutes: null as number | null,
@@ -291,6 +293,39 @@ export function CreateMarketForm() {
                   </div>
                 );
               }}
+            </form.Field>
+
+            {/* Activates At */}
+            <form.Field
+              name="activatesAt"
+              validators={{
+                onChange: ({ value }) => {
+                  if (value && new Date(value) <= new Date()) return 'Must be in future';
+                  return undefined;
+                }
+              }}
+            >
+              {(field) => (
+                <div className="space-y-2">
+                  <Label htmlFor="activatesAt">Activates At (Optional)</Label>
+                  <div className="relative">
+                    <Input
+                      id="activatesAt"
+                      type="datetime-local"
+                      placeholder="Leave empty to activate immediately"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={field.state.meta.errors.join(', ')}
+                      className="pr-10"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-text-dim">If set, market will remain DRAFT until this time.</p>
+                </div>
+              )}
             </form.Field>
 
             {/* Closes At */}
@@ -505,6 +540,10 @@ export function CreateMarketForm() {
           <div>
             <p className="text-sm text-gray-400">Initial YES</p>
             <p className="text-white">{(pendingValues?.initialYesPrice * 100).toFixed(0)}%</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">Activates At</p>
+            <p className="text-white">{pendingValues?.activatesAt ? format(new Date(pendingValues.activatesAt), 'PPP p') : 'Immediately'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-400">Closes At</p>

@@ -105,9 +105,50 @@ async function checkExpiredMarkets(job: Job<JobData>): Promise<any> {
  * Runs every 1 minute.
  */
 async function activateScheduledMarkets(job: Job<JobData>): Promise<any> {
-  // TODO: Implement in SCHEDULER-5
-  // Will query markets with status = 'DRAFT' and activates_at < NOW()
-  return { activated: 0 };
+  const db = createDatabase();
+  const now = new Date();
+
+  try {
+    // Find markets with status = 'DRAFT' and activates_at < NOW()
+    const scheduledMarkets = await db.query.markets.findMany({
+      where: and(
+        eq(markets.status, 'DRAFT'),
+        isNotNull(markets.activatesAt),
+        sql`${markets.activatesAt} < ${now.toISOString()}`
+      ),
+    });
+
+    for (const market of scheduledMarkets) {
+      await db.transaction(async (tx) => {
+        // Update market status to ACTIVE
+        await tx.update(markets)
+          .set({ status: 'ACTIVE', updatedAt: new Date() })
+          .where(eq(markets.id, market.id));
+
+        // Create audit log entry
+        await tx.insert(auditLogs).values({
+          adminId: SYSTEM_USER_ID,
+          action: 'MARKET_ACTIVATED_SCHEDULED',
+          entityType: 'market',
+          entityId: market.id,
+          details: JSON.stringify({
+            marketId: market.id,
+            title: market.title,
+            scheduledActivation: market.activatesAt,
+            activatedAt: new Date(),
+          }),
+        });
+
+        console.log(`[market:activate-scheduled] Activated market ${market.id}`);
+        // TODO: Emit WebSocket event: market:activated
+      });
+    }
+
+    return { activated: scheduledMarkets.length };
+  } catch (error) {
+    console.error('[market:activate-scheduled] Error:', error);
+    throw error;
+  }
 }
 
 /**

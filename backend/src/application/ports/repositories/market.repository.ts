@@ -105,7 +105,7 @@ export interface MarketRepository {
   updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<Market>;
   update(
     marketId: string,
-    updates: Partial<Pick<Market, 'title' | 'description' | 'category' | 'categoryId' | 'imageUrl' | 'closesAt' | 'eventEndedAt'>>,
+    updates: Partial<Pick<Market, 'title' | 'description' | 'category' | 'categoryId' | 'imageUrl' | 'closesAt' | 'activatesAt' | 'eventEndedAt'>>,
     tx?: unknown
   ): Promise<Market>;
   count(status?: string): Promise<number>;

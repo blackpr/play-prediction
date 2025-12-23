@@ -18,6 +18,7 @@ export interface CreateMarketParams {
   categoryId: string;
   imageUrl?: string;
   closesAt: Date;
+  activatesAt?: Date;
   seedLiquidity: bigint;
   closeBehavior?: string;
   bufferMinutes?: number;
@@ -29,6 +30,7 @@ export interface CreateMarketResult {
   marketId: string;
   title: string;
   status: string;
+  activatesAt: Date | null;
   closeBehavior: string;
   bufferMinutes: number | null;
   pool: {
@@ -84,6 +86,7 @@ export class CreateMarketUseCase {
         categoryId: category.id,
         imageUrl: params.imageUrl,
         closesAt: params.closesAt,
+        activatesAt: params.activatesAt,
         status: MarketStatus.DRAFT,
         closeBehavior: closeBehavior as any,
         bufferMinutes: bufferMinutes,
@@ -162,6 +165,7 @@ export class CreateMarketUseCase {
           initialYesPrice: params.initialYesPrice,
           closeBehavior: market.closeBehavior,
           closesAt: market.closesAt,
+          activatesAt: market.activatesAt,
         }),
       }, tx);
 
@@ -172,6 +176,7 @@ export class CreateMarketUseCase {
         marketId: market.id,
         title: market.title,
         status: market.status,
+        activatesAt: market.activatesAt || null,
         closeBehavior: market.closeBehavior,
         bufferMinutes: market.bufferMinutes,
         pool: {
@@ -224,6 +229,17 @@ export class CreateMarketUseCase {
         'closesAt must be in the future',
         { provided: params.closesAt.toISOString() }
       );
+    }
+
+    // Validate activatesAt logic
+    if (params.activatesAt) {
+      const now = new Date();
+      if (params.activatesAt <= now) {
+        throw new ValidationError('activatesAt must be in the future', { provided: params.activatesAt.toISOString() });
+      }
+      if (params.activatesAt >= params.closesAt) {
+        throw new ValidationError('activatesAt must be before closesAt', { activatesAt: params.activatesAt, closesAt: params.closesAt });
+      }
     }
 
     // Validate initialYesPrice

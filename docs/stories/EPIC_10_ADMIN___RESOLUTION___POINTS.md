@@ -1019,7 +1019,7 @@ curl -s -X PATCH "http://localhost:4000/api/v1/admin/markets/{MARKET_ID}/extend"
 **Depends On:** SETUP-3
 
 **Acceptance Criteria:**
-- [ ] Add Drizzle schema migration for new fields:
+- [x] Add Drizzle schema migration for new fields:
   ```typescript
   // In markets table schema
   closeBehavior: varchar('close_behavior', { length: 20 })
@@ -1027,9 +1027,9 @@ curl -s -X PATCH "http://localhost:4000/api/v1/admin/markets/{MARKET_ID}/extend"
     .default('auto'), // 'auto' | 'manual' | 'auto_with_buffer'
   bufferMinutes: integer('buffer_minutes'), // Only used when close_behavior = 'auto_with_buffer'
   ```
-- [ ] Generate migration: `npx drizzle-kit generate`
-- [ ] Apply migration: `npx drizzle-kit migrate`
-- [ ] Update TypeScript types
+- [x] Generate migration: `npx drizzle-kit generate`
+- [x] Apply migration: `npx drizzle-kit migrate`
+- [x] Update TypeScript types
 
 **Close Behavior Options:**
 
@@ -1443,13 +1443,13 @@ close_behavior = 'manual':
 ```
 
 **Acceptance Criteria:**
-- [ ] Add migration: `activates_at` column to markets table (nullable TIMESTAMPTZ)
-- [ ] Markets with `activates_at` remain in DRAFT until that time
-- [ ] Implement handler in `src/infrastructure/jobs/handlers/market.ts`
-- [ ] Query markets WHERE `status = 'DRAFT' AND activates_at < NOW()`
-- [ ] Transition `DRAFT` → `ACTIVE` and emit WebSocket event
-- [ ] Admin can override and manually activate earlier
-- [ ] UI shows countdown to activation
+- [x] Add migration: `activates_at` column to markets table (nullable TIMESTAMPTZ)
+- [x] Markets with `activates_at` remain in DRAFT until that time
+- [x] Implement handler in `src/infrastructure/jobs/handlers/market.ts`
+- [x] Query markets WHERE `status = 'DRAFT' AND activates_at < NOW()`
+- [x] Transition `DRAFT` → `ACTIVE` and emit WebSocket event
+- [x] Admin can override and manually activate earlier
+- [x] UI shows countdown to activation
 
 **Implementation:**
 ```typescript
@@ -1482,8 +1482,8 @@ close_behavior = 'manual':
 **Depends On:** EPIC_00 - JOBS-2
 
 **Acceptance Criteria:**
-- [ ] Create job registration module: `src/infrastructure/jobs/register-jobs.ts`
-- [ ] Register all repeatable jobs on worker startup:
+- [x] Create job registration module: `src/infrastructure/jobs/register-jobs.ts`
+- [x] Register all repeatable jobs on worker startup:
   ```typescript
   const repeatableJobs = [
     { queue: 'market-ops', name: 'market:check-expired', pattern: '* * * * *' },
@@ -1491,9 +1491,9 @@ close_behavior = 'manual':
     { queue: 'notifications', name: 'admin:alert-pending-resolution', pattern: '0 * * * *' },
   ];
   ```
-- [ ] Idempotent registration (don't duplicate if already exists)
-- [ ] Log registered jobs on startup
-- [ ] CLI command to list registered jobs: `npm run job:list`
+- [x] Idempotent registration (don't duplicate if already exists)
+- [x] Log registered jobs on startup
+- [x] CLI command to list registered jobs: `npm run job:list`
 
 **Worker Startup:**
 ```typescript

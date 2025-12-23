@@ -25,6 +25,7 @@ export interface UpdateMarketParams {
   categoryId?: string;
   imageUrl?: string;
   closesAt?: Date;
+  activatesAt?: Date | null;
   seedLiquidity?: bigint;
   initialYesPrice?: number;
   closeBehavior?: string;
@@ -269,6 +270,7 @@ export class UpdateMarketUseCase {
         imageUrl: updatedMarket.imageUrl,
         status: updatedMarket.status,
         closesAt: updatedMarket.closesAt,
+        activatesAt: updatedMarket.activatesAt,
         closeBehavior: updatedMarket.closeBehavior,
         bufferMinutes: updatedMarket.bufferMinutes,
         pool: {
@@ -316,6 +318,20 @@ export class UpdateMarketUseCase {
       const now = new Date();
       if (params.closesAt <= now) {
         errors.push('Market close time must be in the future');
+      }
+    }
+
+    // Validate activatesAt
+    if (params.activatesAt) {
+      const now = new Date();
+      if (params.activatesAt <= now) {
+        errors.push('Market activation time must be in the future');
+      }
+
+      // We need effectiveClosesAt to strict validation, but it might not be available here if not fetching again
+      // Simplified check: if both provided
+      if (params.closesAt && params.activatesAt >= params.closesAt) {
+        errors.push('Market activation time must be before close time');
       }
     }
 

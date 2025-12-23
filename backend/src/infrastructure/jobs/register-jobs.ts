@@ -1,50 +1,52 @@
 import { queueService } from './queue-service';
 
 /**
- * Register all repeatable jobs on worker startup.
- * Jobs are registered with specific cron patterns and will run automatically.
- * 
- * SCHEDULER-1: Market Lifecycle Jobs
+ * Registers all repeatable jobs (crons) for the application.
+ * This should be called on worker startup.
  */
 export async function registerRepeatableJobs() {
-  try {
-    // SCHEDULER-2: Check for expired markets every 1 minute
-    await queueService.addRepeatable('market-ops', {
-      type: 'market:check-expired',
-      payload: {}
-    }, '* * * * *'); // Every minute
+  console.log('[Scheduler] Registering repeatable jobs...');
 
-    console.log('[Jobs] Registered market:check-expired (every 1 minute)');
+  const repeatableJobs = [
+    // Market Lifecycle Jobs
+    {
+      queue: 'market-ops',
+      name: 'market:check-expired',
+      data: { type: 'market:check-expired' as const, payload: {} },
+      opts: { repeat: { pattern: '* * * * *' } }, // Every 1 minute
+    },
+    {
+      queue: 'market-ops',
+      name: 'market:activate-scheduled',
+      data: { type: 'market:activate-scheduled' as const, payload: {} },
+      opts: { repeat: { pattern: '* * * * *' } }, // Every 1 minute
+    },
+    {
+      queue: 'market-ops',
+      name: 'market:remind-manual-close',
+      data: { type: 'market:remind-manual-close' as const, payload: {} },
+      opts: { repeat: { pattern: '*/15 * * * *' } }, // Every 15 minutes
+    },
+    // Admin Notifications
+    {
+      queue: 'notifications',
+      name: 'admin:alert-pending-resolution',
+      data: { type: 'admin:alert-pending-resolution' as const, payload: {} },
+      opts: { repeat: { pattern: '0 * * * *' } }, // Every 1 hour
+    },
+  ];
 
-    // SCHEDULER-2a: Remind about manual-close markets every 15 minutes
-    await queueService.addRepeatable('market-ops', {
-      type: 'market:remind-manual-close',
-      payload: {}
-    }, '*/15 * * * *'); // Every 15 minutes
-
-    console.log('[Jobs] Registered market:remind-manual-close (every 15 minutes)');
-
-    // SCHEDULER-3: Alert about pending resolutions every 1 hour
-    await queueService.addRepeatable('notifications', {
-      type: 'admin:alert-pending-resolution',
-      payload: {}
-    }, '0 * * * *'); // Every hour at minute 0
-
-    console.log('[Jobs] Registered admin:alert-pending-resolution (every 1 hour)');
-
-    // SCHEDULER-5: Activate scheduled markets (placeholder for future)
-    // Commented out until SCHEDULER-5 is implemented
-    // await queueService.addRepeatable('market-ops', {
-    //   type: 'market:activate-scheduled',
-    //   payload: {}
-    // }, {
-    //   pattern: '* * * * *', // Every minute
-    //   jobId: 'market:activate-scheduled'
-    // });
-
-    console.log('[Jobs] All repeatable jobs registered successfully');
-  } catch (error) {
-    console.error('[Jobs] Failed to register repeatable jobs:', error);
-    throw error;
+  for (const job of repeatableJobs) {
+    try {
+      await queueService.add(job.queue as any, job.data, {
+        jobId: `repeat:${job.name}`, // constant ID ensures we don't duplicate
+        ...job.opts,
+      });
+      console.log(`[Scheduler] Registered job: ${job.name} (${job.opts.repeat.pattern})`);
+    } catch (error) {
+      console.error(`[Scheduler] Failed to register job ${job.name}:`, error);
+    }
   }
+
+  console.log(`[Scheduler] Registered ${repeatableJobs.length} repeatable jobs.`);
 }

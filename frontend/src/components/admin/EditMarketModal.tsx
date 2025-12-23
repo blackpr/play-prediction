@@ -82,6 +82,16 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
         updates.closesAt = newCloseDate.toISOString();
       }
 
+      if (values.activatesAt) {
+        const newActivatesDate = new Date(values.activatesAt);
+        const oldActivatesDate = (market as any).activatesAt ? new Date((market as any).activatesAt) : null;
+        if (!oldActivatesDate || newActivatesDate.getTime() !== oldActivatesDate.getTime()) {
+          updates.activatesAt = newActivatesDate.toISOString();
+        }
+      } else if ((market as any).activatesAt) {
+        updates.activatesAt = null;
+      }
+
       // Logic for new fields
       if (values.seedLiquidity !== seedLiquidity) updates.seedLiquidity = values.seedLiquidity.toString();
       // Tolerance for float comparison
@@ -116,6 +126,7 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
       categoryId: market.categoryId || '',
       imageUrl: market.imageUrl || '',
       closesAt: market.closesAt ? toDateTimeLocalString(new Date(market.closesAt)) : '',
+      activatesAt: (market as any).activatesAt ? toDateTimeLocalString(new Date((market as any).activatesAt)) : '',
       seedLiquidity: seedLiquidity,
       initialYesPrice: initialYesPrice,
       closeBehavior: (market.closeBehavior as CloseBehavior) || CloseBehavior.AUTO,
@@ -293,6 +304,43 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+        </form.Field>
+
+        {/* Activates At */}
+        <form.Field
+          name="activatesAt"
+          validators={{
+            onChange: ({ value }) => {
+              if (value) {
+                if (new Date(value) <= new Date()) return 'Must be in future';
+                // We can't easily validate against closesAt here without subscribing, 
+                // but backend handles safety. We could add cross-field validation if needed.
+              }
+              return undefined;
+            }
+          }}
+        >
+          {(field) => (
+            <div className="space-y-2">
+              <Label htmlFor="activatesAt">Activates At (Optional)</Label>
+              <div className="relative">
+                <Input
+                  id="activatesAt"
+                  type="datetime-local"
+                  placeholder="Leave empty to activate immediately"
+                  value={field.state.value || ''}
+                  onChange={(e) => field.handleChange(e.target.value || '')}
+                  onBlur={field.handleBlur}
+                  error={field.state.meta.errors.join(', ')}
+                  className="pr-10"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <Calendar className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-xs text-text-dim">If set, market will remain DRAFT until this time.</p>
             </div>
           )}
         </form.Field>

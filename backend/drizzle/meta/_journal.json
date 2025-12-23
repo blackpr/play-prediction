@@ -15,6 +15,13 @@
       "when": 1766494896556,
       "tag": "0001_demonic_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766515070114,
+      "tag": "0002_striped_hydra",
+      "breakpoints": true
     }
   ]
 }
