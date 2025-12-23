@@ -917,12 +917,89 @@ curl -s -b /tmp/admin-cookies.txt "http://localhost:4000/api/v1/admin/audit-log?
 ```
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Market must be ACTIVE
-- [ ] New time must be in the future
-- [ ] New time must be after current closesAt
-- [ ] Notify market subscribers via WebSocket
-- [ ] Log extension in audit trail
+- [x] Require admin role
+- [x] Market must be ACTIVE
+- [x] New time must be in the future
+- [x] New time must be after current closesAt
+- [ ] Notify market subscribers via WebSocket (Deferred - EPIC_11 not yet implemented)
+- [x] Log extension in audit trail
+
+**Implementation Notes:**
+- ✅ Implemented in `ExtendMarketCloseTimeUseCase` with full validation
+- ✅ Route: `PATCH /v1/admin/markets/:id/extend`
+- ✅ Requires admin authentication via `requireAdmin` middleware
+- ✅ Comprehensive unit tests (9 tests, all passing)
+- ✅ Frontend: `ExtendMarketCloseTimeModal` component with real-time validation
+- ✅ Extension duration calculation (e.g., "Extending by 5 hours 59 minutes")
+- ✅ Audit log entry with action `MARKET_CLOSE_TIME_EXTENDED`
+- ⚠️ WebSocket notifications deferred until EPIC_11 is implemented
+
+**Curl Verification Example:**
+```bash
+# Login as admin
+curl -s -X POST http://localhost:4000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"SecurePassword123!"}' \
+  -c /tmp/admin-cookies.txt
+
+# Extend market close time
+curl -s -X PATCH "http://localhost:4000/api/v1/admin/markets/{MARKET_ID}/extend" \
+  -H "Content-Type: application/json" \
+  -b /tmp/admin-cookies.txt \
+  -d '{
+    "newClosesAt": "2025-12-28T23:59:59Z",
+    "reason": "Event delayed due to weather conditions"
+  }' | jq '.'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "id": "1040a01d-f95f-4e14-bcbb-b9ad3d385d7f",
+    "title": "Will Lakers win tonight?",
+    "oldClosesAt": "2025-12-27T20:00:00.000Z",
+    "newClosesAt": "2025-12-28T23:59:59.000Z",
+    "reason": "Event delayed due to weather conditions"
+  }
+}
+
+# Verify audit log
+curl -s -X GET "http://localhost:4000/api/v1/admin/audit-log?action=MARKET_CLOSE_TIME_EXTENDED" \
+  -b /tmp/admin-cookies.txt | jq '.data.items[0]'
+
+# Test error cases
+# Past date (should fail)
+curl -s -X PATCH "http://localhost:4000/api/v1/admin/markets/{MARKET_ID}/extend" \
+  -H "Content-Type: application/json" \
+  -b /tmp/admin-cookies.txt \
+  -d '{"newClosesAt":"2020-01-01T00:00:00Z","reason":"Should fail"}' | jq '.error'
+
+# Response:
+{
+  "code": "VALIDATION_ERROR",
+  "message": "New close time must be in the future",
+  "details": {
+    "newClosesAt": "2020-01-01T00:00:00.000Z",
+    "currentTime": "2025-12-23T14:48:52.196Z"
+  }
+}
+
+# Before current close time (should fail)
+curl -s -X PATCH "http://localhost:4000/api/v1/admin/markets/{MARKET_ID}/extend" \
+  -H "Content-Type: application/json" \
+  -b /tmp/admin-cookies.txt \
+  -d '{"newClosesAt":"2025-12-28T12:00:00Z","reason":"Should fail"}' | jq '.error'
+
+# Response:
+{
+  "code": "VALIDATION_ERROR",
+  "message": "New close time must be after the current close time",
+  "details": {
+    "newClosesAt": "2025-12-28T12:00:00.000Z",
+    "currentClosesAt": "2025-12-28T23:59:59.000Z"
+  }
+}
+```
 
 **References:** EDGE_CASES.md Section 7.4
 

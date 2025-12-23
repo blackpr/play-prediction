@@ -5,6 +5,7 @@ import { updateMarket } from './update-market';
 import { activateMarket } from './activate-market';
 import { pauseMarket } from './pause-market';
 import { resumeMarket } from './resume-market';
+import { extendMarketCloseTime } from './extend-market-close-time';
 import { getAdminStats } from './get-stats';
 import { listAdminMarkets } from './list-markets';
 import { uploadRoutes } from './upload';
@@ -37,6 +38,9 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // POST /admin/markets/:id/resume - Resume paused market
   server.post('/markets/:id/resume', resumeMarket);
+
+  // PATCH /admin/markets/:id/extend - Extend market close time
+  server.patch('/markets/:id/extend', extendMarketCloseTime);
 
   // POST /admin/markets/:id/resolve - Resolve market and pay winners
   server.post('/markets/:id/resolve', resolveMarket);

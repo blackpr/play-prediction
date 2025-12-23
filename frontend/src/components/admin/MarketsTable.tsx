@@ -10,6 +10,7 @@ import { Search, Play, Pause } from 'lucide-react';
 import { toast } from 'sonner';
 import { ResolveMarketModal } from './ResolveMarketModal';
 import { EditMarketModal } from './EditMarketModal';
+import { ExtendMarketCloseTimeModal } from './ExtendMarketCloseTimeModal';
 
 interface Market {
   id: string;
@@ -68,6 +69,7 @@ export function MarketsTable() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [extendModalOpen, setExtendModalOpen] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<{
     id: string;
     title: string;
@@ -275,15 +277,32 @@ export function MarketsTable() {
                           </div>
                         )}
                         {market.status === 'ACTIVE' && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => pauseMut.mutate(market.id)}
-                            isLoading={pauseMut.isPending && pauseMut.variables === market.id}
-                            leftIcon={<Pause className="w-3 h-3" />}
-                          >
-                            Pause
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => pauseMut.mutate(market.id)}
+                              isLoading={pauseMut.isPending && pauseMut.variables === market.id}
+                              leftIcon={<Pause className="w-3 h-3" />}
+                            >
+                              Pause
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedMarket({
+                                  id: market.id,
+                                  title: market.title,
+                                  closesAt: market.closesAt,
+                                });
+                                setExtendModalOpen(true);
+                              }}
+                              className="text-xs"
+                            >
+                              Extend Close Time
+                            </Button>
+                          </div>
                         )}
                         {market.status === 'PAUSED' && (
                           <div className="flex gap-2">
@@ -361,6 +380,20 @@ export function MarketsTable() {
           closesAt={selectedMarket.closesAt}
           closeBehavior={selectedMarket.closeBehavior}
           eventEndedAt={selectedMarket.eventEndedAt}
+        />
+      )}
+
+      {/* Extend Market Close Time Modal */}
+      {selectedMarket && extendModalOpen && (
+        <ExtendMarketCloseTimeModal
+          isOpen={extendModalOpen}
+          onClose={() => {
+            setExtendModalOpen(false);
+            setSelectedMarket(null);
+          }}
+          marketId={selectedMarket.id}
+          marketTitle={selectedMarket.title}
+          currentClosesAt={selectedMarket.closesAt || null}
         />
       )}
 

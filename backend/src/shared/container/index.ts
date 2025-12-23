@@ -48,6 +48,7 @@ import { UpdateMarketUseCase } from '../../application/use-cases/admin/update-ma
 import { ActivateMarketUseCase } from '../../application/use-cases/admin/activate-market.use-case';
 import { PauseMarketUseCase } from '../../application/use-cases/admin/pause-market.use-case';
 import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-market.use-case';
+import { ExtendMarketCloseTimeUseCase } from '../../application/use-cases/admin/extend-market-close-time.use-case';
 import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admin-stats.use-case';
 import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
 import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-market.use-case';
@@ -154,6 +155,7 @@ export function registerDependencies(): void {
     activateMarketUseCase: asClass(ActivateMarketUseCase).scoped(),
     pauseMarketUseCase: asClass(PauseMarketUseCase).scoped(),
     resumeMarketUseCase: asClass(ResumeMarketUseCase).scoped(),
+    extendMarketCloseTimeUseCase: asClass(ExtendMarketCloseTimeUseCase).scoped(),
     resolveMarketUseCase: asClass(ResolveMarketUseCase).scoped(),
     cancelMarketUseCase: asClass(CancelMarketUseCase).scoped(),
     grantPointsUseCase: asClass(GrantPointsUseCase).scoped(),
