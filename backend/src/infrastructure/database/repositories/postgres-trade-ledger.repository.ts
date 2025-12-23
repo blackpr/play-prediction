@@ -165,4 +165,11 @@ export class PostgresTradeLedgerRepository implements TradeLedgerRepository {
       .where(gt(tradeLedger.createdAt, oneDayAgo));
     return result.volume.toString();
   }
+
+  async getTotalVolume(): Promise<string> {
+    const [result] = await this.db
+      .select({ volume: sql<string>`coalesce(sum(${tradeLedger.amountIn}), '0')` })
+      .from(tradeLedger);
+    return result.volume.toString();
+  }
 }

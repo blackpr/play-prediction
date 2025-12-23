@@ -2,10 +2,22 @@ import { UserRepository } from '../../ports/repositories/user.repository';
 import { MarketRepository } from '../../ports/repositories/market.repository';
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
 
-export interface AdminStats {
-  totalUsers: number;
-  activeMarkets: number;
-  volume24h: string;
+export interface AdminStatsResponse {
+  users: {
+    total: number;
+    activeLastWeek: number;
+  };
+  markets: {
+    total: number;
+    active: number;
+    pendingResolution: number;
+    resolved: number;
+    cancelled: number;
+  };
+  volume: {
+    total: string;
+    last24h: string;
+  };
   recentTrades: {
     id: string;
     marketTitle: string;
@@ -14,47 +26,48 @@ export interface AdminStats {
     createdAt: Date;
     user: string | null;
   }[];
-  pendingResolutionMarkets: number;
 }
 
 export class GetAdminStatsUseCase {
-  private readonly userRepository: UserRepository;
-  private readonly marketRepository: MarketRepository;
-  private readonly tradeLedgerRepository: TradeLedgerRepository;
+  constructor(
+    private readonly deps: {
+      userRepository: UserRepository;
+      marketRepository: MarketRepository;
+      tradeLedgerRepository: TradeLedgerRepository;
+    }
+  ) { }
 
-  constructor({
-    userRepository,
-    marketRepository,
-    tradeLedgerRepository
-  }: {
-    userRepository: UserRepository;
-    marketRepository: MarketRepository;
-    tradeLedgerRepository: TradeLedgerRepository;
-  }) {
-    this.userRepository = userRepository;
-    this.marketRepository = marketRepository;
-    this.tradeLedgerRepository = tradeLedgerRepository;
-  }
+  async execute(): Promise<AdminStatsResponse> {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  async execute(): Promise<AdminStats> {
     const [
       totalUsers,
+      activeUsers,
+      totalMarkets,
       activeMarkets,
-      pendingResolutionMarkets,
+      pausedMarkets,
+      resolvedMarkets,
+      cancelledMarkets,
+      totalVolume,
       volume24h,
       recentTrades
     ] = await Promise.all([
-      this.userRepository.count(),
-      this.marketRepository.count('ACTIVE'),
-      this.marketRepository.count('PAUSED'),
-      this.tradeLedgerRepository.getVolume24h(),
-      this.tradeLedgerRepository.findAll({ page: 1, pageSize: 10 })
+      this.deps.userRepository.count(),
+      this.deps.userRepository.countActive(oneWeekAgo),
+      this.deps.marketRepository.count(),
+      this.deps.marketRepository.count('ACTIVE'),
+      this.deps.marketRepository.count('PAUSED'),
+      this.deps.marketRepository.count('RESOLVED'),
+      this.deps.marketRepository.count('CANCELLED'),
+      this.deps.tradeLedgerRepository.getTotalVolume(),
+      this.deps.tradeLedgerRepository.getVolume24h(),
+      this.deps.tradeLedgerRepository.findAll({ page: 1, pageSize: 10 })
     ]);
 
     const recentTradesWithDetails = await Promise.all(recentTrades.items.map(async (trade) => {
       let marketTitle = 'Unknown Market';
       try {
-        const market = await this.marketRepository.findById(trade.marketId);
+        const market = await this.deps.marketRepository.findById(trade.marketId);
         if (market) {
           marketTitle = market.title;
         }
@@ -73,10 +86,21 @@ export class GetAdminStatsUseCase {
     }));
 
     return {
-      totalUsers,
-      activeMarkets,
-      pendingResolutionMarkets,
-      volume24h,
+      users: {
+        total: totalUsers,
+        activeLastWeek: activeUsers
+      },
+      markets: {
+        total: totalMarkets,
+        active: activeMarkets,
+        pendingResolution: pausedMarkets,
+        resolved: resolvedMarkets,
+        cancelled: cancelledMarkets
+      },
+      volume: {
+        total: totalVolume,
+        last24h: volume24h
+      },
       recentTrades: recentTradesWithDetails
     };
   }

@@ -217,5 +217,17 @@ export class PostgresUserRepository implements UserRepository {
       pointsGranted: (pointsResult.totalGranted || 0n).toString(),
     };
   }
+
+  async countActive(since: Date): Promise<number> {
+    const { tradeLedger } = await import('../drizzle/schema');
+    const { gt, sql } = await import('drizzle-orm');
+
+    const [result] = await this.db
+      .select({ count: sql<number>`count(distinct ${tradeLedger.userId})` })
+      .from(tradeLedger)
+      .where(gt(tradeLedger.createdAt, since));
+
+    return Number(result.count);
+  }
 }
 

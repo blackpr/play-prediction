@@ -48,6 +48,6 @@ export interface UserRepository {
   create(user: CreateUserDTO, tx?: Transaction): Promise<User>;
   updateBalance(userId: string, newBalance: bigint, tx?: Transaction): Promise<void>;
   count(): Promise<number>;
+  countActive(since: Date): Promise<number>;
   getUserStats(userId: string): Promise<UserStats>;
 }
-

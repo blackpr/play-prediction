@@ -2,10 +2,21 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 
 export interface AdminStats {
-  totalUsers: number;
-  activeMarkets: number;
-  pendingResolutionMarkets: number;
-  volume24h: string;
+  users: {
+    total: number;
+    activeLastWeek: number;
+  };
+  markets: {
+    total: number;
+    active: number;
+    pendingResolution: number;
+    resolved: number;
+    cancelled: number;
+  };
+  volume: {
+    total: string;
+    last24h: string;
+  };
   recentTrades: {
     id: string;
     marketTitle: string;

@@ -53,23 +53,43 @@ function AdminIndex() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Total Users"
-          value={stats.totalUsers}
+          value={stats.users.total}
+          icon={<Users className="w-4 h-4 text-blue-400" />}
+        />
+        <MetricCard
+          label="Active Users (7d)"
+          value={stats.users.activeLastWeek}
           icon={<Users className="w-4 h-4 text-blue-400" />}
         />
         <MetricCard
           label="Active Markets"
-          value={stats.activeMarkets}
+          value={stats.markets.active}
           icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
         />
         <MetricCard
           label="24h Volume"
-          value={`$${(Number(stats.volume24h) / 1000000).toLocaleString()}`}
+          value={`$${(Number(stats.volume.last24h) / 1000000).toLocaleString()}`}
+          icon={<BarChart3 className="w-4 h-4 text-purple-400" />}
+        />
+        <MetricCard
+          label="Total Volume"
+          value={`$${(Number(stats.volume.total) / 1000000).toLocaleString()}`}
           icon={<BarChart3 className="w-4 h-4 text-purple-400" />}
         />
         <MetricCard
           label="Pending Resolution"
-          value={stats.pendingResolutionMarkets}
+          value={stats.markets.pendingResolution}
           icon={<Clock className="w-4 h-4 text-amber-400" />}
+        />
+        <MetricCard
+          label="Resolved Markets"
+          value={stats.markets.resolved}
+          icon={<Clock className="w-4 h-4 text-gray-400" />}
+        />
+        <MetricCard
+          label="Cancelled Markets"
+          value={stats.markets.cancelled}
+          icon={<Clock className="w-4 h-4 text-red-400" />}
         />
       </div>
 

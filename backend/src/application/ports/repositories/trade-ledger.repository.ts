@@ -57,4 +57,5 @@ export interface TradeLedgerRepository {
   create(entry: CreateTradeLedgerEntryDTO, tx?: Transaction): Promise<TradeLedgerEntry>;
   findAll(params: FindTradesParams): Promise<{ items: TradeLedgerEntry[]; total: number }>;
   getVolume24h(): Promise<string>;
+  getTotalVolume(): Promise<string>;
 }
