@@ -11,6 +11,7 @@ import { resolveMarket } from './resolve-market';
 import { cancelMarket } from './cancel-market';
 import { grantPoints } from './grant-points';
 import { listUsers } from './list-users';
+import { getUserDetail } from './get-user-detail';
 
 export default async function adminRoutes(server: FastifyInstance) {
   // Apply admin middleware to all routes in this module
@@ -40,6 +41,9 @@ export default async function adminRoutes(server: FastifyInstance) {
   // GET /admin/users - List all users
   server.get('/users', listUsers);
 
+  // GET /admin/users/:id - Get detailed user info with stats
+  server.get('/users/:id', getUserDetail);
+
   // POST /admin/users/:id/grant-points - Grant points to user
   server.post('/users/:id/grant-points', grantPoints);
 
@@ -49,3 +53,4 @@ export default async function adminRoutes(server: FastifyInstance) {
   // File Uploads
   server.register(uploadRoutes);
 }
+

@@ -33,6 +33,13 @@ export interface PaginatedUsers {
   };
 }
 
+export interface UserStats {
+  totalTrades: number;
+  totalVolume: string; // bigint as string
+  activePositions: number;
+  pointsGranted: string; // bigint as string
+}
+
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
@@ -41,4 +48,6 @@ export interface UserRepository {
   create(user: CreateUserDTO, tx?: Transaction): Promise<User>;
   updateBalance(userId: string, newBalance: bigint, tx?: Transaction): Promise<void>;
   count(): Promise<number>;
+  getUserStats(userId: string): Promise<UserStats>;
 }
+

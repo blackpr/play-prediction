@@ -467,9 +467,104 @@ curl -s -X GET "http://localhost:4000/api/v1/admin/users?role=treasury" \
 **Endpoint:** `GET /v1/admin/users/:id`
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Return user profile
-- [ ] Include stats: totalTrades, totalVolume, activePositions, pointsGranted
+- [x] Require admin role
+- [x] Return user profile
+- [x] Include stats: totalTrades, totalVolume, activePositions, pointsGranted
+
+**Implementation Notes:**
+- ✅ Implemented `GetUserDetailUseCase` in `backend/src/application/use-cases/admin/get-user-detail.use-case.ts`
+- ✅ Added `getUserStats` method to `UserRepository` interface and `PostgresUserRepository`
+- ✅ Statistics calculated efficiently using SQL aggregations:
+  - `totalTrades`: COUNT of BUY/SELL actions in trade_ledger
+  - `totalVolume`: SUM of amountIn for BUY/SELL actions
+  - `activePositions`: COUNT of portfolios where yesQty > 0 OR noQty > 0
+  - `pointsGranted`: SUM of amounts from point_grants where grantType = 'ADMIN_GRANT'
+- ✅ Route: `GET /v1/admin/users/:id`
+- ✅ Requires admin authentication via `requireAdmin` middleware
+- ✅ Comprehensive unit tests (9 tests, all passing)
+- ✅ Registered in DI container
+
+**Curl Verification Example:**
+```bash
+# Login as admin
+curl -s -X POST http://localhost:4000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"SecurePassword123!"}' \
+  -c /tmp/admin-cookies.txt
+
+# Get user list to find a user ID
+curl -s -X GET "http://localhost:4000/api/v1/admin/users" \
+  -b /tmp/admin-cookies.txt | jq '.data.items[0].id'
+
+# Get detailed user info
+curl -s -X GET "http://localhost:4000/api/v1/admin/users/{USER_ID}" \
+  -b /tmp/admin-cookies.txt | jq '.'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "id": "c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+    "email": "alice@example.com",
+    "role": "user",
+    "balance": "5200000000",
+    "isActive": true,
+    "createdAt": "2025-12-21T17:58:58.417Z",
+    "stats": {
+      "totalTrades": 6,
+      "totalVolume": "1200000000",
+      "activePositions": 0,
+      "pointsGranted": "0"
+    }
+  }
+}
+
+# Test error cases
+# Non-existent user (404)
+curl -s -X GET "http://localhost:4000/api/v1/admin/users/00000000-0000-0000-0000-000000000000" \
+  -b /tmp/admin-cookies.txt | jq '.'
+
+# Response:
+{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found: User with ID 00000000-0000-0000-0000-000000000000 not found"
+  }
+}
+
+# Invalid UUID format (400)
+curl -s -X GET "http://localhost:4000/api/v1/admin/users/invalid-id" \
+  -b /tmp/admin-cookies.txt | jq '.'
+
+# Response:
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Invalid user ID",
+    "details": [...]
+  }
+}
+
+# Non-admin access (403)
+curl -s -X POST http://localhost:4000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"SecurePassword123!"}' \
+  -c /tmp/user-cookies.txt
+
+curl -s -X GET "http://localhost:4000/api/v1/admin/users/{USER_ID}" \
+  -b /tmp/user-cookies.txt | jq '.'
+
+# Response:
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Admin access required"
+  }
+}
+```
 
 **References:** API_SPECIFICATION.md Section 4.6.9
 

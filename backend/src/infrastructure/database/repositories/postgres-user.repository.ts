@@ -155,4 +155,67 @@ export class PostgresUserRepository implements UserRepository {
     const [result] = await this.db.select({ count: count() }).from(users);
     return Number(result.count);
   }
+
+  async getUserStats(userId: string): Promise<import('../../../application/ports/repositories/user.repository').UserStats> {
+    const { tradeLedger, portfolios, pointGrants } = await import('../drizzle/schema');
+    const { eq, and, or, sum, sql } = await import('drizzle-orm');
+
+    // 1. Get total trades count and volume (only BUY/SELL actions)
+    const tradesQuery = this.db
+      .select({
+        totalTrades: count(),
+        totalVolume: sum(tradeLedger.amountIn),
+      })
+      .from(tradeLedger)
+      .where(
+        and(
+          eq(tradeLedger.userId, userId),
+          or(
+            eq(tradeLedger.action, 'BUY'),
+            eq(tradeLedger.action, 'SELL')
+          )
+        )
+      );
+
+    const [tradesResult] = await tradesQuery;
+
+    // 2. Get active positions count (portfolios with shares > 0)
+    const activePositionsQuery = this.db
+      .select({ count: count() })
+      .from(portfolios)
+      .where(
+        and(
+          eq(portfolios.userId, userId),
+          or(
+            sql`${portfolios.yesQty} > 0`,
+            sql`${portfolios.noQty} > 0`
+          )
+        )
+      );
+
+    const [positionsResult] = await activePositionsQuery;
+
+    // 3. Get total points granted (ADMIN_GRANT only)
+    const pointsQuery = this.db
+      .select({
+        totalGranted: sum(pointGrants.amount),
+      })
+      .from(pointGrants)
+      .where(
+        and(
+          eq(pointGrants.userId, userId),
+          eq(pointGrants.grantType, 'ADMIN_GRANT')
+        )
+      );
+
+    const [pointsResult] = await pointsQuery;
+
+    return {
+      totalTrades: Number(tradesResult.totalTrades) || 0,
+      totalVolume: (tradesResult.totalVolume || 0n).toString(),
+      activePositions: Number(positionsResult.count) || 0,
+      pointsGranted: (pointsResult.totalGranted || 0n).toString(),
+    };
+  }
 }
+
