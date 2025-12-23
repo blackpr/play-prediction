@@ -872,10 +872,31 @@ curl -s -b /tmp/admin-cookies.txt "http://localhost:4000/api/v1/admin/audit-log?
 - `DELETE /v1/admin/categories/:id` - Soft delete category
 
 **Acceptance Criteria:**
-- [ ] Require admin role for all operations
-- [ ] Categories have: id, name, slug, description, sortOrder, isActive
-- [ ] Cannot delete category with active markets
-- [ ] UI for category CRUD operations
+- [x] Require admin role for all operations
+- [x] Categories have: id, name, slug, description, sortOrder, isActive, defaultCloseBehavior, defaultBufferMinutes
+- [x] Cannot delete category with active markets
+- [x] UI for category CRUD operations
+- [x] Public endpoint `GET /v1/categories` for fetching active categories
+- [x] Markets table updated with `categoryId` foreign key
+- [x] Market creation/update uses dynamic categories from database
+- [x] Public markets page uses dynamic category filtering
+
+**Implementation Notes:**
+- ✅ Database migration: Added `categories` table and `categoryId` to `markets` table
+- ✅ Backend: Full CRUD use cases (`ListCategoriesUseCase`, `CreateCategoryUseCase`, `UpdateCategoryUseCase`, `DeleteCategoryUseCase`)
+- ✅ Backend: Public categories route for frontend consumption
+- ✅ Backend: Updated `CreateMarketUseCase` and `UpdateMarketUseCase` to use `categoryId`
+- ✅ Frontend: Admin categories management page at `/admin/categories`
+- ✅ Frontend: Category selection in market creation/edit forms
+- ✅ Frontend: Dynamic category filters on public markets page
+- ✅ All 247 backend tests passing
+- ✅ Seeded with default categories (Crypto, Politics, Sports, Entertainment, etc.)
+
+**Bug Fixes:**
+- Fixed category filter display on Markets page (API response unwrapping issue)
+- Fixed TypeError in MarketsPage with optional chaining for category data
+- Added DRAFT status validation to UpdateMarketUseCase
+- Moved test files to proper `test/unit/admin/` directory
 
 ---
 

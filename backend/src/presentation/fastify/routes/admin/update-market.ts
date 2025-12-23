@@ -9,7 +9,7 @@ const updateMarketParamsSchema = z.object({
 
 // Request Body Schema
 const updateMarketBodySchema = z.object({
-  title: z.string().min(10).max(500).optional(),
+  title: z.string().min(3).max(500).optional(),
   description: z.string().max(5000).optional(),
   category: z.string().max(100).optional(),
   categoryId: z.string().uuid().optional(),

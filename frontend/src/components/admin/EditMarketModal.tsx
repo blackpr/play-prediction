@@ -171,7 +171,7 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
         <form.Field
           name="title"
           validators={{
-            onChange: ({ value }) => !value ? 'Title is required' : value.length < 10 ? 'Title too short' : value.length > 500 ? 'Title too long' : undefined
+            onChange: ({ value }) => !value ? 'Title is required' : value.length < 3 ? 'Title too short' : value.length > 500 ? 'Title too long' : undefined
           }}
         >
           {(field) => (
