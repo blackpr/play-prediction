@@ -49,6 +49,7 @@ import { PauseMarketUseCase } from '../../application/use-cases/admin/pause-mark
 import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-market.use-case';
 import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admin-stats.use-case';
 import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
+import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-market.use-case';
 
 
 
@@ -140,6 +141,7 @@ export function registerDependencies(): void {
     pauseMarketUseCase: asClass(PauseMarketUseCase).scoped(),
     resumeMarketUseCase: asClass(ResumeMarketUseCase).scoped(),
     resolveMarketUseCase: asClass(ResolveMarketUseCase).scoped(),
+    cancelMarketUseCase: asClass(CancelMarketUseCase).scoped(),
     getAdminStatsUseCase: asClass(GetAdminStatsUseCase).scoped(),
   });
 }

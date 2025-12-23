@@ -167,16 +167,78 @@ async function voidTrade(tx, trade, reason) {
 ```
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Cannot cancel RESOLVED markets
-- [ ] Set status = CANCELLED
-- [ ] Set resolution = CANCELLED
-- [ ] Refund all holders their cost basis:
+- [x] Require admin role
+- [x] Cannot cancel RESOLVED markets
+- [x] Set status = CANCELLED
+- [x] Set resolution = CANCELLED
+- [x] Refund all holders their cost basis:
   - For each portfolio: refund yesCostBasis + noCostBasis
   - Log REFUND per user
-- [ ] Clear portfolios
-- [ ] Clear pool
-- [ ] Track surplus (pool value - total refunds) goes to treasury
+- [x] Clear portfolios
+- [x] Clear pool
+- [x] Track surplus (pool value - total refunds) goes to treasury
+
+**Implementation Notes:**
+- ✅ Implemented in `CancelMarketUseCase` with full transaction support
+- ✅ Refunds users their **cost basis** (what they paid), not current market value
+- ✅ Cannot cancel RESOLVED markets (returns ValidationError)
+- ✅ Can cancel DRAFT, ACTIVE, or PAUSED markets
+- ✅ Comprehensive unit tests (9 tests, all passing)
+- ✅ Route: `POST /v1/admin/markets/:id/cancel`
+- ✅ Requires admin authentication via `requireAdmin` middleware
+- ✅ Returns detailed refund summary
+
+**Curl Verification Example:**
+```bash
+# Login as admin
+curl -s -X POST http://localhost:4000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"SecurePassword123!"}' \
+  -c /tmp/cookies.txt
+
+# Cancel a market
+curl -s -X POST "http://localhost:4000/api/v1/admin/markets/{MARKET_ID}/cancel" \
+  -H "Content-Type: application/json" \
+  -b /tmp/cookies.txt \
+  -d '{"reason": "Event was cancelled"}' | jq '.'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "id": "94a560eb-456f-4bfc-a908-f17d58f4d0df",
+    "status": "CANCELLED",
+    "resolution": "CANCELLED",
+    "refunds": {
+      "totalHolders": 2,
+      "totalRefunded": "10980000",
+      "surplus": "0"
+    }
+  }
+}
+
+# Verify REFUND in trade ledger
+curl -s -X GET "http://localhost:4000/api/v1/portfolio/history?marketId={MARKET_ID}" \
+  -b /tmp/user-cookies.txt | jq '.data.items[] | select(.action == "REFUND")'
+
+# Try to cancel a RESOLVED market (should fail)
+curl -s -X POST "http://localhost:4000/api/v1/admin/markets/{RESOLVED_MARKET_ID}/cancel" \
+  -H "Content-Type: application/json" \
+  -b /tmp/cookies.txt \
+  -d '{"reason": "This should fail"}' | jq '.'
+
+# Response:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Cannot cancel market. Market is already resolved.",
+    "details": {
+      "currentStatus": "RESOLVED"
+    }
+  }
+}
+```
 
 **References:** API_SPECIFICATION.md Section 4.6.6, ENGINE_LOGIC.md Section 10
 
