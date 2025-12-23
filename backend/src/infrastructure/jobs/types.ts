@@ -18,6 +18,7 @@ export type JobType =
   // market-ops
   | 'market:check-expired'
   | 'market:activate-scheduled'
+  | 'market:remind-manual-close'
   | 'market:resolve-oracle'
   | 'market:archive'
 

@@ -5,6 +5,7 @@ import { createWorkers } from './infrastructure/jobs/worker-factory';
 import { handlers } from './infrastructure/jobs/handlers';
 import { metricsService } from './infrastructure/observability/metrics.service';
 import { queueService } from './infrastructure/jobs/queue-service';
+import { registerRepeatableJobs } from './infrastructure/jobs/register-jobs';
 
 // Create lightweight health check server
 const app = fastify({
@@ -19,6 +20,11 @@ app.get('/health', async () => {
 // Start workers and health check
 const start = async () => {
   try {
+    // Register repeatable jobs first
+    console.log('[Worker] Registering repeatable jobs...');
+    await registerRepeatableJobs();
+    console.log('[Worker] Repeatable jobs registered');
+
     // Create workers
     const workerInstances = createWorkers(handlers as Record<string, Processor>);
 

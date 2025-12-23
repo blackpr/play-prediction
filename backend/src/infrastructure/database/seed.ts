@@ -36,6 +36,39 @@ async function seed() {
     // ========================================================================
     console.log('Creating users...');
 
+    // SYSTEM User (for automated jobs and background processes)
+    const systemEmail = 'system@internal';
+    const systemId = '00000000-0000-0000-0000-000000000000'; // Fixed UUID for SYSTEM user
+
+    const existingSystem = await db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.email, systemEmail)
+    });
+
+    if (existingSystem) {
+      await db.update(users)
+        .set({
+          balance: 0n,
+          role: UserRole.ADMIN,
+          isActive: true,
+          displayName: 'System'
+        })
+        .where(sql`${users.id} = ${systemId}`);
+      console.log(`✅ SYSTEM user updated (${systemId})`);
+    } else {
+      await db.insert(users).values({
+        id: systemId,
+        email: systemEmail,
+        displayName: 'System',
+        role: UserRole.ADMIN,
+        balance: 0n,
+        isActive: true,
+      }).onConflictDoUpdate({
+        target: users.id,
+        set: { balance: 0n }
+      });
+      console.log('✅ SYSTEM user created');
+    }
+
     // Treasury User
     const treasuryEmail = 'treasury@playprediction.com';
     let treasuryId = '00000000-0000-0000-0000-000000000001';
