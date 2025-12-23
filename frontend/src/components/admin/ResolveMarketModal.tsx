@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { api } from '../../api/client';
 import { Modal } from '../ui/Modal';
@@ -6,13 +6,17 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
+import { formatPoints } from '../../utils';
 
 interface ResolveMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
   marketId: string;
   marketTitle: string;
+  closesAt?: string | null;
+  closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
+  eventEndedAt?: string | null;
 }
 
 interface Trade {
@@ -26,15 +30,48 @@ interface Trade {
   createdAt: string;
 }
 
-export function ResolveMarketModal({ isOpen, onClose, marketId, marketTitle }: ResolveMarketModalProps) {
+function toDateTimeLocalString(date: Date) {
+  return format(date, "yyyy-MM-dd'T'HH:mm");
+}
+
+function parseDateTimeLocal(value: string) {
+  return parse(value, "yyyy-MM-dd'T'HH:mm", new Date());
+}
+
+function getDefaultEventEndedAt(props: Pick<ResolveMarketModalProps, 'closeBehavior' | 'closesAt' | 'eventEndedAt'>) {
+  if (props.eventEndedAt) return toDateTimeLocalString(new Date(props.eventEndedAt));
+
+  // For auto-close markets, default to closesAt (acceptance criteria)
+  if ((props.closeBehavior === 'auto' || props.closeBehavior === 'auto_with_buffer') && props.closesAt) {
+    return toDateTimeLocalString(new Date(props.closesAt));
+  }
+
+  // Otherwise default to "now" (manual close markets)
+  return toDateTimeLocalString(new Date());
+}
+
+export function ResolveMarketModal({
+  isOpen,
+  onClose,
+  marketId,
+  marketTitle,
+  closesAt,
+  closeBehavior,
+  eventEndedAt: initialEventEndedAt,
+}: ResolveMarketModalProps) {
   const queryClient = useQueryClient();
   const [resolution, setResolution] = useState<'YES' | 'NO'>('YES');
   const [evidence, setEvidence] = useState('');
-  const [eventEndedAt, setEventEndedAt] = useState(() => {
-    // Default to current time in local timezone
-    const now = new Date();
-    return format(now, "yyyy-MM-dd'T'HH:mm");
-  });
+  const [eventEndedAt, setEventEndedAt] = useState(() =>
+    getDefaultEventEndedAt({ closeBehavior, closesAt, eventEndedAt: initialEventEndedAt }),
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setResolution('YES');
+    setEvidence('');
+    setEventEndedAt(getDefaultEventEndedAt({ closeBehavior, closesAt, eventEndedAt: initialEventEndedAt }));
+  }, [isOpen, marketId, closeBehavior, closesAt, initialEventEndedAt]);
 
   // Fetch market trades
   const { data: tradesData } = useQuery({
@@ -50,16 +87,24 @@ export function ResolveMarketModal({ isOpen, onClose, marketId, marketTitle }: R
 
   // Filter trades that will be voided (placed after event ended)
   const tradesToVoid = useMemo(() => {
-    if (!tradesData || !Array.isArray(tradesData)) return [];
-    const eventEndTime = new Date(eventEndedAt);
-    return tradesData.filter(trade => {
+    if (!tradesData || !Array.isArray(tradesData)) {
+      return [];
+    }
+
+    const eventEndTime = parseDateTimeLocal(eventEndedAt);
+
+    const filtered = tradesData.filter(trade => {
       const tradeTime = new Date(trade.createdAt);
-      return tradeTime > eventEndTime && (trade.action === 'BUY' || trade.action === 'SELL');
+      const isAfter = tradeTime > eventEndTime;
+      const isTradeAction = trade.action === 'BUY' || trade.action === 'SELL';
+      return isAfter && isTradeAction;
     });
+
+    return filtered;
   }, [tradesData, eventEndedAt]);
 
   const totalRefund = useMemo(() => {
-    return tradesToVoid.reduce((sum, trade) => sum + Number(trade.amountIn), 0);
+    return tradesToVoid.reduce((sum, trade) => sum + BigInt(trade.amountIn), 0n);
   }, [tradesToVoid]);
 
   const resolveMut = useMutation({
@@ -67,7 +112,7 @@ export function ResolveMarketModal({ isOpen, onClose, marketId, marketTitle }: R
       return api.post(`/admin/markets/${marketId}/resolve`, {
         resolution,
         evidence,
-        eventEndedAt: new Date(eventEndedAt).toISOString(),
+        eventEndedAt: parseDateTimeLocal(eventEndedAt).toISOString(),
       });
     },
     onSuccess: (response) => {
@@ -148,11 +193,11 @@ export function ResolveMarketModal({ isOpen, onClose, marketId, marketTitle }: R
         </div>
 
         {/* Trades to Void Preview */}
-        {tradesToVoid.length > 0 && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
-            <p className="text-sm font-medium text-yellow-400 mb-2">
-              ⚠️ {tradesToVoid.length} trade{tradesToVoid.length > 1 ? 's' : ''} will be voided (placed after event ended):
-            </p>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+          <p className="text-sm font-medium text-yellow-400 mb-2">
+            ⚠️ {tradesToVoid.length} trade{tradesToVoid.length === 1 ? '' : 's'} will be voided (placed after event ended)
+          </p>
+          {tradesToVoid.length > 0 ? (
             <div className="max-h-40 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="text-text-dim">
@@ -168,18 +213,20 @@ export function ResolveMarketModal({ isOpen, onClose, marketId, marketTitle }: R
                     <tr key={trade.id} className="border-t border-white/5">
                       <td className="py-1">{trade.userId.slice(0, 8)}...</td>
                       <td className="py-1">{trade.action} {trade.side}</td>
-                      <td className="text-right py-1">{(Number(trade.amountIn) / 1_000_000).toFixed(2)} pts</td>
+                      <td className="text-right py-1">{formatPoints(BigInt(trade.amountIn))} pts</td>
                       <td className="text-right py-1">{format(new Date(trade.createdAt), 'h:mm a')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-yellow-400 mt-2 font-medium">
-              Total to refund: {(totalRefund / 1_000_000).toFixed(2)} Points
-            </p>
-          </div>
-        )}
+          ) : (
+            <p className="text-xs text-text-dim">No post-event trades for this time.</p>
+          )}
+          <p className="text-xs text-yellow-400 mt-2 font-medium">
+            Total to refund: {formatPoints(totalRefund)} Points
+          </p>
+        </div>
 
         {/* Evidence */}
         <div>

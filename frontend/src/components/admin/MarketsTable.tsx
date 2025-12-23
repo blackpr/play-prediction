@@ -16,6 +16,9 @@ interface Market {
   status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'RESOLVED' | 'CANCELLED';
   volume24h: string;
   createdAt: string;
+  closesAt?: string | null;
+  closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
+  eventEndedAt?: string | null;
   imageUrl?: string | null;
 }
 
@@ -46,7 +49,13 @@ export function MarketsTable() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
-  const [selectedMarket, setSelectedMarket] = useState<{ id: string; title: string } | null>(null);
+  const [selectedMarket, setSelectedMarket] = useState<{
+    id: string;
+    title: string;
+    closesAt?: string | null;
+    closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
+    eventEndedAt?: string | null;
+  } | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -227,7 +236,13 @@ export function MarketsTable() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              setSelectedMarket({ id: market.id, title: market.title });
+                              setSelectedMarket({
+                                id: market.id,
+                                title: market.title,
+                                closesAt: market.closesAt,
+                                closeBehavior: market.closeBehavior,
+                                eventEndedAt: market.eventEndedAt,
+                              });
                               setResolveModalOpen(true);
                             }}
                             leftIcon={<span className="text-xs">✓</span>}
@@ -255,6 +270,9 @@ export function MarketsTable() {
           }}
           marketId={selectedMarket.id}
           marketTitle={selectedMarket.title}
+          closesAt={selectedMarket.closesAt}
+          closeBehavior={selectedMarket.closeBehavior}
+          eventEndedAt={selectedMarket.eventEndedAt}
         />
       )}
 

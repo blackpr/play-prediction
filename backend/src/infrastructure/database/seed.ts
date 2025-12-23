@@ -13,7 +13,7 @@ import {
   Side,
   CloseBehavior
 } from './drizzle/schema';
-import { sql, eq } from 'drizzle-orm';
+import { sql, eq, and, inArray } from 'drizzle-orm';
 import { loadEnv } from '../../shared/config/env';
 
 // Load environment variables
@@ -371,23 +371,69 @@ async function seed() {
     });
 
     // PAUSED MARKET WITH POST-EVENT TRADES (for testing trade voiding preview)
+    // Keep this seed idempotent: always move timestamps relative to "now" so the UI preview remains meaningful.
+    const pausedMarketTitle = 'Will it snow on Christmas?';
     const eventEndTime = new Date(Date.now() - 60 * 60 * 1000); // Event ended 1 hour ago
-    const [pausedMarket] = await db.insert(markets).values({
-      title: 'Will it snow on Christmas?',
-      description: 'Market for testing post-event trade voiding',
-      status: MarketStatus.PAUSED,
-      category: 'Weather',
-      createdBy: treasuryId,
-      closesAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // Closed 2 hours ago
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Created 7 days ago
-      closeBehavior: CloseBehavior.MANUAL,
-    }).returning();
+    const closesAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // Closed 2 hours ago
 
-    await db.insert(liquidityPools).values({
-      id: pausedMarket.id,
-      yesQty: 8_000_000_000n,
-      noQty: 12_000_000_000n
+    const existingPausedMarket = await db.query.markets.findFirst({
+      where: (m, { eq }) => eq(m.title, pausedMarketTitle),
     });
+
+    const [pausedMarket] = existingPausedMarket
+      ? await db
+          .update(markets)
+          .set({
+            description: 'Market for testing post-event trade voiding',
+            status: MarketStatus.PAUSED,
+            category: 'Weather',
+            createdBy: treasuryId,
+            closesAt,
+            eventEndedAt: eventEndTime,
+            closeBehavior: CloseBehavior.MANUAL,
+          })
+          .where(eq(markets.id, existingPausedMarket.id))
+          .returning()
+      : await db
+          .insert(markets)
+          .values({
+            title: pausedMarketTitle,
+            description: 'Market for testing post-event trade voiding',
+            status: MarketStatus.PAUSED,
+            category: 'Weather',
+            createdBy: treasuryId,
+            closesAt,
+            eventEndedAt: eventEndTime, // Used by RESOLVE-1b UI defaults
+            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Created 7 days ago
+            closeBehavior: CloseBehavior.MANUAL,
+          })
+          .returning();
+
+    await db
+      .insert(liquidityPools)
+      .values({
+        id: pausedMarket.id,
+        yesQty: 8_000_000_000n,
+        noQty: 12_000_000_000n,
+      })
+      .onConflictDoUpdate({
+        target: liquidityPools.id,
+        set: {
+          yesQty: 8_000_000_000n,
+          noQty: 12_000_000_000n,
+          updatedAt: new Date(),
+        },
+      });
+
+    // Ensure the preview shows the same 5 deterministic trades each seed run.
+    await db
+      .delete(tradeLedger)
+      .where(
+        and(
+          eq(tradeLedger.marketId, pausedMarket.id),
+          inArray(tradeLedger.action, [TradeAction.BUY, TradeAction.SELL]),
+        ),
+      );
 
     // Create trades: some before event ended, some after (to be voided)
     await db.insert(tradeLedger).values([
@@ -445,7 +491,9 @@ async function seed() {
       },
     ]);
 
-    console.log(`✅ PAUSED market created with post-event trades (event ended at ${eventEndTime.toISOString()})`);
+    console.log(
+      `✅ PAUSED market ready for RESOLVE-1b preview (event ended at ${eventEndTime.toISOString()})`,
+    );
 
     console.log('✅ Markets created');
 
