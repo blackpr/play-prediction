@@ -9,12 +9,12 @@
 **So that** I can push real-time updates
 
 **Acceptance Criteria:**
-- [ ] Register @fastify/websocket plugin
-- [ ] Create `/ws` endpoint
-- [ ] Validate session from cookies
-- [ ] Reject connection if not authenticated (or allow public for prices)
-- [ ] Send "connected" message on success
-- [ ] Handle ping/pong for keepalive
+- [x] Register @fastify/websocket plugin
+- [x] Create `/ws` endpoint
+- [x] Validate session from cookies
+- [x] Reject connection if not authenticated (or allow public for prices)
+- [x] Send "connected" message on success
+- [x] Handle ping/pong for keepalive
 
 **Connection URL:** `wss://api.example.com/ws`
 
@@ -34,13 +34,13 @@
 - `user:{userId}` - User-specific (trade confirmations, balance)
 
 **Acceptance Criteria:**
-- [ ] Subscribe message: `{ type: "subscribe", channel: "market:abc" }`
-- [ ] Unsubscribe message: `{ type: "unsubscribe", channel: "..." }`
-- [ ] Confirm subscription: `{ type: "subscribed", channel: "..." }`
-- [ ] Auto-subscribe user to their user channel
-- [ ] Enforce authorization (can't subscribe to other users)
-- [ ] Max 50 subscriptions per connection
-- [ ] Max 5 connections per user
+- [x] Subscribe message: `{ type: "subscribe", channel: "market:abc" }`
+- [x] Unsubscribe message: `{ type: "unsubscribe", channel: "..." }`
+- [x] Confirm subscription: `{ type: "subscribed", channel: "..." }`
+- [x] Auto-subscribe user to their user channel
+- [x] Enforce authorization (can't subscribe to other users)
+- [x] Max 50 subscriptions per connection
+- [x] Max 5 connections per user
 
 **References:** WEBSOCKET_PROTOCOL.md Sections 4, 6
 

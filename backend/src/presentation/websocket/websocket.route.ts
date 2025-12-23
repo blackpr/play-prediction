@@ -84,84 +84,103 @@ function handleUnsubscribe(client: WebSocketClient, message: ClientMessage): voi
 }
 
 export async function websocketHandler(socket: WebSocket, request: FastifyRequest) {
-  // Create Supabase client with request cookies
-  const cookieHeader = request.headers.cookie || '';
+  try {
+    const cookieHeader = request.headers.cookie || '';
+    request.log.info({ cookieHeaderLength: cookieHeader.length }, 'WebSocket connection attempt');
 
-  const supabase = createServerClient(
-    requireEnv('SUPABASE_URL'),
-    requireEnv('SUPABASE_ANON_KEY'),
-    {
-      cookies: {
-        getAll() {
-          // Parse cookie header into array of {name, value} objects
-          return cookieHeader.split(';').map(cookie => {
-            const [name, ...rest] = cookie.trim().split('=');
-            return { name, value: rest.join('=') };
-          }).filter(c => c.name && c.value);
+    const supabase = createServerClient(
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_ANON_KEY'),
+      {
+        cookies: {
+          getAll() {
+            // Parse cookie header into array of {name, value} objects
+            return cookieHeader.split(';').map(cookie => {
+              const [name, ...rest] = cookie.trim().split('=');
+              return { name, value: rest.join('=') };
+            }).filter(c => c.name && c.value);
+          },
+          setAll() {
+            // WebSocket can't set cookies
+          },
         },
-        setAll() {
-          // WebSocket can't set cookies
-        },
-      },
+      }
+    );
+
+    request.log.info('Validating session...');
+    // Validate session with Supabase Auth
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      request.log.error({ error }, 'WebSocket authentication failed');
+      socket.send(JSON.stringify({
+        type: 'error',
+        error: { code: 'SESSION_INVALID', message: 'Authentication failed' },
+        timestamp: new Date().toISOString(),
+      }));
+      socket.close(4001, 'Invalid session');
+      return;
     }
-  );
 
-  // Validate session with Supabase Auth
-  const { data: { user }, error } = await supabase.auth.getUser();
+    request.log.info({ userId: user.id }, 'WebSocket authenticated');
 
-  if (error || !user) {
+    const userId = user.id;
+
+    // Create client instance
+    const client = new WebSocketClient(socket, userId);
+    wsManager.add(client);
+
+    request.log.info('Sending connected message');
+    // Send connected message
+    client.send({
+      type: 'connected',
+      data: {
+        userId,
+        sessionId: client.sessionId,
+        serverTime: new Date().toISOString(),
+      },
+    });
+
+    // Auto-subscribe to user channel
+    client.subscribe(`user:${userId}`);
+
+    // Handle incoming messages
+    socket.on('message', (raw: Buffer) => {
+      try {
+        const message = JSON.parse(raw.toString()) as ClientMessage;
+        handleClientMessage(client, message);
+      } catch (err) {
+        client.sendError('INVALID_MESSAGE', 'Failed to parse message');
+      }
+    });
+
+    // Handle disconnect
+    socket.on('close', () => {
+      wsManager.remove(client);
+    });
+
+    // Handle errors
+    socket.on('error', (err: Error) => {
+      request.log.error({
+        category: 'websocket',
+        userId,
+        sessionId: client.sessionId,
+        error: err.message,
+        stack: err.stack
+      }, 'WebSocket error');
+      wsManager.remove(client);
+    });
+  } catch (err: any) {
+    request.log.error({ err }, 'WebSocket handler exception');
     socket.send(JSON.stringify({
       type: 'error',
-      error: { code: 'SESSION_INVALID', message: 'Authentication failed' },
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        details: err.message || 'Unknown error' // Exposed for debugging
+      },
       timestamp: new Date().toISOString(),
     }));
-    socket.close(4001, 'Invalid session');
-    return;
+    socket.close(1011, 'Internal error');
   }
-
-  const userId = user.id;
-
-  // Create client instance
-  const client = new WebSocketClient(socket, userId);
-  wsManager.add(client);
-
-  // Send connected message
-  client.send({
-    type: 'connected',
-    data: {
-      userId,
-      sessionId: client.sessionId,
-      serverTime: new Date().toISOString(),
-    },
-  });
-
-  // Auto-subscribe to user channel
-  client.subscribe(`user:${userId}`);
-
-  // Handle incoming messages
-  socket.on('message', (raw: Buffer) => {
-    try {
-      const message = JSON.parse(raw.toString()) as ClientMessage;
-      handleClientMessage(client, message);
-    } catch (err) {
-      client.sendError('INVALID_MESSAGE', 'Failed to parse message');
-    }
-  });
-
-  // Handle disconnect
-  socket.on('close', () => {
-    wsManager.remove(client);
-  });
-
-  // Handle errors
-  socket.on('error', (err: Error) => {
-    request.log.error({
-      category: 'websocket',
-      userId,
-      sessionId: client.sessionId,
-      error: err.message,
-      stack: err.stack
-    }, 'WebSocket error');
-    wsManager.remove(client);
-  });
 }
