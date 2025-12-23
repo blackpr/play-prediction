@@ -61,6 +61,9 @@ async function buildServer() {
   // Register global auth middleware (initializes request.supabase)
   server.addHook('preHandler', authMiddleware);
 
+  // Add request/response logging
+  const { requestLogger } = await import('./presentation/fastify/middleware/request-logger');
+  server.addHook('onRequest', requestLogger);
 
   // Add hook to include userId in logs if authenticated
   server.addHook('preHandler', async (request) => {

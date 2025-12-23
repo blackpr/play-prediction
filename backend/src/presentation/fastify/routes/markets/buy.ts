@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { AppCradle } from '../../../../shared/container/types';
 import { BusinessLogicError } from '../../../../domain/errors/domain-error';
+import { BusinessLogger } from '../../../../shared/logger';
 
 // Request Body Schema
 const buySharesBodySchema = z.object({
@@ -61,6 +62,7 @@ export async function buyShares(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { buySharesUseCase } = request.diScope.cradle as AppCradle;
 
+    const startTime = Date.now();
     const result = await buySharesUseCase.execute({
       userId: user.id,
       marketId,
@@ -68,6 +70,20 @@ export async function buyShares(request: FastifyRequest, reply: FastifyReply) {
       amount: BigInt(amount),
       minSharesOut: BigInt(minSharesOut),
       idempotencyKey,
+    });
+    const duration = Date.now() - startTime;
+
+    // Log successful trade
+    BusinessLogger.logTrade(request.log, {
+      userId: user.id,
+      marketId,
+      action: 'BUY',
+      side,
+      amount,
+      sharesOut: result.sharesOut.toString(),
+      feePaid: result.feePaid.toString(),
+      executionPrice: result.avgExecutionPrice,
+      duration,
     });
 
     return reply.status(200).send({

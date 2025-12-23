@@ -155,7 +155,13 @@ export async function websocketHandler(socket: WebSocket, request: FastifyReques
 
   // Handle errors
   socket.on('error', (err: Error) => {
-    console.error('WebSocket error:', err);
+    request.log.error({
+      category: 'websocket',
+      userId,
+      sessionId: client.sessionId,
+      error: err.message,
+      stack: err.stack
+    }, 'WebSocket error');
     wsManager.remove(client);
   });
 }

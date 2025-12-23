@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { AppCradle } from '../../../../shared/container/types';
+import { BusinessLogger } from '../../../../shared/logger';
 
 // Route params schema
 const grantPointsParamsSchema = z.object({
@@ -72,6 +73,21 @@ export async function grantPoints(request: FastifyRequest, reply: FastifyReply) 
       amount: BigInt(amount),
       reason,
       adminId: request.user.id,
+    });
+
+    // Log admin action
+    BusinessLogger.logAdminAction(request.log, {
+      adminId: request.user.id,
+      adminEmail: request.user.email,
+      action: 'POINTS_GRANTED',
+      entityType: 'USER',
+      entityId: id,
+      details: {
+        amount,
+        reason,
+        previousBalance: result.previousBalance,
+        newBalance: result.newBalance,
+      },
     });
 
     return reply.status(200).send({

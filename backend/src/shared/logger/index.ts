@@ -10,15 +10,15 @@ export const loggerConfig = {
   // Pretty printing in development
   transport: !isProduction
     ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
-          singleLine: false,
-          messageFormat: '{levelLabel} - {msg}',
-        },
-      }
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+        singleLine: false,
+        messageFormat: '{levelLabel} - {msg}',
+      },
+    }
     : undefined,
 
   // Custom formatters
@@ -90,3 +90,6 @@ export const loggerConfig = {
     };
   }
 };
+
+// Export business logger utilities
+export { BusinessLogger } from './business-logger';
