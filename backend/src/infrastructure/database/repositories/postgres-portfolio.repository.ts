@@ -128,4 +128,12 @@ export class PostgresPortfolioRepository implements PortfolioRepository {
       updatedAt: portfolio.updatedAt,
     };
   }
+
+  async deleteByUserAndMarket(userId: string, marketId: string, tx?: unknown): Promise<void> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    await db
+      .delete(portfolios)
+      .where(and(eq(portfolios.userId, userId), eq(portfolios.marketId, marketId)));
+  }
 }

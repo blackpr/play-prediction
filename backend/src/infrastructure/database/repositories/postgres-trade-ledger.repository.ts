@@ -172,4 +172,23 @@ export class PostgresTradeLedgerRepository implements TradeLedgerRepository {
       .from(tradeLedger);
     return result.volume.toString();
   }
+
+  async countByMarket(marketId: string, tx?: unknown): Promise<number> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const [result] = await db
+      .select({ count: count() })
+      .from(tradeLedger)
+      .where(eq(tradeLedger.marketId, marketId));
+
+    return result?.count ?? 0;
+  }
+
+  async deleteByMarketAndAction(marketId: string, action: string, tx?: unknown): Promise<void> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    await db
+      .delete(tradeLedger)
+      .where(and(eq(tradeLedger.marketId, marketId), eq(tradeLedger.action, action)));
+  }
 }

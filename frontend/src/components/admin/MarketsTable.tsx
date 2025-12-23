@@ -19,10 +19,15 @@ interface Market {
   createdAt: string;
   closesAt?: string | null;
   closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
+  bufferMinutes?: number | null;
   eventEndedAt?: string | null;
   imageUrl?: string | null;
   description?: string | null;
   category?: string | null;
+  pool?: {
+    yesQty: string;
+    noQty: string;
+  } | null;
 }
 
 interface MarketsResponse {
@@ -61,7 +66,9 @@ export function MarketsTable() {
     imageUrl?: string | null;
     closesAt?: string | null;
     closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
+    bufferMinutes?: number | null;
     eventEndedAt?: string | null;
+    pool?: { yesQty: string; noQty: string } | null;
   } | null>(null);
 
   // Debounce search
@@ -219,7 +226,9 @@ export function MarketsTable() {
                                 category: market.category,
                                 imageUrl: market.imageUrl,
                                 closesAt: market.closesAt,
-                                closeBehavior: market.closeBehavior
+                                closeBehavior: market.closeBehavior,
+                                bufferMinutes: market.bufferMinutes,
+                                pool: market.pool
                               });
                               setEditModalOpen(true);
                             }}
@@ -302,6 +311,9 @@ export function MarketsTable() {
             category: selectedMarket.category || null,
             imageUrl: selectedMarket.imageUrl || null,
             closesAt: selectedMarket.closesAt || null,
+            closeBehavior: selectedMarket.closeBehavior,
+            bufferMinutes: selectedMarket.bufferMinutes ?? null,
+            pool: selectedMarket.pool ?? null
           }}
         />
       )}

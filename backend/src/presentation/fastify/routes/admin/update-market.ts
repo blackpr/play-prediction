@@ -14,6 +14,10 @@ const updateMarketBodySchema = z.object({
   category: z.string().max(100).optional(),
   imageUrl: z.string().url().max(2048).optional(),
   closesAt: z.string().datetime().optional(),
+  seedLiquidity: z.union([z.string(), z.number()]).transform((val) => BigInt(val)).optional(),
+  initialYesPrice: z.number().min(0.01).max(0.99).optional(),
+  closeBehavior: z.enum(['auto', 'manual', 'auto_with_buffer']).optional(),
+  bufferMinutes: z.number().int().positive().nullable().optional(),
 });
 
 export async function updateMarket(request: FastifyRequest, reply: FastifyReply) {
@@ -68,6 +72,10 @@ export async function updateMarket(request: FastifyRequest, reply: FastifyReply)
       category: updates.category,
       imageUrl: updates.imageUrl,
       closesAt: updates.closesAt ? new Date(updates.closesAt) : undefined,
+      seedLiquidity: updates.seedLiquidity,
+      initialYesPrice: updates.initialYesPrice,
+      closeBehavior: updates.closeBehavior,
+      bufferMinutes: updates.bufferMinutes,
     });
 
     return reply.status(200).send({

@@ -58,4 +58,6 @@ export interface TradeLedgerRepository {
   findAll(params: FindTradesParams): Promise<{ items: TradeLedgerEntry[]; total: number }>;
   getVolume24h(): Promise<string>;
   getTotalVolume(): Promise<string>;
+  countByMarket(marketId: string, tx?: Transaction): Promise<number>;
+  deleteByMarketAndAction(marketId: string, action: string, tx?: Transaction): Promise<void>;
 }

@@ -93,6 +93,7 @@ export interface MarketRepository {
   // Admin operations
   create(market: NewMarket, tx?: unknown): Promise<Market>;
   createPool(pool: NewLiquidityPool, tx?: unknown): Promise<void>;
+  deletePool(marketId: string, tx?: unknown): Promise<void>;
   updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<Market>;
   update(
     marketId: string,

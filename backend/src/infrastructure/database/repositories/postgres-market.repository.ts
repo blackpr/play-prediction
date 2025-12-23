@@ -393,6 +393,14 @@ export class PostgresMarketRepository implements MarketRepository {
       .values(pool);
   }
 
+  async deletePool(marketId: string, tx?: unknown): Promise<void> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    await db
+      .delete(liquidityPools)
+      .where(eq(liquidityPools.id, marketId));
+  }
+
   async updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<import('../drizzle/schema').Market> {
     const db = tx ? (tx as DrizzleDB) : this.db;
 

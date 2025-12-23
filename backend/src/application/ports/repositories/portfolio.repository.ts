@@ -32,4 +32,5 @@ export interface PortfolioRepository {
   findByMarket(marketId: string, tx?: Transaction): Promise<Portfolio[]>;
   create(portfolio: CreatePortfolioDTO, tx?: Transaction): Promise<Portfolio>;
   update(userId: string, marketId: string, updates: UpdatePortfolioDTO, tx?: Transaction): Promise<Portfolio>;
+  deleteByUserAndMarket(userId: string, marketId: string, tx?: Transaction): Promise<void>;
 }
