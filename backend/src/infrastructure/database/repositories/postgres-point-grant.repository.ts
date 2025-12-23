@@ -20,6 +20,7 @@ export class PostgresPointGrantRepository implements PointGrantRepository {
       balanceAfter: grant.balanceAfter,
       grantType: grant.grantType,
       reason: grant.reason,
+      grantedBy: grant.grantedBy,
     });
   }
 

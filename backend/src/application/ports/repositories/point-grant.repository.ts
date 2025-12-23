@@ -19,6 +19,7 @@ export interface CreatePointGrantDTO {
   balanceAfter: bigint;
   grantType: string;
   reason?: string;
+  grantedBy?: string;
 }
 
 import { Transaction } from '../transaction-manager.port';

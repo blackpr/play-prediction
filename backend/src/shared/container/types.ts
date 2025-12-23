@@ -43,6 +43,7 @@ import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-ma
 import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admin-stats.use-case';
 import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
 import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-market.use-case';
+import { GrantPointsUseCase } from '../../application/use-cases/admin/grant-points.use-case';
 
 
 /**
@@ -93,6 +94,7 @@ export interface AppCradle {
   resumeMarketUseCase: ResumeMarketUseCase;
   resolveMarketUseCase: ResolveMarketUseCase;
   cancelMarketUseCase: CancelMarketUseCase;
+  grantPointsUseCase: GrantPointsUseCase;
   getAdminStatsUseCase: GetAdminStatsUseCase;
 }
 

@@ -50,6 +50,7 @@ import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-ma
 import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admin-stats.use-case';
 import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
 import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-market.use-case';
+import { GrantPointsUseCase } from '../../application/use-cases/admin/grant-points.use-case';
 
 
 
@@ -142,6 +143,7 @@ export function registerDependencies(): void {
     resumeMarketUseCase: asClass(ResumeMarketUseCase).scoped(),
     resolveMarketUseCase: asClass(ResolveMarketUseCase).scoped(),
     cancelMarketUseCase: asClass(CancelMarketUseCase).scoped(),
+    grantPointsUseCase: asClass(GrantPointsUseCase).scoped(),
     getAdminStatsUseCase: asClass(GetAdminStatsUseCase).scoped(),
   });
 }

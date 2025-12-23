@@ -261,13 +261,76 @@ curl -s -X POST "http://localhost:4000/api/v1/admin/markets/{RESOLVED_MARKET_ID}
 ```
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Validate user exists
-- [ ] Validate amount > 0
-- [ ] Add to user balance
-- [ ] Log to point_grants table
-- [ ] Record admin who granted
-- [ ] Return new balance
+- [x] Require admin role
+- [x] Validate user exists
+- [x] Validate amount > 0
+- [x] Add to user balance
+- [x] Log to point_grants table
+- [x] Record admin who granted
+- [x] Return new balance
+
+**Implementation Notes:**
+- ✅ Implemented in `GrantPointsUseCase` with full transaction support
+- ✅ Validates amount > 0 (throws `ValidationError` if not)
+- ✅ Validates user exists (throws `NotFoundError` if not)
+- ✅ Validates admin exists (throws `NotFoundError` if not)
+- ✅ Logs to `point_grants` table with `grantType: 'ADMIN_GRANT'` and `grantedBy`
+- ✅ Comprehensive unit tests (9 tests, all passing)
+- ✅ Route: `POST /v1/admin/users/:id/grant-points`
+- ✅ Requires admin authentication via `requireAdmin` middleware
+- ✅ Returns grant details with previous/new balance and admin email
+
+**Curl Verification Example:**
+```bash
+# Login as admin
+curl -s -X POST http://localhost:4000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"SecurePassword123!"}' \
+  -c /tmp/admin-cookies.txt
+
+# Grant 5 Points to user
+curl -s -X POST "http://localhost:4000/api/v1/admin/users/{USER_ID}/grant-points" \
+  -H "Content-Type: application/json" \
+  -b /tmp/admin-cookies.txt \
+  -d '{"amount":"5000000","reason":"Contest winner reward"}' | jq '.'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "grantId": "9505a925-16d1-47a0-844c-4325f94ac40c",
+    "userId": "4edc4998-247f-4601-a7fe-bdd211dd14f2",
+    "amount": "5000000",
+    "previousBalance": "1000000000",
+    "newBalance": "1005000000",
+    "reason": "Contest winner reward",
+    "grantedBy": "admin@example.com",
+    "createdAt": "2025-12-23T00:28:03.728Z"
+  }
+}
+
+# Verify balance updated
+curl -s -X GET http://localhost:4000/api/v1/users/me \
+  -b /tmp/admin-cookies.txt | jq '.data.balance'
+# Output: "1005000000"
+
+# Verify grant in history
+curl -s -X GET "http://localhost:4000/api/v1/users/me/points-history" \
+  -b /tmp/admin-cookies.txt | jq '.data.items[] | select(.type == "ADMIN_GRANT")'
+
+# Test error cases
+# Invalid user ID (404)
+curl -s -X POST "http://localhost:4000/api/v1/admin/users/00000000-0000-0000-0000-000000000000/grant-points" \
+  -H "Content-Type: application/json" \
+  -b /tmp/admin-cookies.txt \
+  -d '{"amount":"1000000","reason":"Should fail"}' | jq '.'
+
+# Negative amount (400)
+curl -s -X POST "http://localhost:4000/api/v1/admin/users/{USER_ID}/grant-points" \
+  -H "Content-Type: application/json" \
+  -b /tmp/admin-cookies.txt \
+  -d '{"amount":"-1000000","reason":"Should fail"}' | jq '.'
+```
 
 **References:** API_SPECIFICATION.md Section 4.6.7
 
