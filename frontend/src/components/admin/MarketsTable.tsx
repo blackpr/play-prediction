@@ -8,6 +8,7 @@ import { Select } from '../ui/Select';
 import { format } from 'date-fns';
 import { Search, Play, Pause } from 'lucide-react';
 import { toast } from 'sonner';
+import { ResolveMarketModal } from './ResolveMarketModal';
 
 interface Market {
   id: string;
@@ -44,6 +45,8 @@ export function MarketsTable() {
   const [status, setStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [resolveModalOpen, setResolveModalOpen] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState<{ id: string; title: string } | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -223,7 +226,10 @@ export function MarketsTable() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => toast.info('Resolution flow not implemented yet')}
+                            onClick={() => {
+                              setSelectedMarket({ id: market.id, title: market.title });
+                              setResolveModalOpen(true);
+                            }}
                             leftIcon={<span className="text-xs">✓</span>}
                           >
                             Resolve
@@ -238,6 +244,19 @@ export function MarketsTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Resolve Market Modal */}
+      {selectedMarket && (
+        <ResolveMarketModal
+          isOpen={resolveModalOpen}
+          onClose={() => {
+            setResolveModalOpen(false);
+            setSelectedMarket(null);
+          }}
+          marketId={selectedMarket.id}
+          marketTitle={selectedMarket.title}
+        />
+      )}
 
       {/* Pagination */}
       {marketsData && marketsData.pagination.totalPages > 1 && (

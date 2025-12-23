@@ -370,6 +370,83 @@ async function seed() {
       closesAt: new Date(Date.now() + 86400000),
     });
 
+    // PAUSED MARKET WITH POST-EVENT TRADES (for testing trade voiding preview)
+    const eventEndTime = new Date(Date.now() - 60 * 60 * 1000); // Event ended 1 hour ago
+    const [pausedMarket] = await db.insert(markets).values({
+      title: 'Will it snow on Christmas?',
+      description: 'Market for testing post-event trade voiding',
+      status: MarketStatus.PAUSED,
+      category: 'Weather',
+      createdBy: treasuryId,
+      closesAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // Closed 2 hours ago
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Created 7 days ago
+      closeBehavior: CloseBehavior.MANUAL,
+    }).returning();
+
+    await db.insert(liquidityPools).values({
+      id: pausedMarket.id,
+      yesQty: 8_000_000_000n,
+      noQty: 12_000_000_000n
+    });
+
+    // Create trades: some before event ended, some after (to be voided)
+    await db.insert(tradeLedger).values([
+      // BEFORE event ended (valid trades)
+      {
+        userId: testUserId,
+        marketId: pausedMarket.id,
+        action: TradeAction.BUY,
+        side: Side.YES,
+        amountIn: 300_000_000n,
+        amountOut: 600_000_000n,
+        priceAtExecution: 500000n,
+        createdAt: new Date(eventEndTime.getTime() - 30 * 60 * 1000), // 30 min before event ended
+      },
+      {
+        userId: user2Id,
+        marketId: pausedMarket.id,
+        action: TradeAction.BUY,
+        side: Side.NO,
+        amountIn: 200_000_000n,
+        amountOut: 400_000_000n,
+        priceAtExecution: 500000n,
+        createdAt: new Date(eventEndTime.getTime() - 15 * 60 * 1000), // 15 min before event ended
+      },
+      // AFTER event ended (should be voided)
+      {
+        userId: testUserId,
+        marketId: pausedMarket.id,
+        action: TradeAction.BUY,
+        side: Side.YES,
+        amountIn: 500_000_000n, // 0.5 Points
+        amountOut: 1_000_000_000n,
+        priceAtExecution: 500000n,
+        createdAt: new Date(eventEndTime.getTime() + 5 * 60 * 1000), // 5 min AFTER event ended
+      },
+      {
+        userId: user2Id,
+        marketId: pausedMarket.id,
+        action: TradeAction.BUY,
+        side: Side.YES,
+        amountIn: 200_000_000n, // 0.2 Points
+        amountOut: 400_000_000n,
+        priceAtExecution: 500000n,
+        createdAt: new Date(eventEndTime.getTime() + 10 * 60 * 1000), // 10 min AFTER event ended
+      },
+      {
+        userId: adminId,
+        marketId: pausedMarket.id,
+        action: TradeAction.BUY,
+        side: Side.NO,
+        amountIn: 100_000_000n, // 0.1 Points
+        amountOut: 200_000_000n,
+        priceAtExecution: 500000n,
+        createdAt: new Date(eventEndTime.getTime() + 20 * 60 * 1000), // 20 min AFTER event ended
+      },
+    ]);
+
+    console.log(`✅ PAUSED market created with post-event trades (event ended at ${eventEndTime.toISOString()})`);
+
     console.log('✅ Markets created');
 
     // ========================================================================

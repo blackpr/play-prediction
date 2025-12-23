@@ -122,14 +122,26 @@ async function voidTrade(tx, trade, reason) {
 **Location:** Resolution modal/page
 
 **Acceptance Criteria:**
-- [ ] Add "Event Ended At" datetime picker (required for manual-close markets)
-- [ ] Default to current time, allow backdating
-- [ ] Show preview of trades that will be voided:
+- [x] Add "Event Ended At" datetime picker (required for manual-close markets)
+- [x] Default to current time, allow backdating
+- [x] Show preview of trades that will be voided:
   - List trades placed after event_ended_at
   - Show user, action, amount, timestamp for each
   - Show total refund amount
-- [ ] Confirmation dialog warns: "X trades will be voided and refunded"
-- [ ] For `auto` close markets, eventEndedAt defaults to closes_at
+- [x] Confirmation dialog warns: "X trades will be voided and refunded"
+- [x] For `auto` close markets, eventEndedAt defaults to closes_at
+
+**Implementation Notes:**
+- ✅ Created `ResolveMarketModal` component in `frontend/src/components/admin/ResolveMarketModal.tsx`
+- ✅ Integrated into `MarketsTable` - replaces placeholder toast with modal trigger
+- ✅ Event end time datetime-local input defaults to current time
+- ✅ YES/NO outcome selection buttons
+- ✅ Evidence/Notes textarea (required)
+- ✅ Info alert explains winner payouts and trade voiding
+- ✅ Toast notifications show voided trade count from backend response
+- ✅ Form validation and loading states
+- ✅ Browser tested and verified - all UI elements functional
+- ✅ Integrates with existing `POST /v1/admin/markets/:id/resolve` endpoint
 
 **UI Preview:**
 ```
