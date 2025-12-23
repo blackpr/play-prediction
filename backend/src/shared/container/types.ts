@@ -41,6 +41,7 @@ import { ActivateMarketUseCase } from '../../application/use-cases/admin/activat
 import { PauseMarketUseCase } from '../../application/use-cases/admin/pause-market.use-case';
 import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-market.use-case';
 import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admin-stats.use-case';
+import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
 
 
 /**
@@ -89,6 +90,7 @@ export interface AppCradle {
   activateMarketUseCase: ActivateMarketUseCase;
   pauseMarketUseCase: PauseMarketUseCase;
   resumeMarketUseCase: ResumeMarketUseCase;
+  resolveMarketUseCase: ResolveMarketUseCase;
   getAdminStatsUseCase: GetAdminStatsUseCase;
 }
 

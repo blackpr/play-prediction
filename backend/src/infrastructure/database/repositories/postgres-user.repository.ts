@@ -81,6 +81,18 @@ export class PostgresUserRepository implements UserRepository {
     };
   }
 
+  async updateBalance(userId: string, newBalance: bigint, tx?: unknown): Promise<void> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    await db
+      .update(users)
+      .set({
+        balance: newBalance,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
   async count(): Promise<number> {
     const [result] = await this.db.select({ count: count() }).from(users);
     return Number(result.count);

@@ -40,6 +40,8 @@ export interface CreateTradeLedgerEntryDTO {
   poolNoAfter?: bigint | null;
   priceAtExecution?: bigint | null;
   idempotencyKey?: string | null;
+  originalTradeId?: string | null;
+  voidReason?: string | null;
 }
 
 export interface FindTradesParams {

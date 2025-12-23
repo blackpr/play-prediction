@@ -7,6 +7,7 @@ import { resumeMarket } from './resume-market';
 import { getAdminStats } from './get-stats';
 import { listAdminMarkets } from './list-markets';
 import { uploadRoutes } from './upload';
+import { resolveMarket } from './resolve-market';
 
 export default async function adminRoutes(server: FastifyInstance) {
   // Apply admin middleware to all routes in this module
@@ -26,6 +27,9 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // POST /admin/markets/:id/resume - Resume paused market
   server.post('/markets/:id/resume', resumeMarket);
+
+  // POST /admin/markets/:id/resolve - Resolve market and pay winners
+  server.post('/markets/:id/resolve', resolveMarket);
 
   // GET /admin/stats - Get admin dashboard stats
   server.get('/stats', getAdminStats);
