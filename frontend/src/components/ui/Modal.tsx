@@ -100,7 +100,7 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full max-w-lg rounded-xl bg-surface p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 outline-none',
+          'relative w-full max-w-lg rounded-xl bg-surface p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 outline-none overflow-visible',
           className,
         )}
         tabIndex={-1}
@@ -119,7 +119,7 @@ export function Modal({
             <X size={20} />
           </Button>
         </div>
-        <div>{children}</div>
+        <div className="overflow-visible">{children}</div>
       </div>
     </div>
   )

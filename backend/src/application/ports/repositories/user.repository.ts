@@ -17,10 +17,27 @@ export interface CreateUserDTO {
   balance: bigint;
 }
 
+export interface FindAllUsersParams {
+  search?: string;
+  role?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedUsers {
+  items: User[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+  };
+}
+
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByRole(role: string): Promise<User | null>;
+  findAll(params: FindAllUsersParams): Promise<PaginatedUsers>;
   create(user: CreateUserDTO, tx?: Transaction): Promise<User>;
   updateBalance(userId: string, newBalance: bigint, tx?: Transaction): Promise<void>;
   count(): Promise<number>;

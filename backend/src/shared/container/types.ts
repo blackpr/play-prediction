@@ -44,6 +44,7 @@ import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admi
 import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
 import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-market.use-case';
 import { GrantPointsUseCase } from '../../application/use-cases/admin/grant-points.use-case';
+import { ListUsersUseCase } from '../../application/use-cases/admin/list-users.use-case';
 
 
 /**
@@ -95,6 +96,7 @@ export interface AppCradle {
   resolveMarketUseCase: ResolveMarketUseCase;
   cancelMarketUseCase: CancelMarketUseCase;
   grantPointsUseCase: GrantPointsUseCase;
+  listUsersUseCase: ListUsersUseCase;
   getAdminStatsUseCase: GetAdminStatsUseCase;
 }
 

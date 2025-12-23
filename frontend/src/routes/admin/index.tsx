@@ -1,13 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useAdminStats } from '../../hooks/useAdminStats'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
+import { Button } from '../../components/ui/Button'
+import { GrantPointsModal } from '../../components/admin/GrantPointsModal'
 import {
   Users,
   TrendingUp,
   BarChart3,
   Clock,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Gift
 } from 'lucide-react'
 
 export const Route = createFileRoute('/admin/')({
@@ -16,6 +20,7 @@ export const Route = createFileRoute('/admin/')({
 
 function AdminIndex() {
   const { data: stats, isLoading, error } = useAdminStats()
+  const [grantPointsModalOpen, setGrantPointsModalOpen] = useState(false)
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading dashboard stats...</div>
   // Add debug info if there's an error
@@ -27,11 +32,21 @@ function AdminIndex() {
 
   return (
     <div className="min-h-screen bg-black text-white p-6 md:p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-          Dashboard
-        </h1>
-        <p className="text-gray-400 mt-1">Platform overview and activity</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+            Dashboard
+          </h1>
+          <p className="text-gray-400 mt-1">Platform overview and activity</p>
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setGrantPointsModalOpen(true)}
+          leftIcon={<Gift className="w-4 h-4" />}
+        >
+          Grant Points
+        </Button>
       </div>
 
       {/* Metrics Cards */}
@@ -102,6 +117,12 @@ function AdminIndex() {
           </table>
         </div>
       </Card>
+
+      {/* Grant Points Modal */}
+      <GrantPointsModal
+        isOpen={grantPointsModalOpen}
+        onClose={() => setGrantPointsModalOpen(false)}
+      />
     </div>
   )
 }

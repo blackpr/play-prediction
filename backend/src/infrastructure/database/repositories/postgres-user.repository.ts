@@ -1,4 +1,4 @@
-import { eq, count } from 'drizzle-orm';
+import { eq, count, like, desc, and } from 'drizzle-orm';
 import { UserRepository, User } from '../../../application/ports/repositories/user.repository';
 import { DrizzleDB } from '../../database'; // Assuming DrizzleDB type wraps the drizzle instance
 import { users } from '../drizzle/schema';
@@ -91,6 +91,64 @@ export class PostgresUserRepository implements UserRepository {
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
+  }
+
+  async findAll(params: import('../../../application/ports/repositories/user.repository').FindAllUsersParams): Promise<import('../../../application/ports/repositories/user.repository').PaginatedUsers> {
+    const { search, role, page = 1, pageSize = 20 } = params;
+    const offset = (page - 1) * pageSize;
+
+    // Build where conditions
+    const conditions = [];
+    if (search) {
+      conditions.push(like(users.email, `%${search}%`));
+    }
+    if (role) {
+      conditions.push(eq(users.role, role));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const countQuery = this.db
+      .select({ count: count() })
+      .from(users);
+
+    if (whereClause) {
+      countQuery.where(whereClause);
+    }
+
+    const [countResult] = await countQuery;
+    const totalItems = Number(countResult.count);
+
+    // Get paginated results
+    const selectQuery = this.db
+      .select()
+      .from(users);
+
+    if (whereClause) {
+      selectQuery.where(whereClause);
+    }
+
+    const results = await selectQuery
+      .orderBy(desc(users.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      items: results.map(user => ({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        balance: user.balance,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+      })),
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+      },
+    };
   }
 
   async count(): Promise<number> {

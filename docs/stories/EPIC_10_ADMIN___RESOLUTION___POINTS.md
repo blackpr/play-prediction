@@ -355,13 +355,21 @@ curl -s -X POST "http://localhost:4000/api/v1/admin/users/{USER_ID}/grant-points
 **So that** I can resolve markets safely
 
 **Acceptance Criteria:**
-- [ ] Resolution modal/page
-- [ ] YES/NO outcome selection
-- [ ] Evidence/notes text field
-- [ ] Show affected users count
-- [ ] Show total payout amount
-- [ ] Confirmation dialog before submit
-- [ ] Success feedback with stats
+- [x] Resolution modal/page
+- [x] YES/NO outcome selection
+- [x] Evidence/notes text field
+- [x] Show affected users count
+- [x] Show total payout amount
+- [x] Confirmation dialog before submit
+- [x] Success feedback with stats
+
+**Implementation Notes:**
+- ✅ Already implemented as part of RESOLVE-1b
+- ✅ `ResolveMarketModal` component includes all acceptance criteria
+- ✅ Integrated into `MarketsTable` with "Resolve" button for PAUSED markets
+- ✅ Shows preview of trades to be voided
+- ✅ Toast notifications with payout and voiding statistics
+- ✅ Browser tested and verified
 
 ---
 
@@ -372,12 +380,26 @@ curl -s -X POST "http://localhost:4000/api/v1/admin/users/{USER_ID}/grant-points
 **So that** I can give users points
 
 **Acceptance Criteria:**
-- [ ] User selector (search by email)
-- [ ] Amount input
-- [ ] Reason field (required)
-- [ ] Show user's current balance
-- [ ] Preview new balance
-- [ ] Submit with confirmation
+- [x] User selector (search by email)
+- [x] Amount input
+- [x] Reason field (required)
+- [x] Show user's current balance
+- [x] Preview new balance
+- [x] Submit with confirmation
+
+**Implementation Notes:**
+- ✅ Created `GrantPointsModal` component in `frontend/src/components/admin/GrantPointsModal.tsx`
+- ✅ Integrated into admin dashboard at `/admin`
+- ✅ User search with debounced input (min 2 characters)
+- ✅ Dropdown shows user email, role, and current balance
+- ✅ Amount input in Points (auto-converts to micro-points)
+- ✅ New balance preview with visual feedback
+- ✅ Reason textarea with character counter (max 1000)
+- ✅ Form validation and loading states
+- ✅ Success/error toast notifications
+- ✅ Invalidates user queries on success
+- ✅ Uses existing `POST /admin/users/:id/grant-points` endpoint (RESOLVE-3)
+- ✅ Requires ADMIN-14 (GET /admin/users) for user search functionality
 
 ---
 
@@ -395,9 +417,42 @@ curl -s -X POST "http://localhost:4000/api/v1/admin/users/{USER_ID}/grant-points
 - `page`, `pageSize`
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Return paginated user list
-- [ ] Include id, email, role, balance, isActive, createdAt
+- [x] Require admin role
+- [x] Return paginated user list
+- [x] Include id, email, role, balance, isActive, createdAt
+
+**Implementation Notes:**
+- ✅ Implemented `ListUsersUseCase` in `backend/src/application/use-cases/admin/list-users.use-case.ts`
+- ✅ Added `findAll` method to `UserRepository` with search, role filtering, and pagination
+- ✅ Route: `GET /v1/admin/users`
+- ✅ Requires admin authentication via `requireAdmin` middleware
+- ✅ Comprehensive unit tests (7 tests, all passing)
+- ✅ Registered in DI container
+- ✅ Returns paginated response with items and pagination metadata
+- ✅ Email search uses SQL LIKE for partial matching
+- ✅ Results ordered by `createdAt` DESC
+- ✅ PageSize capped at 100
+
+**Curl Verification Example:**
+```bash
+# Login as admin
+curl -s -X POST http://localhost:4000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"SecurePassword123!"}' \
+  -c /tmp/admin-cookies.txt
+
+# List all users
+curl -s -X GET "http://localhost:4000/api/v1/admin/users" \
+  -b /tmp/admin-cookies.txt | jq '.'
+
+# Search users by email
+curl -s -X GET "http://localhost:4000/api/v1/admin/users?search=admin" \
+  -b /tmp/admin-cookies.txt | jq '.data.items[] | {email, role}'
+
+# Filter by role
+curl -s -X GET "http://localhost:4000/api/v1/admin/users?role=treasury" \
+  -b /tmp/admin-cookies.txt | jq '.data.items[] | {email, role}'
+```
 
 **References:** API_SPECIFICATION.md Section 4.6.8
 
