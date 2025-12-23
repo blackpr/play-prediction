@@ -15,6 +15,8 @@ describe('ListUsersUseCase', () => {
       create: vi.fn(),
       updateBalance: vi.fn(),
       count: vi.fn(),
+      countActive: vi.fn(),
+      getUserStats: vi.fn(),
     };
 
     useCase = new ListUsersUseCase({ userRepository: mockUserRepository });

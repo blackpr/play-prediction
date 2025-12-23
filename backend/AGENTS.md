@@ -104,6 +104,38 @@ diContainer.register({
   // Scoped (one per request)
   tradingService: asClass(TradingService).scoped(),
 });
+
+### 🚨 Critical: Factory Function Pattern (NO Decorators)
+
+We use **Awilix** with the **Proxy Pattern**. Classes do NOT use decorators.
+
+**WRONG (Do NOT do this):**
+```typescript
+// ❌ NO decorators, NO tsyringe
+@injectable() 
+export class Service {
+  constructor(@inject('Repo') repo: Repo) {}
+}
+```
+
+**CORRECT (Do this):**
+```typescript
+// ✅ Use interface for dependencies
+interface Dependencies {
+  userRepository: UserRepository;
+  db: DrizzleDB;
+}
+
+export class Service {
+  private readonly userRepo: UserRepository;
+  private readonly db: DrizzleDB;
+
+  // ✅ Destructure dependencies in constructor
+  constructor({ userRepository, db }: Dependencies) {
+    this.userRepo = userRepository;
+    this.db = db;
+  }
+}
 ```
 
 ### Using in Routes
@@ -277,6 +309,20 @@ server.post('/trade', withRateLimit(RateLimitType.TRADING), handler);
 ---
 
 ## 🧪 Testing
+
+We use **Vitest**, NOT Jest.
+
+**WRONG (Do NOT do this):**
+```typescript
+import { jest } from '@jest/globals'; // ❌
+const mock = jest.fn();
+```
+
+**CORRECT (Do this):**
+```typescript
+import { describe, it, expect, vi } from 'vitest'; // ✅
+const mock = vi.fn();
+```
 
 ```bash
 npm test                    # Run all tests

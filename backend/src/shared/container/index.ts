@@ -54,6 +54,9 @@ import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-ma
 import { GrantPointsUseCase } from '../../application/use-cases/admin/grant-points.use-case';
 import { ListUsersUseCase } from '../../application/use-cases/admin/list-users.use-case';
 import { GetUserDetailUseCase } from '../../application/use-cases/admin/get-user-detail.use-case';
+import { GetAdminMarketsUseCase } from '../../application/use-cases/admin/get-admin-markets.use-case';
+import { PostgresAuditLogRepository } from '@/infrastructure/repositories/postgres-audit-log.repository';
+import { GetAuditLogUseCase } from '@/application/use-cases/admin/get-audit-log.use-case';
 
 
 
@@ -151,6 +154,10 @@ export function registerDependencies(): void {
     listUsersUseCase: asClass(ListUsersUseCase).scoped(),
     getUserDetailUseCase: asClass(GetUserDetailUseCase).scoped(),
     getAdminStatsUseCase: asClass(GetAdminStatsUseCase).scoped(),
+    getAdminMarketsUseCase: asClass(GetAdminMarketsUseCase).scoped(),
+
+    auditLogRepository: asClass(PostgresAuditLogRepository).singleton(),
+    getAuditLogUseCase: asClass(GetAuditLogUseCase).scoped(),
   });
 }
 

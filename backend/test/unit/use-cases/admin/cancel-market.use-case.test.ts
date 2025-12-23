@@ -9,6 +9,7 @@ describe('CancelMarketUseCase', () => {
   let mockPortfolioRepository: any;
   let mockUserRepository: any;
   let mockTradeLedgerRepository: any;
+  let mockAuditLogRepository: any;
   let mockTransactionManager: any;
 
   const mockMarket = {
@@ -90,6 +91,10 @@ describe('CancelMarketUseCase', () => {
       create: vi.fn(),
     };
 
+    mockAuditLogRepository = {
+      create: vi.fn(),
+    };
+
     mockTransactionManager = {
       run: vi.fn((callback) => callback({})), // Execute callback immediately with mock tx
     };
@@ -99,6 +104,7 @@ describe('CancelMarketUseCase', () => {
       portfolioRepository: mockPortfolioRepository,
       userRepository: mockUserRepository,
       tradeLedgerRepository: mockTradeLedgerRepository,
+      auditLogRepository: mockAuditLogRepository,
       transactionManager: mockTransactionManager,
     });
   });
@@ -126,6 +132,7 @@ describe('CancelMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         reason: 'Event was cancelled',
+        adminId: 'admin-id',
       });
 
       // Verify market was updated to CANCELLED
@@ -187,6 +194,17 @@ describe('CancelMarketUseCase', () => {
         {}
       );
 
+      // Verify audit log creation
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adminId: 'admin-id',
+          action: 'MARKET_CANCELLED',
+          entityType: 'MARKET',
+          entityId: 'market-id',
+        }),
+        {}
+      );
+
       // Verify result
       expect(result.id).toBe('market-id');
       expect(result.status).toBe(MarketStatus.CANCELLED);
@@ -204,6 +222,7 @@ describe('CancelMarketUseCase', () => {
         useCase.execute({
           marketId: 'non-existent-id',
           reason: 'Event was cancelled',
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(NotFoundError);
 
@@ -218,6 +237,7 @@ describe('CancelMarketUseCase', () => {
         useCase.execute({
           marketId: 'market-id',
           reason: 'Event was cancelled',
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(ValidationError);
 
@@ -239,6 +259,7 @@ describe('CancelMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         reason: 'Event was cancelled',
+        adminId: 'admin-id',
       });
 
       expect(result.totalHolders).toBe(0);
@@ -274,6 +295,7 @@ describe('CancelMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         reason: 'Event was cancelled',
+        adminId: 'admin-id',
       });
 
       // No refund should be processed for zero cost basis
@@ -312,6 +334,7 @@ describe('CancelMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         reason: 'Event was cancelled',
+        adminId: 'admin-id',
       });
 
       expect(result.status).toBe(MarketStatus.CANCELLED);
@@ -334,6 +357,7 @@ describe('CancelMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         reason: 'Event was cancelled',
+        adminId: 'admin-id',
       });
 
       expect(result.status).toBe(MarketStatus.CANCELLED);
@@ -368,6 +392,7 @@ describe('CancelMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         reason: 'Event was cancelled',
+        adminId: 'admin-id',
       });
 
       // Total refund should be yesCostBasis + noCostBasis = 400 + 250 = 650
@@ -385,6 +410,7 @@ describe('CancelMarketUseCase', () => {
         useCase.execute({
           marketId: 'market-id',
           reason: 'Event was cancelled',
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(NotFoundError);
     });

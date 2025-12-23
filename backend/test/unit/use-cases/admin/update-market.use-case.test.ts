@@ -9,6 +9,7 @@ describe('UpdateMarketUseCase', () => {
   let mockMarketRepository: any;
   let mockPortfolioRepository: any;
   let mockTradeLedgerRepository: any;
+  let mockAuditLogRepository: any;
   let mockTransactionManager: any;
 
   const mockAdmin = {
@@ -99,6 +100,10 @@ describe('UpdateMarketUseCase', () => {
       create: vi.fn(),
     };
 
+    mockAuditLogRepository = {
+      create: vi.fn(),
+    };
+
     mockTransactionManager = {
       run: vi.fn((callback) => callback({})), // Execute callback immediately with mock tx
     };
@@ -108,6 +113,7 @@ describe('UpdateMarketUseCase', () => {
       marketRepository: mockMarketRepository,
       portfolioRepository: mockPortfolioRepository,
       tradeLedgerRepository: mockTradeLedgerRepository,
+      auditLogRepository: mockAuditLogRepository,
       transactionManager: mockTransactionManager,
     });
   });
@@ -138,6 +144,16 @@ describe('UpdateMarketUseCase', () => {
           title: 'Updated Title',
           description: 'Updated description',
         },
+        {}
+      );
+
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adminId: 'admin-id',
+          action: 'MARKET_UPDATED',
+          entityType: 'MARKET',
+          entityId: 'market-id',
+        }),
         {}
       );
 

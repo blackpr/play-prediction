@@ -13,6 +13,7 @@ import { cancelMarket } from './cancel-market';
 import { grantPoints } from './grant-points';
 import { listUsers } from './list-users';
 import { getUserDetail } from './get-user-detail';
+import { getAuditLogRoute } from './get-audit-log';
 
 export default async function adminRoutes(server: FastifyInstance) {
   // Apply admin middleware to all routes in this module
@@ -56,5 +57,8 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // File Uploads
   server.register(uploadRoutes);
+
+  // Audit Logs
+  server.register(getAuditLogRoute);
 }
 

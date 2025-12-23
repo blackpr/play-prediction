@@ -2,6 +2,7 @@ import { MarketRepository } from '../../ports/repositories/market.repository';
 import { PortfolioRepository } from '../../ports/repositories/portfolio.repository';
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
 import { UserRepository } from '../../ports/repositories/user.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { BusinessLogicError, ValidationError, NotFoundError } from '../../../domain/errors/domain-error';
 import { NewMarket, NewLiquidityPool, MarketStatus, CloseBehavior } from '../../../infrastructure/database/drizzle/schema';
@@ -57,6 +58,7 @@ export class CreateMarketUseCase {
       marketRepository: MarketRepository;
       portfolioRepository: PortfolioRepository;
       tradeLedgerRepository: TradeLedgerRepository;
+      auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
   ) { }
@@ -150,6 +152,22 @@ export class CreateMarketUseCase {
       };
 
       await this.deps.tradeLedgerRepository.create(ledgerData, tx);
+
+      // Create Audit Log Entry
+      await this.deps.auditLogRepository.create({
+        adminId: params.createdBy,
+        action: 'MARKET_CREATED',
+        entityType: 'MARKET',
+        entityId: market.id,
+        details: JSON.stringify({
+          title: market.title,
+          category: market.category,
+          seedLiquidity: params.seedLiquidity.toString(),
+          initialYesPrice: params.initialYesPrice,
+          closeBehavior: market.closeBehavior,
+          closesAt: market.closesAt,
+        }),
+      }, tx);
 
       // Calculate k-invariant
       const k = yesQty * noQty;

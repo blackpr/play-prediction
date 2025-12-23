@@ -1,10 +1,12 @@
 import { MarketRepository } from '../../ports/repositories/market.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { MarketStatus } from '../../../infrastructure/database/drizzle/schema';
 
 export interface PauseMarketParams {
   marketId: string;
   reason?: string;
+  adminId: string;
 }
 
 export interface PauseMarketResult {
@@ -18,11 +20,12 @@ export class PauseMarketUseCase {
   constructor(
     private readonly deps: {
       marketRepository: MarketRepository;
+      auditLogRepository: AuditLogRepository;
     }
   ) { }
 
   async execute(params: PauseMarketParams): Promise<PauseMarketResult> {
-    const { marketId, reason } = params;
+    const { marketId, reason, adminId } = params;
 
     // 1. Find market
     const market = await this.deps.marketRepository.findById(marketId);
@@ -40,6 +43,15 @@ export class PauseMarketUseCase {
 
     // 3. Update status to PAUSED
     const updated = await this.deps.marketRepository.updateStatus(marketId, MarketStatus.PAUSED);
+
+    // 4. Create Audit Log
+    await this.deps.auditLogRepository.create({
+      adminId,
+      action: 'MARKET_PAUSED',
+      entityType: 'MARKET',
+      entityId: marketId,
+      details: JSON.stringify({ title: market.title, reason }),
+    });
 
     return {
       id: updated.id,

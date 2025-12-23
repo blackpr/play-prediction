@@ -47,6 +47,9 @@ import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-ma
 import { GrantPointsUseCase } from '../../application/use-cases/admin/grant-points.use-case';
 import { ListUsersUseCase } from '../../application/use-cases/admin/list-users.use-case';
 import { GetUserDetailUseCase } from '../../application/use-cases/admin/get-user-detail.use-case';
+import { GetAdminMarketsUseCase } from '../../application/use-cases/admin/get-admin-markets.use-case';
+import { AuditLogRepository } from '@/application/ports/repositories/audit-log.repository';
+import { GetAuditLogUseCase } from '@/application/use-cases/admin/get-audit-log.use-case';
 
 
 /**
@@ -102,6 +105,10 @@ export interface AppCradle {
   listUsersUseCase: ListUsersUseCase;
   getUserDetailUseCase: GetUserDetailUseCase;
   getAdminStatsUseCase: GetAdminStatsUseCase;
+  getAdminMarketsUseCase: GetAdminMarketsUseCase;
+
+  auditLogRepository: AuditLogRepository;
+  getAuditLogUseCase: GetAuditLogUseCase;
 }
 
 

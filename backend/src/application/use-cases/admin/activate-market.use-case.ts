@@ -1,4 +1,5 @@
 import { MarketRepository } from '../../ports/repositories/market.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { MarketStatus } from '../../../infrastructure/database/drizzle/schema';
 
@@ -12,10 +13,11 @@ export class ActivateMarketUseCase {
   constructor(
     private readonly deps: {
       marketRepository: MarketRepository;
+      auditLogRepository: AuditLogRepository;
     }
   ) { }
 
-  async execute(marketId: string): Promise<ActivateMarketResult> {
+  async execute(marketId: string, adminId: string): Promise<ActivateMarketResult> {
     // 1. Find market
     const market = await this.deps.marketRepository.findById(marketId);
     if (!market) {
@@ -32,6 +34,15 @@ export class ActivateMarketUseCase {
 
     // 3. Update status to ACTIVE
     const updated = await this.deps.marketRepository.updateStatus(marketId, MarketStatus.ACTIVE);
+
+    // 4. Create Audit Log
+    await this.deps.auditLogRepository.create({
+      adminId,
+      action: 'MARKET_ACTIVATED',
+      entityType: 'MARKET',
+      entityId: marketId,
+      details: JSON.stringify({ title: market.title }),
+    });
 
     return {
       id: updated.id,

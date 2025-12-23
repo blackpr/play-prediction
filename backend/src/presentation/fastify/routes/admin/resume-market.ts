@@ -25,8 +25,9 @@ export async function resumeMarket(request: FastifyRequest, reply: FastifyReply)
 
   try {
     const { resumeMarketUseCase } = request.diScope.cradle as AppCradle;
+    const adminId = (request.user as any).id;
 
-    const result = await resumeMarketUseCase.execute(id);
+    const result = await resumeMarketUseCase.execute(id, adminId);
 
     return reply.status(200).send({
       success: true,

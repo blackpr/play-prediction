@@ -25,8 +25,9 @@ export async function activateMarket(request: FastifyRequest, reply: FastifyRepl
 
   try {
     const { activateMarketUseCase } = request.diScope.cradle as AppCradle;
+    const adminId = (request.user as any).id;
 
-    const result = await activateMarketUseCase.execute(id);
+    const result = await activateMarketUseCase.execute(id, adminId);
 
     return reply.status(200).send({
       success: true,

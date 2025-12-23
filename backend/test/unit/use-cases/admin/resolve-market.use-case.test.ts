@@ -9,6 +9,7 @@ describe('ResolveMarketUseCase', () => {
   let mockPortfolioRepository: any;
   let mockUserRepository: any;
   let mockTradeLedgerRepository: any;
+  let mockAuditLogRepository: any;
   let mockTransactionManager: any;
 
   const mockMarket = {
@@ -91,6 +92,10 @@ describe('ResolveMarketUseCase', () => {
       create: vi.fn(),
     };
 
+    mockAuditLogRepository = {
+      create: vi.fn(),
+    };
+
     mockTransactionManager = {
       run: vi.fn((callback) => callback({})), // Execute callback immediately with mock tx
     };
@@ -100,6 +105,7 @@ describe('ResolveMarketUseCase', () => {
       portfolioRepository: mockPortfolioRepository,
       userRepository: mockUserRepository,
       tradeLedgerRepository: mockTradeLedgerRepository,
+      auditLogRepository: mockAuditLogRepository,
       transactionManager: mockTransactionManager,
     });
   });
@@ -118,6 +124,7 @@ describe('ResolveMarketUseCase', () => {
         marketId: 'market-id',
         resolution: 'YES',
         evidence: 'Team A won',
+        adminId: 'admin-id',
       });
 
       // Verify market was updated
@@ -166,6 +173,17 @@ describe('ResolveMarketUseCase', () => {
         {}
       );
 
+      // Verify audit log creation
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adminId: 'admin-id',
+          action: 'MARKET_RESOLVED',
+          entityType: 'MARKET',
+          entityId: 'market-id',
+        }),
+        {}
+      );
+
       // Verify result
       expect(result.id).toBe('market-id');
       expect(result.resolution).toBe('YES');
@@ -187,11 +205,20 @@ describe('ResolveMarketUseCase', () => {
         marketId: 'market-id',
         resolution: 'NO',
         evidence: 'Team B won',
+        adminId: 'admin-id',
       });
 
       // Verify winners were paid (user-1 has 50 NO shares, user-2 has 0 NO shares)
       expect(mockUserRepository.updateBalance).toHaveBeenCalledWith('user-1', 1050n, {}); // 1000 + 50
       expect(mockUserRepository.updateBalance).toHaveBeenCalledTimes(1); // Only user-1 wins
+
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'MARKET_RESOLVED',
+          details: expect.stringContaining('"resolution":"NO"'),
+        }),
+        {}
+      );
 
       // Verify result
       expect(result.resolution).toBe('NO');
@@ -239,6 +266,7 @@ describe('ResolveMarketUseCase', () => {
         marketId: 'market-id',
         resolution: 'YES',
         eventEndedAt,
+        adminId: 'admin-id',
       });
 
       // Verify post-event trade was voided
@@ -273,6 +301,13 @@ describe('ResolveMarketUseCase', () => {
         }),
         {}
       );
+
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          details: expect.stringContaining('"voidedTrades":1'),
+        }),
+        {}
+      );
     });
 
     it('should throw NotFoundError if market does not exist', async () => {
@@ -282,6 +317,7 @@ describe('ResolveMarketUseCase', () => {
         useCase.execute({
           marketId: 'non-existent-id',
           resolution: 'YES',
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(NotFoundError);
 
@@ -296,6 +332,7 @@ describe('ResolveMarketUseCase', () => {
         useCase.execute({
           marketId: 'market-id',
           resolution: 'YES',
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(ValidationError);
 
@@ -310,6 +347,7 @@ describe('ResolveMarketUseCase', () => {
         useCase.execute({
           marketId: 'market-id',
           resolution: 'YES',
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(ValidationError);
     });
@@ -321,6 +359,7 @@ describe('ResolveMarketUseCase', () => {
         useCase.execute({
           marketId: 'market-id',
           resolution: 'INVALID' as any,
+          adminId: 'admin-id',
         })
       ).rejects.toThrow(ValidationError);
     });
@@ -334,6 +373,7 @@ describe('ResolveMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         resolution: 'YES',
+        adminId: 'admin-id',
       });
 
       expect(result.totalWinners).toBe(0);
@@ -363,6 +403,7 @@ describe('ResolveMarketUseCase', () => {
       const result = await useCase.execute({
         marketId: 'market-id',
         resolution: 'YES', // Resolving YES, but user only has NO shares
+        adminId: 'admin-id',
       });
 
       expect(result.totalWinners).toBe(0);

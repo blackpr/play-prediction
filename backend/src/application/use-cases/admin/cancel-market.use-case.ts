@@ -2,6 +2,7 @@ import { MarketRepository } from '../../ports/repositories/market.repository';
 import { PortfolioRepository } from '../../ports/repositories/portfolio.repository';
 import { UserRepository } from '../../ports/repositories/user.repository';
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { MarketStatus, Resolution, TradeAction } from '../../../infrastructure/database/drizzle/schema';
@@ -9,6 +10,7 @@ import { MarketStatus, Resolution, TradeAction } from '../../../infrastructure/d
 export interface CancelMarketParams {
   marketId: string;
   reason: string;
+  adminId: string;
 }
 
 export interface CancelMarketResult {
@@ -27,12 +29,13 @@ export class CancelMarketUseCase {
       portfolioRepository: PortfolioRepository;
       userRepository: UserRepository;
       tradeLedgerRepository: TradeLedgerRepository;
+      auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
   ) { }
 
   async execute(params: CancelMarketParams): Promise<CancelMarketResult> {
-    const { marketId, reason } = params;
+    const { marketId, reason, adminId } = params;
 
     return await this.deps.transactionManager.run(async (tx) => {
       // 1. Find and validate market
@@ -44,7 +47,7 @@ export class CancelMarketUseCase {
       // 2. Validate market status - cannot cancel RESOLVED markets
       if (market.status === MarketStatus.RESOLVED) {
         throw new ValidationError(
-          `Cannot cancel market. Market is already resolved.`,
+          `Cannot cancel market.Market is already resolved.`,
           { currentStatus: market.status }
         );
       }
@@ -120,6 +123,15 @@ export class CancelMarketUseCase {
 
       // Note: Pool clearing is handled by database constraints on market status change
       // When a market is set to CANCELLED, the pool is automatically cleared
+
+      // 9. Create Audit Log
+      await this.deps.auditLogRepository.create({
+        adminId,
+        action: 'MARKET_CANCELLED',
+        entityType: 'MARKET',
+        entityId: marketId,
+        details: JSON.stringify({ reason, surplus: surplus.toString() }),
+      }, tx);
 
       return {
         id: marketId,

@@ -14,6 +14,8 @@ describe('GetPortfolioUseCase', () => {
       findByUserAndMarket: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      findByMarket: vi.fn(),
+      deleteByUserAndMarket: vi.fn(),
     };
 
     mockMarketRepo = {

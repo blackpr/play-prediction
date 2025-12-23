@@ -2,6 +2,7 @@ import { MarketRepository } from '../../ports/repositories/market.repository';
 import { UserRepository } from '../../ports/repositories/user.repository';
 import { PortfolioRepository } from '../../ports/repositories/portfolio.repository';
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { NotFoundError, ValidationError, BusinessLogicError } from '../../../domain/errors/domain-error';
 import { MarketStatus, NewLiquidityPool, CloseBehavior, TradeAction } from '../../../infrastructure/database/drizzle/schema';
@@ -68,6 +69,7 @@ export class UpdateMarketUseCase {
       marketRepository: MarketRepository;
       portfolioRepository: PortfolioRepository;
       tradeLedgerRepository: TradeLedgerRepository;
+      auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
   ) { }
@@ -247,6 +249,15 @@ export class UpdateMarketUseCase {
         updates,
         tx
       );
+
+      // Create Audit Log
+      await this.deps.auditLogRepository.create({
+        adminId: params.adminId,
+        action: 'MARKET_UPDATED',
+        entityType: 'MARKET',
+        entityId: params.marketId,
+        details: JSON.stringify({ updates, poolReset: needsPoolReset }),
+      }, tx);
 
       // Re-fetch pool to ensure we return latest state (or Construct it from memory if we just reset it)
       // Since we just did createPool, finding details again is safest to get versionId etc.

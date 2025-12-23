@@ -6,6 +6,7 @@ import { MarketStatus } from '../../../../src/infrastructure/database/drizzle/sc
 describe('ResumeMarketUseCase', () => {
   let useCase: ResumeMarketUseCase;
   let mockMarketRepository: any;
+  let mockAuditLogRepository: any;
 
   const mockPausedMarket = {
     id: 'market-id',
@@ -64,8 +65,13 @@ describe('ResumeMarketUseCase', () => {
       updateStatus: vi.fn(),
     };
 
+    mockAuditLogRepository = {
+      create: vi.fn(),
+    };
+
     useCase = new ResumeMarketUseCase({
       marketRepository: mockMarketRepository,
+      auditLogRepository: mockAuditLogRepository,
     });
   });
 
@@ -74,10 +80,16 @@ describe('ResumeMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(mockPausedMarket);
       mockMarketRepository.updateStatus.mockResolvedValue(mockUpdatedMarket);
 
-      const result = await useCase.execute('market-id');
+      const result = await useCase.execute('market-id', 'admin-id');
 
       expect(mockMarketRepository.findById).toHaveBeenCalledWith('market-id');
       expect(mockMarketRepository.updateStatus).toHaveBeenCalledWith('market-id', MarketStatus.ACTIVE);
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        adminId: 'admin-id',
+        action: 'MARKET_RESUMED',
+        entityType: 'MARKET',
+        entityId: 'market-id',
+      }));
       expect(result.id).toBe('market-id');
       expect(result.status).toBe(MarketStatus.ACTIVE);
       expect(result.resumedAt).toBeInstanceOf(Date);
@@ -87,10 +99,11 @@ describe('ResumeMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(null);
 
       await expect(
-        useCase.execute('non-existent-id')
+        useCase.execute('non-existent-id', 'admin-id')
       ).rejects.toThrow(NotFoundError);
 
       expect(mockMarketRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockAuditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError if market is not in PAUSED status', async () => {
@@ -98,10 +111,11 @@ describe('ResumeMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(draftMarket);
 
       await expect(
-        useCase.execute('market-id')
+        useCase.execute('market-id', 'admin-id')
       ).rejects.toThrow(ValidationError);
 
       expect(mockMarketRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockAuditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError if market is ACTIVE', async () => {
@@ -109,7 +123,7 @@ describe('ResumeMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(activeMarket);
 
       await expect(
-        useCase.execute('market-id')
+        useCase.execute('market-id', 'admin-id')
       ).rejects.toThrow(ValidationError);
     });
 
@@ -118,7 +132,7 @@ describe('ResumeMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(resolvedMarket);
 
       await expect(
-        useCase.execute('market-id')
+        useCase.execute('market-id', 'admin-id')
       ).rejects.toThrow(ValidationError);
     });
 
@@ -127,7 +141,7 @@ describe('ResumeMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(cancelledMarket);
 
       await expect(
-        useCase.execute('market-id')
+        useCase.execute('market-id', 'admin-id')
       ).rejects.toThrow(ValidationError);
     });
   });

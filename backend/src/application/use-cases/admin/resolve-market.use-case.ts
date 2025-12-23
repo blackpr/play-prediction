@@ -2,6 +2,7 @@ import { MarketRepository } from '../../ports/repositories/market.repository';
 import { PortfolioRepository } from '../../ports/repositories/portfolio.repository';
 import { UserRepository } from '../../ports/repositories/user.repository';
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { MarketStatus, Resolution, TradeAction } from '../../../infrastructure/database/drizzle/schema';
@@ -11,6 +12,7 @@ export interface ResolveMarketParams {
   resolution: 'YES' | 'NO';
   evidence?: string;
   eventEndedAt?: Date;
+  adminId: string;
 }
 
 export interface VoidedTradesInfo {
@@ -34,12 +36,13 @@ export class ResolveMarketUseCase {
       portfolioRepository: PortfolioRepository;
       userRepository: UserRepository;
       tradeLedgerRepository: TradeLedgerRepository;
+      auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
   ) { }
 
   async execute(params: ResolveMarketParams): Promise<ResolveMarketResult> {
-    const { marketId, resolution, evidence, eventEndedAt } = params;
+    const { marketId, resolution, evidence, eventEndedAt, adminId } = params;
 
     return await this.deps.transactionManager.run(async (tx) => {
       // 1. Find and validate market
@@ -154,6 +157,15 @@ export class ResolveMarketUseCase {
       }
 
       // 9. Pool clearing handled by database constraints on market resolution
+
+      // 10. Create Audit Log
+      await this.deps.auditLogRepository.create({
+        adminId,
+        action: 'MARKET_RESOLVED',
+        entityType: 'MARKET',
+        entityId: marketId,
+        details: JSON.stringify({ resolution, evidence, eventEndedAt, voidedTrades: voidedTradesCount }),
+      }, tx);
 
       return {
         id: marketId,

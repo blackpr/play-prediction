@@ -1,3 +1,13 @@
+CREATE TABLE IF NOT EXISTS "audit_logs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"admin_id" uuid NOT NULL,
+	"action" varchar(50) NOT NULL,
+	"entity_type" varchar(50),
+	"entity_id" uuid,
+	"details" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "liquidity_pools" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"yes_qty" bigint NOT NULL,
@@ -16,6 +26,9 @@ CREATE TABLE IF NOT EXISTS "markets" (
 	"category" varchar(100),
 	"closes_at" timestamp with time zone,
 	"resolved_at" timestamp with time zone,
+	"event_ended_at" timestamp with time zone,
+	"close_behavior" varchar(20) DEFAULT 'auto' NOT NULL,
+	"buffer_minutes" integer,
 	"created_by" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -44,16 +57,6 @@ CREATE TABLE IF NOT EXISTS "portfolios" (
 	CONSTRAINT "portfolios_user_id_market_id_pk" PRIMARY KEY("user_id","market_id")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "refresh_tokens" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"token_hash" varchar(255) NOT NULL,
-	"expires_at" timestamp with time zone NOT NULL,
-	"revoked_at" timestamp with time zone,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "refresh_tokens_token_hash_unique" UNIQUE("token_hash")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "trade_ledger" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -73,12 +76,15 @@ CREATE TABLE IF NOT EXISTS "trade_ledger" (
 	"pool_no_after" bigint,
 	"price_at_execution" bigint,
 	"idempotency_key" varchar(255),
+	"original_trade_id" uuid,
+	"void_reason" varchar(100),
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"email" varchar(255) NOT NULL,
+	"display_name" varchar(100),
 	"balance" bigint DEFAULT 0 NOT NULL,
 	"role" varchar(20) DEFAULT 'user' NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL,
@@ -86,6 +92,12 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_admin_id_users_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "liquidity_pools" ADD CONSTRAINT "liquidity_pools_id_markets_id_fk" FOREIGN KEY ("id") REFERENCES "public"."markets"("id") ON DELETE cascade ON UPDATE no action;
@@ -124,12 +136,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "trade_ledger" ADD CONSTRAINT "trade_ledger_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -141,17 +147,19 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_audit_logs_admin" ON "audit_logs" USING btree ("admin_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_audit_logs_action" ON "audit_logs" USING btree ("action","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_audit_logs_entity" ON "audit_logs" USING btree ("entity_id","entity_type");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_markets_status" ON "markets" USING btree ("status");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_markets_status_closes" ON "markets" USING btree ("status","closes_at") WHERE status = 'ACTIVE';--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_markets_category" ON "markets" USING btree ("category") WHERE status = 'ACTIVE';--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_markets_created_by" ON "markets" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_markets_close_behavior" ON "markets" USING btree ("close_behavior","status","closes_at") WHERE status = 'ACTIVE';--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_point_grants_user" ON "point_grants" USING btree ("user_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_point_grants_type" ON "point_grants" USING btree ("grant_type");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_portfolios_user" ON "portfolios" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_portfolios_market" ON "portfolios" USING btree ("market_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_portfolios_holdings" ON "portfolios" USING btree ("user_id","market_id") WHERE "portfolios"."yes_qty" > 0 OR "portfolios"."no_qty" > 0;--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_refresh_tokens_user" ON "refresh_tokens" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_refresh_tokens_expires" ON "refresh_tokens" USING btree ("expires_at") WHERE "refresh_tokens"."revoked_at" IS NULL;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_ledger_user" ON "trade_ledger" USING btree ("user_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_ledger_market" ON "trade_ledger" USING btree ("market_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_ledger_idempotency" ON "trade_ledger" USING btree ("idempotency_key") WHERE "trade_ledger"."idempotency_key" IS NOT NULL;--> statement-breakpoint

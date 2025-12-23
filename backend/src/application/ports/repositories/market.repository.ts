@@ -73,8 +73,15 @@ export interface UpdatePoolResult {
   newVersionId: number;
 }
 
+
+
+export interface AdminMarketListItem extends MarketExtendedDetails {
+  holdersCount: number;
+}
+
 export interface MarketRepository {
   findAll(params: GetMarketsParams): Promise<{ items: MarketWithDetails[]; total: number }>;
+  listAdminMarkets(params: GetMarketsParams): Promise<{ items: AdminMarketListItem[]; total: number }>;
   findById(id: string): Promise<MarketExtendedDetails | null>;
   getPriceHistory(marketId: string, interval: string, from: Date, to: Date): Promise<PriceCandle[]>;
   getRecentTrades(marketId: string, limit: number): Promise<RecentTrade[]>;

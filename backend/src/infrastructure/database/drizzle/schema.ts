@@ -233,6 +233,22 @@ export const pointGrants = pgTable('point_grants', {
   }
 });
 
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  adminId: uuid('admin_id').notNull().references(() => users.id),
+  action: varchar('action', { length: 50 }).notNull(),
+  entityType: varchar('entity_type', { length: 50 }),
+  entityId: uuid('entity_id'),
+  details: text('details'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    adminIdIdx: index('idx_audit_logs_admin').on(table.adminId, table.createdAt),
+    actionIdx: index('idx_audit_logs_action').on(table.action, table.createdAt),
+    entityIdx: index('idx_audit_logs_entity').on(table.entityId, table.entityType),
+  }
+});
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -242,6 +258,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   trades: many(tradeLedger),
   createdMarkets: many(markets),
   pointGrants: many(pointGrants),
+  auditLogs: many(auditLogs),
 }));
 
 export const marketsRelations = relations(markets, ({ one, many }) => ({
@@ -294,6 +311,14 @@ export const pointGrantsRelations = relations(pointGrants, ({ one }) => ({
   grantedByUser: one(users, {
     fields: [pointGrants.grantedBy],
     references: [users.id],
+    relationName: 'pointGrantsGrantedBy'
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  admin: one(users, {
+    fields: [auditLogs.adminId],
+    references: [users.id],
   }),
 }));
 
@@ -318,3 +343,6 @@ export type NewTradeLedgerEntry = typeof tradeLedger.$inferInsert;
 
 export type PointGrant = typeof pointGrants.$inferSelect;
 export type NewPointGrant = typeof pointGrants.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;

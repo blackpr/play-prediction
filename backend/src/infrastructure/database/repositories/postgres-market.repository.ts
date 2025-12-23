@@ -93,6 +93,103 @@ export class PostgresMarketRepository implements MarketRepository {
     return { items: results, total };
   }
 
+  async listAdminMarkets(params: GetMarketsParams): Promise<{ items: import('../../../application/ports/repositories/market.repository').AdminMarketListItem[]; total: number }> {
+    const { status, category, page, pageSize, sort, order, search } = params;
+    const offset = (page - 1) * pageSize;
+
+    // Base query conditions
+    const conditions = [];
+    if (status && status !== 'all') {
+      conditions.push(eq(markets.status, status));
+    }
+    if (category && category !== 'all') {
+      conditions.push(eq(markets.category, category));
+    }
+    if (search) {
+      conditions.push(or(
+        ilike(markets.title, `%${search}%`),
+        ilike(markets.description, `%${search}%`)
+      ));
+    }
+
+    // 1. Get total count
+    const [countResult] = await this.db
+      .select({ count: count() })
+      .from(markets)
+      .where(and(...conditions));
+
+    const total = Number(countResult.count);
+
+    if (total === 0) {
+      return { items: [], total: 0 };
+    }
+
+    // 2. Determine sort field
+    let orderBy;
+    const sortOrder = order === 'asc' ? asc : desc;
+
+    switch (sort) {
+      case 'createdAt':
+        orderBy = sortOrder(markets.createdAt);
+        break;
+      case 'closesAt':
+        orderBy = sortOrder(markets.closesAt);
+        break;
+      // Volume sorting is complex due to join, defaulting to createdAt for MVP if not handled specifically below
+      default:
+        orderBy = desc(markets.createdAt);
+    }
+
+    // 3. Fetch markets with pools AND creator info
+    const marketItems = await this.db
+      .select()
+      .from(markets)
+      .leftJoin(liquidityPools, eq(liquidityPools.id, markets.id))
+      .leftJoin(users, eq(users.id, markets.createdBy))
+      .where(and(...conditions))
+      .limit(pageSize)
+      .offset(offset)
+      .orderBy(orderBy);
+
+    // 4. Calculate stats for each market (Volume 24h & Prices & Holders & Total Volume)
+    const results: import('../../../application/ports/repositories/market.repository').AdminMarketListItem[] = await Promise.all(
+      marketItems.map(async (row: any) => {
+        const { markets: market, liquidity_pools: pool, users: creator } = row;
+
+        const volume24h = await this.get24hVolume(market.id);
+        const stats = await this.getMarketStats(market.id);
+        const holdersCount = await this.getHoldersCount(market.id);
+        const { yesPrice, noPrice } = this.calculatePrices(pool);
+
+        return {
+          ...market,
+          pool: pool ? {
+            ...pool,
+            yesQty: pool.yesQty.toString(),
+            noQty: pool.noQty.toString(),
+            k: (BigInt(pool.yesQty) * BigInt(pool.noQty)).toString(),
+          } : null,
+          volume24h,
+          yesPrice,
+          noPrice,
+          stats: {
+            ...stats,
+            volume24h
+          },
+          creator: creator ? {
+            email: creator.email,
+            displayName: creator.displayName,
+            role: creator.role,
+          } : { email: 'unknown', displayName: 'Unknown', role: 'user' },
+          holdersCount,
+        };
+      })
+    );
+
+    return { items: results, total };
+  }
+
+
   async findById(id: string): Promise<MarketExtendedDetails | null> {
     const result = await this.db
       .select()
@@ -234,6 +331,18 @@ export class PostgresMarketRepository implements MarketRepository {
       tradeCount: Number(result.tradeCount),
       uniqueTraders: Number(result.uniqueTraders)
     };
+  }
+
+  private async getHoldersCount(marketId: string): Promise<number> {
+    const { portfolios } = await import('../drizzle/schema');
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(portfolios)
+      .where(and(
+        eq(portfolios.marketId, marketId),
+        or(gt(portfolios.yesQty, 0n), gt(portfolios.noQty, 0n))
+      ));
+    return Number(result.count);
   }
 
   private calculatePrices(pool: { yesQty: bigint | string, noQty: bigint | string } | null): { yesPrice: string; noPrice: string } {

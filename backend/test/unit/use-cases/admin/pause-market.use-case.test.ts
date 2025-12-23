@@ -6,6 +6,7 @@ import { MarketStatus } from '../../../../src/infrastructure/database/drizzle/sc
 describe('PauseMarketUseCase', () => {
   let useCase: PauseMarketUseCase;
   let mockMarketRepository: any;
+  let mockAuditLogRepository: any;
 
   const mockActiveMarket = {
     id: 'market-id',
@@ -64,8 +65,13 @@ describe('PauseMarketUseCase', () => {
       updateStatus: vi.fn(),
     };
 
+    mockAuditLogRepository = {
+      create: vi.fn(),
+    };
+
     useCase = new PauseMarketUseCase({
       marketRepository: mockMarketRepository,
+      auditLogRepository: mockAuditLogRepository,
     });
   });
 
@@ -74,10 +80,16 @@ describe('PauseMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(mockActiveMarket);
       mockMarketRepository.updateStatus.mockResolvedValue(mockUpdatedMarket);
 
-      const result = await useCase.execute({ marketId: 'market-id' });
+      const result = await useCase.execute({ marketId: 'market-id', adminId: 'admin-id' });
 
       expect(mockMarketRepository.findById).toHaveBeenCalledWith('market-id');
       expect(mockMarketRepository.updateStatus).toHaveBeenCalledWith('market-id', MarketStatus.PAUSED);
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        adminId: 'admin-id',
+        action: 'MARKET_PAUSED',
+        entityType: 'MARKET',
+        entityId: 'market-id',
+      }));
       expect(result.id).toBe('market-id');
       expect(result.status).toBe(MarketStatus.PAUSED);
       expect(result.pausedAt).toBeInstanceOf(Date);
@@ -89,19 +101,23 @@ describe('PauseMarketUseCase', () => {
       mockMarketRepository.updateStatus.mockResolvedValue(mockUpdatedMarket);
 
       const reason = 'Investigating potential manipulation';
-      const result = await useCase.execute({ marketId: 'market-id', reason });
+      const result = await useCase.execute({ marketId: 'market-id', reason, adminId: 'admin-id' });
 
       expect(result.reason).toBe(reason);
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        details: expect.stringContaining(reason),
+      }));
     });
 
     it('should throw NotFoundError if market does not exist', async () => {
       mockMarketRepository.findById.mockResolvedValue(null);
 
       await expect(
-        useCase.execute({ marketId: 'non-existent-id' })
+        useCase.execute({ marketId: 'non-existent-id', adminId: 'admin-id' })
       ).rejects.toThrow(NotFoundError);
 
       expect(mockMarketRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockAuditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError if market is not in ACTIVE status', async () => {
@@ -109,10 +125,11 @@ describe('PauseMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(draftMarket);
 
       await expect(
-        useCase.execute({ marketId: 'market-id' })
+        useCase.execute({ marketId: 'market-id', adminId: 'admin-id' })
       ).rejects.toThrow(ValidationError);
 
       expect(mockMarketRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockAuditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError if market is already PAUSED', async () => {
@@ -120,7 +137,7 @@ describe('PauseMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(pausedMarket);
 
       await expect(
-        useCase.execute({ marketId: 'market-id' })
+        useCase.execute({ marketId: 'market-id', adminId: 'admin-id' })
       ).rejects.toThrow(ValidationError);
     });
 
@@ -129,7 +146,7 @@ describe('PauseMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(resolvedMarket);
 
       await expect(
-        useCase.execute({ marketId: 'market-id' })
+        useCase.execute({ marketId: 'market-id', adminId: 'admin-id' })
       ).rejects.toThrow(ValidationError);
     });
 
@@ -138,7 +155,7 @@ describe('PauseMarketUseCase', () => {
       mockMarketRepository.findById.mockResolvedValue(cancelledMarket);
 
       await expect(
-        useCase.execute({ marketId: 'market-id' })
+        useCase.execute({ marketId: 'market-id', adminId: 'admin-id' })
       ).rejects.toThrow(ValidationError);
     });
   });

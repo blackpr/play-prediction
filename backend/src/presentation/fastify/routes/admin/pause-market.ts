@@ -44,8 +44,9 @@ export async function pauseMarket(request: FastifyRequest, reply: FastifyReply) 
 
   try {
     const { pauseMarketUseCase } = request.diScope.cradle as AppCradle;
+    const adminId = (request.user as any).id;
 
-    const result = await pauseMarketUseCase.execute({ marketId: id, reason });
+    const result = await pauseMarketUseCase.execute({ marketId: id, reason, adminId });
 
     return reply.status(200).send({
       success: true,

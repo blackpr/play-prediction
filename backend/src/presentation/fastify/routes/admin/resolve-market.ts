@@ -48,12 +48,14 @@ export async function resolveMarket(request: FastifyRequest, reply: FastifyReply
 
   try {
     const { resolveMarketUseCase } = request.diScope.cradle as AppCradle;
+    const adminId = (request.user as any).id;
 
     const result = await resolveMarketUseCase.execute({
       marketId: id,
       resolution,
       evidence,
       eventEndedAt: eventEndedAt ? new Date(eventEndedAt) : undefined,
+      adminId,
     });
 
     return reply.status(200).send({

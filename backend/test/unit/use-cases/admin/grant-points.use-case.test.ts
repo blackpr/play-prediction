@@ -7,6 +7,7 @@ describe('GrantPointsUseCase', () => {
   let useCase: GrantPointsUseCase;
   let mockUserRepository: any;
   let mockPointGrantRepository: any;
+  let mockAuditLogRepository: any;
   let mockTransactionManager: any;
 
   const mockUser = {
@@ -39,6 +40,10 @@ describe('GrantPointsUseCase', () => {
       create: vi.fn(),
     };
 
+    mockAuditLogRepository = {
+      create: vi.fn(),
+    };
+
     mockTransactionManager = {
       run: vi.fn((callback) => callback({})), // Execute callback immediately with mock tx
     };
@@ -46,6 +51,7 @@ describe('GrantPointsUseCase', () => {
     useCase = new GrantPointsUseCase({
       userRepository: mockUserRepository,
       pointGrantRepository: mockPointGrantRepository,
+      auditLogRepository: mockAuditLogRepository,
       transactionManager: mockTransactionManager,
     });
   });
@@ -80,6 +86,17 @@ describe('GrantPointsUseCase', () => {
           grantType: PointGrantType.ADMIN_GRANT,
           reason: 'Contest winner reward',
           grantedBy: 'admin-id',
+        }),
+        {}
+      );
+
+      // Verify audit log creation
+      expect(mockAuditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adminId: 'admin-id',
+          action: 'POINTS_GRANTED',
+          entityType: 'USER',
+          entityId: 'user-id',
         }),
         {}
       );

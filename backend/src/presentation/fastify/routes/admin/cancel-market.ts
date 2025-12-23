@@ -44,10 +44,12 @@ export async function cancelMarket(request: FastifyRequest, reply: FastifyReply)
 
   try {
     const { cancelMarketUseCase } = request.diScope.cradle as AppCradle;
+    const adminId = (request.user as any).id;
 
     const result = await cancelMarketUseCase.execute({
       marketId: id,
       reason,
+      adminId,
     });
 
     return reply.status(200).send({

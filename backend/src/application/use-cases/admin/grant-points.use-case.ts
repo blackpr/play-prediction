@@ -1,5 +1,6 @@
 import { UserRepository } from '../../ports/repositories/user.repository';
 import { PointGrantRepository } from '../../ports/repositories/point-grant.repository';
+import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { PointGrantType } from '../../../infrastructure/database/drizzle/schema';
@@ -27,6 +28,7 @@ export class GrantPointsUseCase {
     private readonly deps: {
       userRepository: UserRepository;
       pointGrantRepository: PointGrantRepository;
+      auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
   ) { }
@@ -76,6 +78,15 @@ export class GrantPointsUseCase {
         },
         tx
       );
+
+      // 6. Create Audit Log
+      await this.deps.auditLogRepository.create({
+        adminId,
+        action: 'POINTS_GRANTED',
+        entityType: 'USER',
+        entityId: userId,
+        details: JSON.stringify({ amount: amount.toString(), reason }),
+      }, tx);
 
       return {
         grantId,

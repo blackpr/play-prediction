@@ -7,6 +7,7 @@ import { TradeLedgerRepository } from '@/application/ports/repositories/trade-le
 describe('GetAdminStatsUseCase', () => {
   const mockUserRepository = {
     count: vi.fn(),
+    countActive: vi.fn(),
   } as unknown as UserRepository;
 
   const mockMarketRepository = {
@@ -16,6 +17,7 @@ describe('GetAdminStatsUseCase', () => {
 
   const mockTradeLedgerRepository = {
     getVolume24h: vi.fn(),
+    getTotalVolume: vi.fn(),
     findAll: vi.fn(),
   } as unknown as TradeLedgerRepository;
 
@@ -27,11 +29,15 @@ describe('GetAdminStatsUseCase', () => {
 
   it('should return aggregated stats', async () => {
     vi.mocked(mockUserRepository.count).mockResolvedValue(150);
+    vi.mocked(mockUserRepository.countActive).mockResolvedValue(50);
     vi.mocked(mockMarketRepository.count).mockImplementation(async (status) => {
       if (status === 'ACTIVE') return 10;
       if (status === 'PAUSED') return 2;
+      if (status === 'RESOLVED') return 5;
+      if (status === 'CANCELLED') return 1;
       return 0;
     });
+    vi.mocked(mockTradeLedgerRepository.getTotalVolume).mockResolvedValue('100000');
     vi.mocked(mockTradeLedgerRepository.getVolume24h).mockResolvedValue('50000');
     vi.mocked(mockTradeLedgerRepository.findAll).mockResolvedValue({
       items: [
@@ -53,10 +59,12 @@ describe('GetAdminStatsUseCase', () => {
 
     const result = await useCase.execute();
 
-    expect(result.totalUsers).toBe(150);
-    expect(result.activeMarkets).toBe(10);
-    expect(result.pendingResolutionMarkets).toBe(2);
-    expect(result.volume24h).toBe('50000');
+    expect(result.users.total).toBe(150);
+    expect(result.users.activeLastWeek).toBe(50);
+    expect(result.markets.active).toBe(10);
+    expect(result.markets.pendingResolution).toBe(2);
+    expect(result.volume.last24h).toBe('50000');
+    expect(result.volume.total).toBe('100000');
     expect(result.recentTrades).toHaveLength(1);
     expect(result.recentTrades[0].marketTitle).toBe('Election 2024');
 
@@ -67,7 +75,9 @@ describe('GetAdminStatsUseCase', () => {
 
   it('should handle missing market titles gracefully', async () => {
     vi.mocked(mockUserRepository.count).mockResolvedValue(100);
+    vi.mocked(mockUserRepository.countActive).mockResolvedValue(20);
     vi.mocked(mockMarketRepository.count).mockResolvedValue(5);
+    vi.mocked(mockTradeLedgerRepository.getTotalVolume).mockResolvedValue('5000');
     vi.mocked(mockTradeLedgerRepository.getVolume24h).mockResolvedValue('1000');
     vi.mocked(mockTradeLedgerRepository.findAll).mockResolvedValue({
       items: [

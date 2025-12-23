@@ -16,11 +16,11 @@ const getAdminMarketsQuerySchema = z.object({
 
 export async function listAdminMarkets(request: FastifyRequest, reply: FastifyReply) {
   const query = getAdminMarketsQuerySchema.parse(request.query);
-  const { getMarketsUseCase } = request.diScope.cradle as AppCradle;
+  const { getAdminMarketsUseCase } = request.diScope.cradle as AppCradle;
 
   // The simplified use case interface handles undefined as "no filter" effectively,
   // but our Zod schema uses 'all' as a keyword, so we map it.
-  const { items, total } = await getMarketsUseCase.execute({
+  const { items, total } = await getAdminMarketsUseCase.execute({
     status: query.status === 'all' ? undefined : query.status,
     category: query.category === 'all' ? undefined : query.category,
     page: query.page,
