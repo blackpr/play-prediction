@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { Search, Play, Pause } from 'lucide-react';
 import { toast } from 'sonner';
 import { ResolveMarketModal } from './ResolveMarketModal';
+import { EditMarketModal } from './EditMarketModal';
 
 interface Market {
   id: string;
@@ -20,6 +21,8 @@ interface Market {
   closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
   eventEndedAt?: string | null;
   imageUrl?: string | null;
+  description?: string | null;
+  category?: string | null;
 }
 
 interface MarketsResponse {
@@ -49,9 +52,13 @@ export function MarketsTable() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<{
     id: string;
     title: string;
+    description?: string | null;
+    category?: string | null;
+    imageUrl?: string | null;
     closesAt?: string | null;
     closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
     eventEndedAt?: string | null;
@@ -200,15 +207,35 @@ export function MarketsTable() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       {market.status === 'DRAFT' && (
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => activateMut.mutate(market.id)}
-                          isLoading={activateMut.isPending && activateMut.variables === market.id}
-                          leftIcon={<Play className="w-3 h-3" />}
-                        >
-                          Activate
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setSelectedMarket({
+                                id: market.id,
+                                title: market.title,
+                                description: market.description,
+                                category: market.category,
+                                imageUrl: market.imageUrl,
+                                closesAt: market.closesAt,
+                                closeBehavior: market.closeBehavior
+                              });
+                              setEditModalOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => activateMut.mutate(market.id)}
+                            isLoading={activateMut.isPending && activateMut.variables === market.id}
+                            leftIcon={<Play className="w-3 h-3" />}
+                          >
+                            Activate
+                          </Button>
+                        </div>
                       )}
                       {market.status === 'ACTIVE' && (
                         <Button
@@ -260,8 +287,27 @@ export function MarketsTable() {
         </table>
       </div>
 
+      {/* Edit Market Modal */}
+      {selectedMarket && editModalOpen && (
+        <EditMarketModal
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedMarket(null);
+          }}
+          market={{
+            id: selectedMarket.id,
+            title: selectedMarket.title,
+            description: selectedMarket.description || null,
+            category: selectedMarket.category || null,
+            imageUrl: selectedMarket.imageUrl || null,
+            closesAt: selectedMarket.closesAt || null,
+          }}
+        />
+      )}
+
       {/* Resolve Market Modal */}
-      {selectedMarket && (
+      {selectedMarket && resolveModalOpen && (
         <ResolveMarketModal
           isOpen={resolveModalOpen}
           onClose={() => {

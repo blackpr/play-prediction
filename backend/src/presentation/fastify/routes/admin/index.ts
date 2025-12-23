@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../../middleware/auth';
 import { createMarket } from './create-market';
+import { updateMarket } from './update-market';
 import { activateMarket } from './activate-market';
 import { pauseMarket } from './pause-market';
 import { resumeMarket } from './resume-market';
@@ -19,6 +20,9 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // POST /admin/markets - Create new market
   server.post('/markets', createMarket);
+
+  // PATCH /admin/markets/:id - Update draft market
+  server.patch('/markets/:id', updateMarket);
 
   // GET /admin/markets - List all markets for admin
   server.get('/markets', listAdminMarkets);

@@ -44,6 +44,7 @@ import { GetPositionUseCase } from '../../application/use-cases/portfolio/get-po
 import { GetPortfolioUseCase } from '../../application/use-cases/portfolio/get-portfolio.use-case';
 import { GetPortfolioHistoryUseCase } from '../../application/use-cases/portfolio/get-portfolio-history.use-case';
 import { CreateMarketUseCase } from '../../application/use-cases/admin/create-market.use-case';
+import { UpdateMarketUseCase } from '../../application/use-cases/admin/update-market.use-case';
 import { ActivateMarketUseCase } from '../../application/use-cases/admin/activate-market.use-case';
 import { PauseMarketUseCase } from '../../application/use-cases/admin/pause-market.use-case';
 import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-market.use-case';
@@ -140,6 +141,7 @@ export function registerDependencies(): void {
     getPortfolioUseCase: asClass(GetPortfolioUseCase).scoped(),
     getPortfolioHistoryUseCase: asClass(GetPortfolioHistoryUseCase).scoped(),
     createMarketUseCase: asClass(CreateMarketUseCase).scoped(),
+    updateMarketUseCase: asClass(UpdateMarketUseCase).scoped(),
     activateMarketUseCase: asClass(ActivateMarketUseCase).scoped(),
     pauseMarketUseCase: asClass(PauseMarketUseCase).scoped(),
     resumeMarketUseCase: asClass(ResumeMarketUseCase).scoped(),

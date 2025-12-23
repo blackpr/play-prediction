@@ -601,8 +601,8 @@ curl -s -X GET "http://localhost:4000/api/v1/admin/users/{USER_ID}" \
 
 ### ADMIN-17: Implement Market Edit Endpoint
 
-**As an** admin  
-**I want** to edit market details  
+**As an** admin
+**I want** to edit market details (title, description, etc.) while it is in DRAFT status
 **So that** I can fix typos or update information before activation
 
 **Endpoint:** `PATCH /v1/admin/markets/:id`
@@ -619,12 +619,41 @@ curl -s -X GET "http://localhost:4000/api/v1/admin/users/{USER_ID}" \
 ```
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Only allow editing DRAFT markets
-- [ ] Validate all fields
+- [x] Require admin role
+- [x] Endpoint: `PATCH /v1/admin/markets/:id`
+- [x] Only allow editing if status = `DRAFT`
+- [x] Editable fields: `title`, `description`, `category`, `imageUrl`, `closesAt`
+- [x] Non-editable fields: `seedLiquidity`, `closeBehavior`, `bufferMinutes` (cannot change pool parameters)
+- [x] Returns updated market details
+- [x] Frontend: Add "Edit" button to MarketsTable for DRAFT markets
+- [x] Frontend: EditMarketModal with form validation
 - [ ] Cannot change market ID
 - [ ] Log edit action
 - [ ] Return updated market
+
+**Implementation Notes:**
+- ✅ Implemented `UpdateMarketUseCase` with transaction support.
+- ✅ Added `PATCH` route with Zod validation.
+- ✅ Updated `MarketRepository` with partial update support.
+- ✅ Integrated `EditMarketModal` in Admin frontend.
+- ✅ Verified with curl and unit tests.
+
+**Curl Verification:**
+```bash
+# Create DRAFT
+MARKET_ID=$(curl -s -X POST http://localhost:4000/api/v1/admin/markets ... | jq -r '.data.marketId')
+
+# Update Market
+curl -X PATCH "http://localhost:4000/api/v1/admin/markets/$MARKET_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Title",
+    "description": "Updated Description"
+  }'
+
+# Verify Update
+curl -s http://localhost:4000/api/v1/markets/$MARKET_ID | jq '.data.title'
+```
 
 **Errors:**
 - MARKET_NOT_FOUND (404)

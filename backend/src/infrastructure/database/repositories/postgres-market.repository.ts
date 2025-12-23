@@ -408,6 +408,25 @@ export class PostgresMarketRepository implements MarketRepository {
     return updated;
   }
 
+  async update(
+    marketId: string,
+    updates: Partial<Pick<import('../drizzle/schema').Market, 'title' | 'description' | 'category' | 'imageUrl' | 'closesAt'>>,
+    tx?: unknown
+  ): Promise<import('../drizzle/schema').Market> {
+    const db = tx ? (tx as DrizzleDB) : this.db;
+
+    const [updated] = await db
+      .update(markets)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(markets.id, marketId))
+      .returning();
+
+    return updated;
+  }
+
   async count(status?: string): Promise<number> {
     const conditions = [];
     if (status) {

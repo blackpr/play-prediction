@@ -94,6 +94,11 @@ export interface MarketRepository {
   create(market: NewMarket, tx?: unknown): Promise<Market>;
   createPool(pool: NewLiquidityPool, tx?: unknown): Promise<void>;
   updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<Market>;
+  update(
+    marketId: string,
+    updates: Partial<Pick<Market, 'title' | 'description' | 'category' | 'imageUrl' | 'closesAt'>>,
+    tx?: unknown
+  ): Promise<Market>;
   count(status?: string): Promise<number>;
 }
 
