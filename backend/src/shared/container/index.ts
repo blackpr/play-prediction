@@ -57,6 +57,11 @@ import { GetUserDetailUseCase } from '../../application/use-cases/admin/get-user
 import { GetAdminMarketsUseCase } from '../../application/use-cases/admin/get-admin-markets.use-case';
 import { PostgresAuditLogRepository } from '@/infrastructure/repositories/postgres-audit-log.repository';
 import { GetAuditLogUseCase } from '@/application/use-cases/admin/get-audit-log.use-case';
+import { PostgresCategoryRepository } from '../../infrastructure/database/repositories/postgres-category.repository';
+import { ListCategoriesUseCase } from '../../application/use-cases/admin/list-categories.use-case';
+import { CreateCategoryUseCase } from '../../application/use-cases/admin/create-category.use-case';
+import { UpdateCategoryUseCase } from '../../application/use-cases/admin/update-category.use-case';
+import { DeleteCategoryUseCase } from '../../application/use-cases/admin/delete-category.use-case';
 
 
 
@@ -99,6 +104,7 @@ export function registerDependencies(): void {
     marketRepository: asClass(PostgresMarketRepository).singleton(),
     portfolioRepository: asClass(PostgresPortfolioRepository).singleton(),
     tradeLedgerRepository: asClass(PostgresTradeLedgerRepository).singleton(),
+    categoryRepository: asClass(PostgresCategoryRepository).singleton(),
   });
 
   // ========================================
@@ -158,6 +164,12 @@ export function registerDependencies(): void {
 
     auditLogRepository: asClass(PostgresAuditLogRepository).singleton(),
     getAuditLogUseCase: asClass(GetAuditLogUseCase).scoped(),
+
+    // Categories
+    listCategoriesUseCase: asClass(ListCategoriesUseCase).scoped(),
+    createCategoryUseCase: asClass(CreateCategoryUseCase).scoped(),
+    updateCategoryUseCase: asClass(UpdateCategoryUseCase).scoped(),
+    deleteCategoryUseCase: asClass(DeleteCategoryUseCase).scoped(),
   });
 }
 

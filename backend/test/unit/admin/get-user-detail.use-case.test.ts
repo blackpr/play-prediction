@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GetUserDetailUseCase } from './get-user-detail.use-case';
-import { UserRepository, User, UserStats } from '../../ports/repositories/user.repository';
-import { NotFoundError } from '../../../domain/errors/domain-error';
+import { GetUserDetailUseCase } from '@/application/use-cases/admin/get-user-detail.use-case';
+import { UserRepository, User, UserStats } from '@/application/ports/repositories/user.repository';
+import { NotFoundError } from '@/domain/errors/domain-error';
 
 describe('GetUserDetailUseCase', () => {
   let useCase: GetUserDetailUseCase;

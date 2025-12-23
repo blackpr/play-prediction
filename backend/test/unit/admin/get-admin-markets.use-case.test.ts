@@ -1,5 +1,5 @@
-import { GetAdminMarketsUseCase } from './get-admin-markets.use-case';
-import { AdminMarketListItem, MarketRepository } from '../../ports/repositories/market.repository';
+import { GetAdminMarketsUseCase } from '@/application/use-cases/admin/get-admin-markets.use-case';
+import { AdminMarketListItem, MarketRepository } from '@/application/ports/repositories/market.repository';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('GetAdminMarketsUseCase', () => {

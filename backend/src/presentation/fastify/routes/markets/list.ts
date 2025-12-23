@@ -6,6 +6,7 @@ import { AppCradle } from '../../../../shared/container/types';
 const getMarketsQuerySchema = z.object({
   status: z.enum(['ACTIVE', 'RESOLVED', 'CANCELLED', 'PAUSED', 'DRAFT', 'all']).optional().default('ACTIVE'),
   category: z.string().optional(),
+  categoryId: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(20),
   sort: z.enum(['createdAt', 'closesAt', 'volume']).optional().default('createdAt'),
@@ -19,6 +20,7 @@ export async function listMarkets(request: FastifyRequest, reply: FastifyReply) 
 
   const { items, total } = await getMarketsUseCase.execute({
     status: query.status === 'all' ? undefined : query.status,
+    categoryId: query.categoryId === 'all' ? undefined : query.categoryId,
     category: query.category === 'all' ? undefined : query.category,
     page: query.page,
     pageSize: query.pageSize,

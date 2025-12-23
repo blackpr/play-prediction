@@ -11,7 +11,7 @@ export class PostgresMarketRepository implements MarketRepository {
   }
 
   async findAll(params: GetMarketsParams): Promise<{ items: MarketWithDetails[]; total: number }> {
-    const { status, category, page, pageSize, sort, order, search } = params;
+    const { status, category, categoryId, page, pageSize, sort, order, search } = params;
     const offset = (page - 1) * pageSize;
 
     // Base query conditions
@@ -19,7 +19,9 @@ export class PostgresMarketRepository implements MarketRepository {
     if (status && status !== 'all') {
       conditions.push(eq(markets.status, status));
     }
-    if (category && category !== 'all') {
+    if (categoryId && categoryId !== 'all') {
+      conditions.push(eq(markets.categoryId, categoryId));
+    } else if (category && category !== 'all') {
       conditions.push(eq(markets.category, category));
     }
     if (search) {
@@ -94,7 +96,7 @@ export class PostgresMarketRepository implements MarketRepository {
   }
 
   async listAdminMarkets(params: GetMarketsParams): Promise<{ items: import('../../../application/ports/repositories/market.repository').AdminMarketListItem[]; total: number }> {
-    const { status, category, page, pageSize, sort, order, search } = params;
+    const { status, category, categoryId, page, pageSize, sort, order, search } = params;
     const offset = (page - 1) * pageSize;
 
     // Base query conditions
@@ -102,7 +104,9 @@ export class PostgresMarketRepository implements MarketRepository {
     if (status && status !== 'all') {
       conditions.push(eq(markets.status, status));
     }
-    if (category && category !== 'all') {
+    if (categoryId && categoryId !== 'all') {
+      conditions.push(eq(markets.categoryId, categoryId));
+    } else if (category && category !== 'all') {
       conditions.push(eq(markets.category, category));
     }
     if (search) {
@@ -527,7 +531,7 @@ export class PostgresMarketRepository implements MarketRepository {
 
   async update(
     marketId: string,
-    updates: Partial<Pick<import('../drizzle/schema').Market, 'title' | 'description' | 'category' | 'imageUrl' | 'closesAt'>>,
+    updates: Partial<Pick<import('../drizzle/schema').Market, 'title' | 'description' | 'category' | 'categoryId' | 'imageUrl' | 'closesAt' | 'eventEndedAt'>>,
     tx?: unknown
   ): Promise<import('../drizzle/schema').Market> {
     const db = tx ? (tx as DrizzleDB) : this.db;

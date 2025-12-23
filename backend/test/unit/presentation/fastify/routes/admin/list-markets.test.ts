@@ -1,16 +1,16 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { listAdminMarkets } from '@/presentation/fastify/routes/admin/list-markets';
 import { AppCradle } from '@/shared/container/types';
-import { GetMarketsUseCase } from '@/application/use-cases/markets/get-markets.use-case';
+import { GetAdminMarketsUseCase } from '@/application/use-cases/admin/get-admin-markets.use-case';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 
 describe('listAdminMarkets', () => {
   let mockRequest: Partial<FastifyRequest>;
   let mockReply: Partial<FastifyReply>;
-  let mockGetMarketsUseCase: Partial<GetMarketsUseCase>;
+  let mockGetAdminMarketsUseCase: Partial<GetAdminMarketsUseCase>;
 
   beforeEach(() => {
-    mockGetMarketsUseCase = {
+    mockGetAdminMarketsUseCase = {
       execute: vi.fn().mockResolvedValue({
         items: [],
         total: 0,
@@ -21,7 +21,7 @@ describe('listAdminMarkets', () => {
       query: {},
       diScope: {
         cradle: {
-          getMarketsUseCase: mockGetMarketsUseCase,
+          getAdminMarketsUseCase: mockGetAdminMarketsUseCase,
         } as unknown as AppCradle,
       } as any,
     };
@@ -34,7 +34,7 @@ describe('listAdminMarkets', () => {
   it('should list markets with default parameters', async () => {
     await listAdminMarkets(mockRequest as FastifyRequest, mockReply as FastifyReply);
 
-    expect(mockGetMarketsUseCase.execute).toHaveBeenCalledWith({
+    expect(mockGetAdminMarketsUseCase.execute).toHaveBeenCalledWith({
       status: undefined,
       category: undefined,
       page: 1,
@@ -65,7 +65,7 @@ describe('listAdminMarkets', () => {
 
     await listAdminMarkets(mockRequest as FastifyRequest, mockReply as FastifyReply);
 
-    expect(mockGetMarketsUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockGetAdminMarketsUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
       status: 'DRAFT',
     }));
   });
@@ -75,7 +75,7 @@ describe('listAdminMarkets', () => {
 
     await listAdminMarkets(mockRequest as FastifyRequest, mockReply as FastifyReply);
 
-    expect(mockGetMarketsUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockGetAdminMarketsUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
       status: undefined,
     }));
   });
@@ -85,7 +85,7 @@ describe('listAdminMarkets', () => {
 
     await listAdminMarkets(mockRequest as FastifyRequest, mockReply as FastifyReply);
 
-    expect(mockGetMarketsUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockGetAdminMarketsUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
       page: 2,
       pageSize: 50,
       search: 'bitcoin',

@@ -22,6 +22,7 @@ export interface Market {
   createdAt: string
   updatedAt: string
   category: string
+  categoryId: string | null
   imageUrl: string | null
   closesAt: string | null
   pool: MarketPool
@@ -234,4 +235,28 @@ export interface TradeHistoryResponse {
     totalItems: number
     totalPages: number
   }
+}
+
+// Category Types
+export interface Category {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  sortOrder: number
+  isActive: boolean
+  defaultCloseBehavior: 'auto' | 'manual' | 'auto_with_buffer'
+  defaultBufferMinutes: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NewCategory {
+  name: string
+  slug: string
+  description?: string
+  sortOrder?: number
+  isActive?: boolean
+  defaultCloseBehavior?: 'auto' | 'manual' | 'auto_with_buffer'
+  defaultBufferMinutes?: number | null
 }

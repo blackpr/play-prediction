@@ -3,6 +3,7 @@ import { UserRepository } from '../../ports/repositories/user.repository';
 import { PortfolioRepository } from '../../ports/repositories/portfolio.repository';
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
 import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
+import { CategoryRepository } from '../../ports/repositories/category.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { NotFoundError, ValidationError, BusinessLogicError } from '../../../domain/errors/domain-error';
 import { MarketStatus, NewLiquidityPool, CloseBehavior, TradeAction } from '../../../infrastructure/database/drizzle/schema';
@@ -14,28 +15,14 @@ const MAX_CATEGORY_LENGTH = 100;
 const MAX_IMAGE_URL_LENGTH = 2048;
 const MIN_SEED_LIQUIDITY = 1_000_000n; // 1 Point
 
-interface CategoryDefaults {
-  closeBehavior: string;
-  bufferMinutes: number | null;
-}
-
-const CATEGORY_DEFAULTS: Record<string, CategoryDefaults> = {
-  'Sports - Soccer': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Sports - Basketball': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 30 },
-  'Sports - Football': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 45 },
-  'Sports - Other': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 15 },
-  'Crypto': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Weather': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Politics': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Entertainment': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-};
+// Removed hardcoded CATEGORY_DEFAULTS
 
 export interface UpdateMarketParams {
   marketId: string;
   adminId: string;
   title?: string;
   description?: string;
-  category?: string;
+  categoryId?: string;
   imageUrl?: string;
   closesAt?: Date;
   seedLiquidity?: bigint;
@@ -69,15 +56,13 @@ export class UpdateMarketUseCase {
       marketRepository: MarketRepository;
       portfolioRepository: PortfolioRepository;
       tradeLedgerRepository: TradeLedgerRepository;
+      categoryRepository: CategoryRepository;
       auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
   ) { }
 
   async execute(params: UpdateMarketParams): Promise<UpdateMarketResult> {
-    // Validate inputs first (fail fast)
-    this.validateInputs(params);
-
     // Validate admin exists
     const admin = await this.deps.userRepository.findById(params.adminId);
     if (!admin) {
@@ -91,14 +76,30 @@ export class UpdateMarketUseCase {
         throw new NotFoundError('Market', params.marketId);
       }
 
-      // Only DRAFT markets can be edited
       if (market.status !== MarketStatus.DRAFT) {
         throw new BusinessLogicError(
-          'Cannot edit market. Only DRAFT markets can be edited.',
-          'MARKET_NOT_EDITABLE',
-          { currentStatus: market.status }
+          'Only markets in DRAFT status can be updated.',
+          'INVALID_MARKET_STATUS',
+          { status: market.status }
         );
       }
+
+      // 0. Resolve Category & Defaults
+      let category = null;
+      if (params.categoryId) {
+        category = await this.deps.categoryRepository.findById(params.categoryId);
+        if (!category) throw new NotFoundError('Category', params.categoryId);
+      } else if (market.categoryId) {
+        category = await this.deps.categoryRepository.findById(market.categoryId);
+      }
+
+      const effectiveBehavior = params.closeBehavior || (params.categoryId ? category?.defaultCloseBehavior : market.closeBehavior);
+      const effectiveBuffer = params.bufferMinutes !== undefined
+        ? params.bufferMinutes
+        : (params.categoryId && effectiveBehavior === category?.defaultCloseBehavior ? category?.defaultBufferMinutes : market.bufferMinutes) as number | null;
+
+      // Validate inputs with context
+      this.validateInputs(params, effectiveBehavior as string, effectiveBuffer);
 
       // 1. Handle Pool Reset (if seedLiquidity or initialYesPrice provided)
       let needsPoolReset = false;
@@ -217,6 +218,7 @@ export class UpdateMarketUseCase {
         title?: string;
         description?: string;
         category?: string;
+        categoryId?: string;
         imageUrl?: string;
         closesAt?: Date;
         closeBehavior?: string;
@@ -225,23 +227,15 @@ export class UpdateMarketUseCase {
 
       if (params.title !== undefined) updates.title = params.title;
       if (params.description !== undefined) updates.description = params.description;
-      if (params.category !== undefined) updates.category = params.category;
+      if (params.categoryId !== undefined) {
+        updates.categoryId = params.categoryId;
+        if (category) updates.category = category.name;
+      }
       if (params.imageUrl !== undefined) updates.imageUrl = params.imageUrl;
       if (params.closesAt !== undefined) updates.closesAt = params.closesAt;
-      if (params.closeBehavior !== undefined) updates.closeBehavior = params.closeBehavior;
 
-      // Buffer minutes handling
-      if (params.bufferMinutes !== undefined) {
-        updates.bufferMinutes = params.bufferMinutes;
-      } else if (params.closeBehavior === CloseBehavior.AUTO_WITH_BUFFER && updates.bufferMinutes === undefined && market.bufferMinutes === null) {
-        // Auto-apply default buffer if switching to auto_with_buffer without validation error?
-        // Validation check below ensures buffer provided if needed.
-        // Here we might need defaulting logic similar to creation if allowed?
-        // For now assumption: validation ensures correctness.
-      } else if (params.closeBehavior && params.closeBehavior !== CloseBehavior.AUTO_WITH_BUFFER) {
-        // Reset buffer to null if behavior changes away
-        updates.bufferMinutes = null;
-      }
+      updates.closeBehavior = effectiveBehavior as string;
+      updates.bufferMinutes = effectiveBuffer;
 
       // Update market
       const updatedMarket = await this.deps.marketRepository.update(
@@ -287,7 +281,7 @@ export class UpdateMarketUseCase {
     });
   }
 
-  private validateInputs(params: UpdateMarketParams): void {
+  private validateInputs(params: UpdateMarketParams, effectiveBehavior: string, effectiveBuffer: number | null): void {
     const errors: string[] = [];
 
     // Validate title if provided
@@ -305,17 +299,11 @@ export class UpdateMarketUseCase {
       errors.push(`Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters`);
     }
 
-    // Validate category if provided
-    if (params.category !== undefined && params.category.length > MAX_CATEGORY_LENGTH) {
-      errors.push(`Category must not exceed ${MAX_CATEGORY_LENGTH} characters`);
-    }
-
     // Validate imageUrl if provided
     if (params.imageUrl !== undefined) {
       if (params.imageUrl.length > MAX_IMAGE_URL_LENGTH) {
         errors.push(`Image URL must not exceed ${MAX_IMAGE_URL_LENGTH} characters`);
       }
-      // Basic URL validation
       try {
         new URL(params.imageUrl);
       } catch {
@@ -353,20 +341,12 @@ export class UpdateMarketUseCase {
       }
     }
 
-    // Check Auto With Buffer logic (needs bufferMinutes)
-    // Note: This validation is tricky because params might only have part of the picture.
-    // Ideally we should check against existing market state too, but that requires async fetch.
-    // We'll rely on strict parameters here: if you pass auto_with_buffer, you SHOULD pass bufferMinutes 
-    // OR we assume existing market has it? The latter is safer but harder to validate synchronously here.
-    // For update logic: if behavior is becoming auto_with_buffer, bufferMinutes must be provided OR exist.
-    // We'll defer deeper logical validation to execution phase where we have market data,
-    // OR just valid params if both provided.
-    if (params.closeBehavior === CloseBehavior.AUTO_WITH_BUFFER && typeof params.bufferMinutes === 'number' && params.bufferMinutes <= 0) {
-      errors.push('bufferMinutes must be greater than 0');
-    }
-
-    // Explicit null check is valid (clearing buffer)
-    if (params.closeBehavior && params.closeBehavior !== CloseBehavior.AUTO_WITH_BUFFER && params.bufferMinutes !== undefined && params.bufferMinutes !== null) {
+    // Validate bufferMinutes based on closeBehavior
+    if (effectiveBehavior === CloseBehavior.AUTO_WITH_BUFFER) {
+      if (!effectiveBuffer || effectiveBuffer <= 0) {
+        errors.push('bufferMinutes must be greater than 0 when closeBehavior is "auto_with_buffer"');
+      }
+    } else if (params.bufferMinutes !== undefined && params.bufferMinutes !== null) {
       errors.push('bufferMinutes should only be provided when closeBehavior is "auto_with_buffer"');
     }
 

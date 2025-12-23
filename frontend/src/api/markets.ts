@@ -19,6 +19,7 @@ import type {
 export interface GetMarketsParams {
   status?: 'ACTIVE' | 'RESOLVED' | 'CANCELLED'
   category?: string
+  categoryId?: string
   page?: number
   pageSize?: number
   sort?: 'createdAt' | 'closesAt' | 'volume'
@@ -40,6 +41,7 @@ export const getMarkets = async (params: GetMarketsParams): Promise<GetMarketsRe
   const query = new URLSearchParams()
   if (params.status) query.append('status', params.status)
   if (params.category) query.append('category', params.category)
+  if (params.categoryId) query.append('categoryId', params.categoryId)
   if (params.page) query.append('page', params.page.toString())
   if (params.pageSize) query.append('pageSize', params.pageSize.toString())
   if (params.sort) query.append('sort', params.sort)
@@ -197,10 +199,13 @@ export const getTradeHistory = async (
   if (params.marketId) query.append('marketId', params.marketId)
   if (params.action) query.append('action', params.action)
   if (params.page) query.append('page', params.page.toString())
-  if (params.pageSize) query.append('pageSize', params.pageSize.toString())
-
   const response = await api.get<import('./types').TradeHistoryResponse>(
     `/portfolio/history?${query.toString()}`
   )
+  return response.data
+}
+
+export const getCategories = async (): Promise<import('./types').Category[]> => {
+  const response = await api.get<import('./types').Category[]>('/categories')
   return response.data
 }

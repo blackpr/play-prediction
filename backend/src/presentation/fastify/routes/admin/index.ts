@@ -14,6 +14,7 @@ import { grantPoints } from './grant-points';
 import { listUsers } from './list-users';
 import { getUserDetail } from './get-user-detail';
 import { getAuditLogRoute } from './get-audit-log';
+import { categoryRoutes } from './categories';
 
 export default async function adminRoutes(server: FastifyInstance) {
   // Apply admin middleware to all routes in this module
@@ -60,5 +61,8 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // Audit Logs
   server.register(getAuditLogRoute);
+
+  // Categories
+  server.register(categoryRoutes);
 }
 

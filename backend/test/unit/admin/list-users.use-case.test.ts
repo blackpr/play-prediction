@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ListUsersUseCase } from './list-users.use-case';
-import { UserRepository, PaginatedUsers } from '../../ports/repositories/user.repository';
+import { ListUsersUseCase } from '@/application/use-cases/admin/list-users.use-case';
+import { UserRepository, PaginatedUsers } from '@/application/ports/repositories/user.repository';
 
 describe('ListUsersUseCase', () => {
   let useCase: ListUsersUseCase;

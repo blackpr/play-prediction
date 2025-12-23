@@ -6,12 +6,13 @@ import { AppCradle } from '../../../../shared/container/types';
 const createMarketBodySchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().min(1),
-  category: z.string().min(1).max(100),
+  category: z.string().min(1).max(100).optional(),
+  categoryId: z.string().uuid(),
   imageUrl: z.string().url().max(2048).optional(),
   closesAt: z.string().datetime(),
   seedLiquidity: z.string().regex(/^\d+$/, 'Seed liquidity must be a positive integer string'),
   closeBehavior: z.enum(['auto', 'manual', 'auto_with_buffer']).optional(),
-  bufferMinutes: z.number().int().positive().optional(),
+  bufferMinutes: z.number().int().positive().nullable().optional(),
   initialYesPrice: z.number().min(0.01).max(0.99).optional(),
 });
 
@@ -29,7 +30,7 @@ export async function createMarket(request: FastifyRequest, reply: FastifyReply)
     });
   }
 
-  const { title, description, category, imageUrl, closesAt, seedLiquidity, closeBehavior, bufferMinutes } = bodyResult.data;
+  const { title, description, category, categoryId, imageUrl, closesAt, seedLiquidity, closeBehavior, bufferMinutes } = bodyResult.data;
 
   try {
     const { createMarketUseCase } = request.diScope.cradle as AppCradle;
@@ -37,12 +38,12 @@ export async function createMarket(request: FastifyRequest, reply: FastifyReply)
     const result = await createMarketUseCase.execute({
       title,
       description,
-      category,
+      categoryId,
       imageUrl,
       closesAt: new Date(closesAt),
       seedLiquidity: BigInt(seedLiquidity),
       closeBehavior,
-      bufferMinutes,
+      bufferMinutes: bufferMinutes ?? undefined,
       initialYesPrice: bodyResult.data.initialYesPrice,
       createdBy: (request as any).user.id,
     });

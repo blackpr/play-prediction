@@ -50,6 +50,11 @@ import { GetUserDetailUseCase } from '../../application/use-cases/admin/get-user
 import { GetAdminMarketsUseCase } from '../../application/use-cases/admin/get-admin-markets.use-case';
 import { AuditLogRepository } from '@/application/ports/repositories/audit-log.repository';
 import { GetAuditLogUseCase } from '@/application/use-cases/admin/get-audit-log.use-case';
+import { CategoryRepository } from '../../application/ports/repositories/category.repository';
+import { ListCategoriesUseCase } from '../../application/use-cases/admin/list-categories.use-case';
+import { CreateCategoryUseCase } from '../../application/use-cases/admin/create-category.use-case';
+import { UpdateCategoryUseCase } from '../../application/use-cases/admin/update-category.use-case';
+import { DeleteCategoryUseCase } from '../../application/use-cases/admin/delete-category.use-case';
 
 
 /**
@@ -109,6 +114,13 @@ export interface AppCradle {
 
   auditLogRepository: AuditLogRepository;
   getAuditLogUseCase: GetAuditLogUseCase;
+
+  // Categories
+  categoryRepository: CategoryRepository;
+  listCategoriesUseCase: ListCategoriesUseCase;
+  createCategoryUseCase: CreateCategoryUseCase;
+  updateCategoryUseCase: UpdateCategoryUseCase;
+  deleteCategoryUseCase: DeleteCategoryUseCase;
 }
 
 

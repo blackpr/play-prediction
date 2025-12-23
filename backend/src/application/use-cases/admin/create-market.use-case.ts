@@ -3,32 +3,19 @@ import { PortfolioRepository } from '../../ports/repositories/portfolio.reposito
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
 import { UserRepository } from '../../ports/repositories/user.repository';
 import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
+import { CategoryRepository } from '../../ports/repositories/category.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
 import { BusinessLogicError, ValidationError, NotFoundError } from '../../../domain/errors/domain-error';
 import { NewMarket, NewLiquidityPool, MarketStatus, CloseBehavior } from '../../../infrastructure/database/drizzle/schema';
 
 const MIN_SEED_LIQUIDITY = 1_000_000n; // 1 Point
 
-interface CategoryDefaults {
-  closeBehavior: string;
-  bufferMinutes: number | null;
-}
-
-const CATEGORY_DEFAULTS: Record<string, CategoryDefaults> = {
-  'Sports - Soccer': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Sports - Basketball': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 30 },
-  'Sports - Football': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 45 },
-  'Sports - Other': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 15 },
-  'Crypto': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Weather': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Politics': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Entertainment': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-};
+// Removed hardcoded CATEGORY_DEFAULTS
 
 export interface CreateMarketParams {
   title: string;
   description: string;
-  category: string;
+  categoryId: string;
   imageUrl?: string;
   closesAt: Date;
   seedLiquidity: bigint;
@@ -58,6 +45,7 @@ export class CreateMarketUseCase {
       marketRepository: MarketRepository;
       portfolioRepository: PortfolioRepository;
       tradeLedgerRepository: TradeLedgerRepository;
+      categoryRepository: CategoryRepository;
       auditLogRepository: AuditLogRepository;
       transactionManager: TransactionManager;
     }
@@ -73,11 +61,18 @@ export class CreateMarketUseCase {
       );
     }
 
-    // 2. Validate Inputs
-    this.validateInputs(params);
+    // 2. Fetch Category
+    const category = await this.deps.categoryRepository.findById(params.categoryId);
+    if (!category) {
+      throw new NotFoundError('Category', params.categoryId);
+    }
 
-    // 3. Apply Category Defaults
-    const { closeBehavior, bufferMinutes } = this.applyDefaults(params);
+    // 3. Resolve Effective Settings (Provided or Defaults)
+    const closeBehavior = params.closeBehavior || category.defaultCloseBehavior;
+    const bufferMinutes = params.bufferMinutes ?? (closeBehavior === category.defaultCloseBehavior ? category.defaultBufferMinutes : null);
+
+    // 4. Validate Inputs
+    this.validateInputs(params, closeBehavior, bufferMinutes);
 
     // 4. Execute Transaction
     return await this.deps.transactionManager.run(async (tx) => {
@@ -85,12 +80,13 @@ export class CreateMarketUseCase {
       const marketData: NewMarket = {
         title: params.title,
         description: params.description,
-        category: params.category,
+        category: category.name, // Keep for legacy/index compatibility if needed
+        categoryId: category.id,
         imageUrl: params.imageUrl,
         closesAt: params.closesAt,
         status: MarketStatus.DRAFT,
-        closeBehavior,
-        bufferMinutes,
+        closeBehavior: closeBehavior as any,
+        bufferMinutes: bufferMinutes,
         createdBy: params.createdBy,
       };
 
@@ -187,7 +183,7 @@ export class CreateMarketUseCase {
     });
   }
 
-  private validateInputs(params: CreateMarketParams): void {
+  private validateInputs(params: CreateMarketParams, effectiveBehavior: string, effectiveBuffer: number | null): void {
     // Validate minimum seed liquidity
     if (params.seedLiquidity < MIN_SEED_LIQUIDITY) {
       throw new ValidationError(
@@ -208,14 +204,11 @@ export class CreateMarketUseCase {
     }
 
     // Validate bufferMinutes based on closeBehavior
-    const effectiveBehavior = params.closeBehavior || CATEGORY_DEFAULTS[params.category]?.closeBehavior || CloseBehavior.AUTO;
-
     if (effectiveBehavior === CloseBehavior.AUTO_WITH_BUFFER) {
-      const effectiveBuffer = params.bufferMinutes ?? CATEGORY_DEFAULTS[params.category]?.bufferMinutes;
       if (!effectiveBuffer || effectiveBuffer <= 0) {
         throw new ValidationError(
           'bufferMinutes must be greater than 0 when closeBehavior is "auto_with_buffer"',
-          { closeBehavior: effectiveBehavior }
+          { closeBehavior: effectiveBehavior, bufferMinutes: effectiveBuffer }
         );
       }
     } else if (params.bufferMinutes !== undefined && params.bufferMinutes !== null) {
@@ -242,14 +235,5 @@ export class CreateMarketUseCase {
         );
       }
     }
-  }
-
-  private applyDefaults(params: CreateMarketParams): { closeBehavior: string; bufferMinutes: number | null } {
-    const categoryDefault = CATEGORY_DEFAULTS[params.category];
-
-    const closeBehavior = params.closeBehavior || categoryDefault?.closeBehavior || CloseBehavior.AUTO;
-    const bufferMinutes = params.bufferMinutes ?? (closeBehavior === CloseBehavior.AUTO_WITH_BUFFER ? categoryDefault?.bufferMinutes ?? null : null);
-
-    return { closeBehavior, bufferMinutes };
   }
 }

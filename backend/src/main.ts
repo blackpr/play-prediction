@@ -11,6 +11,7 @@ import { usersRoutes } from './presentation/fastify/routes/users';
 import { marketsRoutes } from './presentation/fastify/routes/markets';
 import { portfolioRoutes } from './presentation/fastify/routes/portfolio';
 import adminRoutes from './presentation/fastify/routes/admin';
+import { publicCategoryRoutes } from './presentation/fastify/routes/categories';
 import { websocketHandler } from './presentation/websocket/websocket.route';
 import { registerRateLimit, withRateLimit, RateLimitType } from './presentation/fastify/plugins/rate-limit';
 import multipart from '@fastify/multipart';
@@ -82,6 +83,7 @@ async function buildServer() {
   server.register(marketsRoutes, { prefix: '/api/v1/markets' });
   server.register(portfolioRoutes, { prefix: '/api/v1/portfolio' });
   server.register(adminRoutes, { prefix: '/api/v1/admin' });
+  server.register(publicCategoryRoutes, { prefix: '/api/v1/categories' });
 
   // Test route for rate limiting (can be removed in production)
   server.get('/test-rate-limit', withRateLimit(RateLimitType.PUBLIC), async () => {

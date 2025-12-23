@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UploadMarketImageUseCase } from './upload-market-image';
+import { UploadMarketImageUseCase } from '@/application/use-cases/admin/upload-market-image';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 describe('UploadMarketImageUseCase', () => {

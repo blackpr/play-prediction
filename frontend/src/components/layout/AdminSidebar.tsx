@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { LayoutDashboard, Users, Store, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Users, Store, ClipboardList, Tags } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { cn } from '../../utils'
 
@@ -29,6 +29,13 @@ export function AdminSidebar() {
       icon: Users,
       show: !isTreasury, // Hidden for treasury
       isActive: pathname.startsWith('/admin/users'),
+    },
+    {
+      label: 'Categories',
+      to: '/admin/categories',
+      icon: Tags,
+      show: true,
+      isActive: pathname.startsWith('/admin/categories'),
     },
     {
       label: 'Audit Log',

@@ -10,6 +10,7 @@ describe('UpdateMarketUseCase', () => {
   let mockPortfolioRepository: any;
   let mockTradeLedgerRepository: any;
   let mockAuditLogRepository: any;
+  let mockCategoryRepository: any;
   let mockTransactionManager: any;
 
   const mockAdmin = {
@@ -104,9 +105,25 @@ describe('UpdateMarketUseCase', () => {
       create: vi.fn(),
     };
 
+    mockCategoryRepository = {
+      findById: vi.fn(),
+    };
+
     mockTransactionManager = {
       run: vi.fn((callback) => callback({})), // Execute callback immediately with mock tx
     };
+
+    mockUserRepository.findById.mockResolvedValue(mockAdmin);
+    mockUserRepository.findByRole.mockResolvedValue(mockTreasury);
+    mockMarketRepository.findById.mockResolvedValue(mockMarketWithPool);
+    mockCategoryRepository.findById.mockResolvedValue({
+      id: 'cat-123',
+      name: 'Crypto',
+      slug: 'crypto',
+      defaultCloseBehavior: 'auto',
+      defaultBufferMinutes: null,
+      isActive: true,
+    });
 
     useCase = new UpdateMarketUseCase({
       userRepository: mockUserRepository,
@@ -114,6 +131,7 @@ describe('UpdateMarketUseCase', () => {
       portfolioRepository: mockPortfolioRepository,
       tradeLedgerRepository: mockTradeLedgerRepository,
       auditLogRepository: mockAuditLogRepository,
+      categoryRepository: mockCategoryRepository,
       transactionManager: mockTransactionManager,
     });
   });
@@ -136,14 +154,15 @@ describe('UpdateMarketUseCase', () => {
         adminId: 'admin-id',
         title: 'Updated Title',
         description: 'Updated description',
+        categoryId: 'cat-123',
       });
 
       expect(mockMarketRepository.update).toHaveBeenCalledWith(
         'market-id',
-        {
+        expect.objectContaining({
           title: 'Updated Title',
           description: 'Updated description',
-        },
+        }),
         {}
       );
 
@@ -177,6 +196,7 @@ describe('UpdateMarketUseCase', () => {
         marketId: 'market-id',
         adminId: 'admin-id',
         seedLiquidity: 20_000_000n, // Changed amount
+        categoryId: 'cat-123',
       });
 
       // Verification of Pool Reset Flow
@@ -217,6 +237,7 @@ describe('UpdateMarketUseCase', () => {
         marketId: 'market-id',
         adminId: 'admin-id',
         initialYesPrice: 0.75, // Change skew
+        categoryId: 'cat-123',
       });
 
       // 0.75 Price -> YesQty should be low, NoQty should be high? 
@@ -241,6 +262,7 @@ describe('UpdateMarketUseCase', () => {
           marketId: 'market-id',
           adminId: 'admin-id',
           seedLiquidity: 20_000_000n,
+          categoryId: 'cat-123',
         })
       ).rejects.toThrow(BusinessLogicError);
 
@@ -288,6 +310,7 @@ describe('UpdateMarketUseCase', () => {
           marketId: 'market-id',
           adminId: 'admin-id',
           title: 'Short', // Less than 10 characters
+          categoryId: 'cat-123',
         })
       ).rejects.toThrow(ValidationError);
     });
@@ -300,6 +323,7 @@ describe('UpdateMarketUseCase', () => {
           marketId: 'market-id',
           adminId: 'admin-id',
           title: longTitle,
+          categoryId: 'cat-123',
         })
       ).rejects.toThrow(ValidationError);
     });
@@ -312,6 +336,7 @@ describe('UpdateMarketUseCase', () => {
           marketId: 'market-id',
           adminId: 'admin-id',
           closesAt: pastDate,
+          categoryId: 'cat-123',
         })
       ).rejects.toThrow(ValidationError);
     });

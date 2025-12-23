@@ -1,6 +1,6 @@
 
 import { describe, it, expect, beforeEach, vi, type Mocked } from 'vitest';
-import { GetAuditLogUseCase } from './get-audit-log.use-case';
+import { GetAuditLogUseCase } from '@/application/use-cases/admin/get-audit-log.use-case';
 import { AuditLogRepository } from '@/application/ports/repositories/audit-log.repository';
 import { AuditLog } from '@/domain/entities/audit-log.entity';
 

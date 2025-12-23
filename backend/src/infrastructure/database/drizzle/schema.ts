@@ -87,6 +87,29 @@ export const users = pgTable('users', {
   }
 });
 
+export const categories = pgTable('categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  defaultCloseBehavior: varchar('default_close_behavior', { length: 20 }).notNull().default('auto'),
+  defaultBufferMinutes: integer('default_buffer_minutes'), // Only used when behavior = 'auto_with_buffer'
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    slugIdx: uniqueIndex('idx_categories_slug').on(table.slug),
+    sortIdx: index('idx_categories_sort').on(table.sortOrder),
+    closeBehaviorCheck: check('categories_close_behavior_valid', sql`${table.defaultCloseBehavior} IN ('auto', 'manual', 'auto_with_buffer')`),
+    bufferCheck: check('categories_buffer_valid', sql`
+        (${table.defaultCloseBehavior} = 'auto_with_buffer' AND ${table.defaultBufferMinutes} IS NOT NULL AND ${table.defaultBufferMinutes} > 0)
+        OR (${table.defaultCloseBehavior} != 'auto_with_buffer' AND ${table.defaultBufferMinutes} IS NULL)
+    `),
+  }
+});
+
 export const markets = pgTable('markets', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: varchar('title', { length: 500 }).notNull(),
@@ -94,7 +117,8 @@ export const markets = pgTable('markets', {
   status: varchar('status', { length: 20 }).notNull().default('DRAFT'),
   resolution: varchar('resolution', { length: 10 }),
   imageUrl: varchar('image_url', { length: 2048 }),
-  category: varchar('category', { length: 100 }),
+  category: varchar('category', { length: 100 }), // Keep for migration
+  categoryId: uuid('category_id').references(() => categories.id),
   closesAt: timestamp('closes_at', { withTimezone: true }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   // When the event actually ended (for voiding post-event trades)
@@ -112,6 +136,7 @@ export const markets = pgTable('markets', {
     statusIdx: index('idx_markets_status').on(table.status),
     statusClosesIdx: index('idx_markets_status_closes').on(table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
     categoryIdx: index('idx_markets_category').on(table.category).where(sql`status = 'ACTIVE'`),
+    categoryIdIdx: index('idx_markets_category_id').on(table.categoryId),
     createdByIdx: index('idx_markets_created_by').on(table.createdBy),
     // Index for scheduler jobs to find markets needing auto-close by behavior type
     closeBehaviorIdx: index('idx_markets_close_behavior').on(table.closeBehavior, table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
@@ -261,10 +286,18 @@ export const usersRelations = relations(users, ({ many }) => ({
   auditLogs: many(auditLogs),
 }));
 
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  markets: many(markets),
+}));
+
 export const marketsRelations = relations(markets, ({ one, many }) => ({
   creator: one(users, {
     fields: [markets.createdBy],
     references: [users.id],
+  }),
+  category: one(categories, {
+    fields: [markets.categoryId],
+    references: [categories.id],
   }),
   pool: one(liquidityPools, {
     fields: [markets.id],
@@ -346,3 +379,6 @@ export type NewPointGrant = typeof pointGrants.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;

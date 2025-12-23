@@ -12,6 +12,7 @@ import { MarketCardSkeleton } from '../../components/market/MarketCardSkeleton'
 const marketsSearchSchema = z.object({
   status: z.enum(['ACTIVE', 'RESOLVED', 'CANCELLED', 'all']).optional(),
   category: z.string().optional(),
+  categoryId: z.string().optional(),
   page: z.number().catch(1),
   pageSize: z.number().catch(20),
   sort: z.enum(['createdAt', 'closesAt', 'volume']).catch('createdAt'),
@@ -24,15 +25,8 @@ export const Route = createFileRoute('/markets/')({
   component: MarketsPage,
 })
 
-const CATEGORIES = [
-  'Sports',
-  'Politics',
-  'Crypto',
-  'Technology',
-  'Entertainment',
-  'Weather',
-  'Other',
-]
+import { getCategories } from '../../api/markets'
+import { useQuery } from '@tanstack/react-query'
 
 function MarketsPage() {
   const search = Route.useSearch()
@@ -58,9 +52,15 @@ function MarketsPage() {
     return () => clearTimeout(timer)
   }, [searchInput, search.search, navigate])
 
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories', 'public'],
+    queryFn: getCategories,
+  })
+
   const { data, isLoading, error } = useMarkets({
     // @ts-ignore - 'all' is handled in UI but API expects undefined for all
     status: search.status === 'all' ? undefined : search.status,
+    categoryId: search.categoryId,
     category: search.category,
     page: search.page,
     pageSize: search.pageSize,
@@ -80,11 +80,12 @@ function MarketsPage() {
     })
   }
 
-  const setCategory = (category: string | undefined) => {
+  const setCategory = (categoryId: string | undefined) => {
     navigate({
       search: (prev) => ({
         ...prev,
-        category,
+        categoryId,
+        category: undefined, // Clear legacy category string
         page: 1,
       }),
     })
@@ -162,25 +163,25 @@ function MarketsPage() {
             onClick={() => setCategory(undefined)}
             className={cn(
               "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-              !search.category
+              !search.categoryId
                 ? "bg-white text-gray-950 border-white"
                 : "bg-transparent text-gray-400 border-white/10 hover:border-white/30"
             )}
           >
             All Categories
           </button>
-          {CATEGORIES.map((cat) => (
+          {categoriesData?.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setCategory(cat)}
+              key={cat.id}
+              onClick={() => setCategory(cat.id)}
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-                search.category === cat
+                search.categoryId === cat.id
                   ? "bg-white text-gray-950 border-white"
                   : "bg-transparent text-gray-400 border-white/10 hover:border-white/30"
               )}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>

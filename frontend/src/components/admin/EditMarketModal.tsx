@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { adminApi } from '../../api/admin';
 import { api } from '../../api/client';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -21,6 +22,7 @@ interface EditMarketModalProps {
     title: string;
     description: string | null;
     category: string | null;
+    categoryId: string | null;
     imageUrl: string | null;
     closesAt: string | null;
     closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
@@ -37,16 +39,7 @@ enum CloseBehavior {
   AUTO_WITH_BUFFER = 'auto_with_buffer',
 }
 
-const CATEGORY_DEFAULTS: Record<string, { closeBehavior: CloseBehavior; bufferMinutes: number | null }> = {
-  'Sports - Soccer': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Sports - Basketball': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 30 },
-  'Sports - Football': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 45 },
-  'Sports - Other': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 15 },
-  'Crypto': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Weather': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Politics': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Entertainment': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-};
+// Removed hardcoded CATEGORY_DEFAULTS
 
 function toDateTimeLocalString(date: Date) {
   return format(date, "yyyy-MM-dd'T'HH:mm");
@@ -57,6 +50,13 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
   const [isUploading, setIsUploading] = useState(false);
   const closesAtInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch Categories
+  const { data: categoriesResponse, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ['admin-categories', false],
+    queryFn: () => adminApi.listCategories({ includeInactive: false }),
+  });
+  const categories = categoriesResponse?.data || [];
 
   // Initialize form values logic
   const initialYesPrice = market.pool
@@ -73,7 +73,7 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
 
       if (values.title !== market.title) updates.title = values.title;
       if (values.description !== (market.description || '')) updates.description = values.description;
-      if (values.category !== (market.category || '')) updates.category = values.category;
+      if (values.categoryId !== (market.categoryId || '')) updates.categoryId = values.categoryId;
       if (values.imageUrl !== (market.imageUrl || '')) updates.imageUrl = values.imageUrl;
 
       const newCloseDate = new Date(values.closesAt);
@@ -113,7 +113,7 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
     defaultValues: {
       title: market.title,
       description: market.description || '',
-      category: market.category || '',
+      categoryId: market.categoryId || '',
       imageUrl: market.imageUrl || '',
       closesAt: market.closesAt ? toDateTimeLocalString(new Date(market.closesAt)) : '',
       seedLiquidity: seedLiquidity,
@@ -210,38 +210,27 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
 
         {/* Category */}
         <form.Field
-          name="category"
+          name="categoryId"
           validators={{
             onChange: ({ value }) => !value ? 'Category is required' : undefined
           }}
         >
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="categoryId">Category</Label>
               <Select
-                id="category"
-                value={field.state.value}
+                id="categoryId"
+                value={field.state.value || ''}
+                disabled={isLoadingCategories}
                 onChange={(e) => {
-                  const newCategory = e.target.value;
-                  field.handleChange(newCategory);
-                  // Update behaviors if switching categories (optional UX choice: auto-switch behavior? Yes, why not for consistency)
-                  // BUT this is edit mode, maybe don't override user's manual settings unless asked?
-                  // Let's stick to CreateMarketForm behavior for now to be "smart"
-                  if (newCategory && CATEGORY_DEFAULTS[newCategory]) {
-                    // Only if current behavior is default/null? Or just override? 
-                    // Let's NOT override automatically on edit, as user might have custom settings.
-                  }
+                  const newCategoryId = e.target.value;
+                  field.handleChange(newCategoryId);
                 }}
               >
-                <option value="">Select Category</option>
-                <option value="Crypto">Crypto</option>
-                <option value="Weather">Weather</option>
-                <option value="Politics">Politics</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Sports - Soccer">Sports - Soccer</option>
-                <option value="Sports - Basketball">Sports - Basketball</option>
-                <option value="Sports - Football">Sports - Football</option>
-                <option value="Sports - Other">Sports - Other</option>
+                <option value="">{isLoadingCategories ? 'Loading categories...' : 'Select Category'}</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
               </Select>
               {field.state.meta.errors.length > 0 && (
                 <p className="text-red-500 text-sm">{field.state.meta.errors.join(', ')}</p>

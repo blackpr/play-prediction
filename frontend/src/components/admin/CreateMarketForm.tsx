@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '../ui/Button';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
 import { api } from '../../api/client';
+import { adminApi } from '../../api/admin';
 import { useState, useRef } from 'react';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -23,16 +24,7 @@ enum CloseBehavior {
   AUTO_WITH_BUFFER = 'auto_with_buffer',
 }
 
-const CATEGORY_DEFAULTS: Record<string, { closeBehavior: CloseBehavior; bufferMinutes: number | null }> = {
-  'Sports - Soccer': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Sports - Basketball': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 30 },
-  'Sports - Football': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 45 },
-  'Sports - Other': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 15 },
-  'Crypto': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Weather': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
-  'Politics': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-  'Entertainment': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
-};
+// Removed hardcoded CATEGORY_DEFAULTS
 
 export function CreateMarketForm() {
   const navigate = useNavigate();
@@ -42,6 +34,13 @@ export function CreateMarketForm() {
   const [isUploadingIdx, setIsUploadingIdx] = useState(false); // Renamed to avoid collision if needed, or just isUploading
   const closesAtInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch Categories
+  const { data: categoriesResponse, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ['admin-categories', false], // only active ones
+    queryFn: () => adminApi.listCategories({ includeInactive: false }),
+  });
+  const categories = categoriesResponse?.data || [];
 
   const createMarketMut = useMutation({
     mutationFn: async (data: any) => {
@@ -99,7 +98,7 @@ export function CreateMarketForm() {
     defaultValues: {
       title: '',
       description: '',
-      category: '',
+      categoryId: '',
       imageUrl: '',
       closesAt: '',
       seedLiquidity: 10_000_000,
@@ -182,38 +181,34 @@ export function CreateMarketForm() {
 
             {/* Category */}
             <form.Field
-              name="category"
+              name="categoryId"
               validators={{
                 onChange: ({ value }) => !value ? 'Category is required' : undefined
               }}
             >
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="categoryId">Category</Label>
                   <Select
-                    id="category"
+                    id="categoryId"
                     value={field.state.value}
+                    disabled={isLoadingCategories}
                     onChange={(e) => {
-                      const newCategory = e.target.value;
-                      field.handleChange(newCategory);
+                      const newCategoryId = e.target.value;
+                      field.handleChange(newCategoryId);
 
                       // Side effect: update defaults
-                      if (newCategory && CATEGORY_DEFAULTS[newCategory]) {
-                        const defaults = CATEGORY_DEFAULTS[newCategory];
-                        form.setFieldValue('closeBehavior', defaults.closeBehavior);
-                        form.setFieldValue('bufferMinutes', defaults.bufferMinutes);
+                      const selectedCat = categories.find(c => c.id === newCategoryId);
+                      if (selectedCat) {
+                        form.setFieldValue('closeBehavior', selectedCat.defaultCloseBehavior as CloseBehavior);
+                        form.setFieldValue('bufferMinutes', selectedCat.defaultBufferMinutes);
                       }
                     }}
                   >
-                    <option value="">Select Category</option>
-                    <option value="Crypto">Crypto</option>
-                    <option value="Weather">Weather</option>
-                    <option value="Politics">Politics</option>
-                    <option value="Entertainment">Entertainment</option>
-                    <option value="Sports - Soccer">Sports - Soccer</option>
-                    <option value="Sports - Basketball">Sports - Basketball</option>
-                    <option value="Sports - Football">Sports - Football</option>
-                    <option value="Sports - Other">Sports - Other</option>
+                    <option value="">{isLoadingCategories ? 'Loading categories...' : 'Select Category'}</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </Select>
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-red-500 text-sm">{field.state.meta.errors.join(', ')}</p>
@@ -440,15 +435,16 @@ export function CreateMarketForm() {
               </form.Field>
 
               <form.Subscribe
-                selector={(state) => [state.values.category, state.values.closeBehavior]}
+                selector={(state) => [state.values.categoryId, state.values.closeBehavior]}
               >
-                {([cat, behavior]) => (
-                  cat?.includes('Sports') && behavior === CloseBehavior.AUTO ? (
+                {([catId, behavior]) => {
+                  const selectedCat = categories.find(c => c.id === catId);
+                  return selectedCat?.name.includes('Sports') && behavior === CloseBehavior.AUTO ? (
                     <div className="text-amber-500 text-sm bg-amber-100/10 p-2 rounded">
                       ⚠️ Sports matches often have added time. Consider "Manual" or "Buffer".
                     </div>
                   ) : null
-                )}
+                }}
               </form.Subscribe>
 
               <form.Field name="bufferMinutes">
@@ -496,39 +492,39 @@ export function CreateMarketForm() {
             <p className="text-sm text-gray-400">Description</p>
             <p className="text-sm text-white line-clamp-3">{pendingValues?.description}</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-400">Category</p>
-              <p className="text-white">{pendingValues?.category}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Seed Liquidity</p>
-              <p className="text-white">{(pendingValues?.seedLiquidity / 1_000_000).toFixed(2)} Points</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Initial YES</p>
-              <p className="text-white">{(pendingValues?.initialYesPrice * 100).toFixed(0)}%</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Closes At</p>
-              <p className="text-white">{pendingValues?.closesAt ? format(new Date(pendingValues.closesAt), 'PPP p') : '-'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400">Close Behavior</p>
-              <p className="text-white capitalize">{pendingValues?.closeBehavior?.replace('_', ' ')}</p>
-            </div>
+          <div>
+            <p className="text-sm text-gray-400">Category</p>
+            <p className="text-white">
+              {categories.find(c => c.id === pendingValues?.categoryId)?.name || '-'}
+            </p>
           </div>
+          <div>
+            <p className="text-sm text-gray-400">Seed Liquidity</p>
+            <p className="text-white">{(pendingValues?.seedLiquidity / 1_000_000).toFixed(2)} Points</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">Initial YES</p>
+            <p className="text-white">{(pendingValues?.initialYesPrice * 100).toFixed(0)}%</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">Closes At</p>
+            <p className="text-white">{pendingValues?.closesAt ? format(new Date(pendingValues.closesAt), 'PPP p') : '-'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">Close Behavior</p>
+            <p className="text-white capitalize">{pendingValues?.closeBehavior?.replace('_', ' ')}</p>
+          </div>
+        </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={createMarketMut.isPending}
-              isLoading={createMarketMut.isPending}
-            >
-              Confirm & Create
-            </Button>
-          </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={createMarketMut.isPending}
+            isLoading={createMarketMut.isPending}
+          >
+            Confirm & Create
+          </Button>
         </div>
       </Modal>
     </div>

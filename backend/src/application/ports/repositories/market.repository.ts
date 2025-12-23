@@ -36,6 +36,7 @@ export interface MarketExtendedDetails extends MarketWithDetails {
 export interface GetMarketsParams {
   status?: string;
   category?: string;
+  categoryId?: string;
   page: number;
   pageSize: number;
   sort?: string;
@@ -104,7 +105,7 @@ export interface MarketRepository {
   updateStatus(marketId: string, newStatus: string, tx?: unknown): Promise<Market>;
   update(
     marketId: string,
-    updates: Partial<Pick<Market, 'title' | 'description' | 'category' | 'imageUrl' | 'closesAt'>>,
+    updates: Partial<Pick<Market, 'title' | 'description' | 'category' | 'categoryId' | 'imageUrl' | 'closesAt' | 'eventEndedAt'>>,
     tx?: unknown
   ): Promise<Market>;
   count(status?: string): Promise<number>;

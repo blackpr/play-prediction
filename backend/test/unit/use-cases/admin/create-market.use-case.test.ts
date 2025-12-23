@@ -10,6 +10,7 @@ describe('CreateMarketUseCase', () => {
   let mockPortfolioRepository: any;
   let mockTradeLedgerRepository: any;
   let mockAuditLogRepository: any;
+  let mockCategoryRepository: any;
   let mockTransactionManager: any;
 
   const mockTreasuryUser = {
@@ -19,6 +20,15 @@ describe('CreateMarketUseCase', () => {
     balance: 1000000000000n,
     isActive: true,
     createdAt: new Date(),
+  };
+
+  const mockCategory = {
+    id: 'cat-123',
+    name: 'Weather',
+    slug: 'weather',
+    defaultCloseBehavior: CloseBehavior.AUTO,
+    defaultBufferMinutes: null,
+    isActive: true,
   };
 
   const mockMarket = {
@@ -61,9 +71,17 @@ describe('CreateMarketUseCase', () => {
       create: vi.fn(),
     };
 
+    mockCategoryRepository = {
+      findById: vi.fn(),
+    };
+
     mockTransactionManager = {
       run: vi.fn((callback) => callback({})),
     };
+
+    mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+    mockCategoryRepository.findById.mockResolvedValue(mockCategory);
+    mockMarketRepository.create.mockResolvedValue(mockMarket);
 
     useCase = new CreateMarketUseCase({
       userRepository: mockUserRepository,
@@ -71,19 +89,17 @@ describe('CreateMarketUseCase', () => {
       portfolioRepository: mockPortfolioRepository,
       tradeLedgerRepository: mockTradeLedgerRepository,
       auditLogRepository: mockAuditLogRepository,
+      categoryRepository: mockCategoryRepository,
       transactionManager: mockTransactionManager,
     });
   });
 
   describe('execute', () => {
     it('should create market with 50/50 genesis pool', async () => {
-      mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
-      mockMarketRepository.create.mockResolvedValue(mockMarket);
-
       const result = await useCase.execute({
         title: 'Test Market',
         description: 'Test Description',
-        category: 'Weather',
+        categoryId: 'cat-123',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
@@ -103,7 +119,7 @@ describe('CreateMarketUseCase', () => {
         useCase.execute({
           title: 'Test Market',
           description: 'Test Description',
-          category: 'Weather',
+          categoryId: 'cat-123',
           closesAt: new Date('2025-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           createdBy: 'admin-id',
@@ -118,7 +134,7 @@ describe('CreateMarketUseCase', () => {
         useCase.execute({
           title: 'Test Market',
           description: 'Test Description',
-          category: 'Weather',
+          categoryId: 'cat-123',
           closesAt: new Date('2025-12-25T00:00:00Z'),
           seedLiquidity: 500_000n, // Less than 1M minimum
           createdBy: 'admin-id',
@@ -128,6 +144,7 @@ describe('CreateMarketUseCase', () => {
 
     it('should apply category defaults for close behavior - Weather (auto)', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
       mockMarketRepository.create.mockResolvedValue({
         ...mockMarket,
         closeBehavior: CloseBehavior.AUTO,
@@ -137,7 +154,7 @@ describe('CreateMarketUseCase', () => {
       const result = await useCase.execute({
         title: 'Weather Market',
         description: 'Test',
-        category: 'Weather',
+        categoryId: 'cat-123',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
@@ -149,6 +166,11 @@ describe('CreateMarketUseCase', () => {
 
     it('should apply category defaults for close behavior - Soccer (manual)', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue({
+        ...mockCategory,
+        name: 'Sports - Soccer',
+        defaultCloseBehavior: CloseBehavior.MANUAL,
+      });
       mockMarketRepository.create.mockResolvedValue({
         ...mockMarket,
         closeBehavior: CloseBehavior.MANUAL,
@@ -158,7 +180,7 @@ describe('CreateMarketUseCase', () => {
       const result = await useCase.execute({
         title: 'Soccer Match',
         description: 'Test',
-        category: 'Sports - Soccer',
+        categoryId: 'cat-soccer',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
@@ -170,6 +192,12 @@ describe('CreateMarketUseCase', () => {
 
     it('should apply category defaults for close behavior - Basketball (auto_with_buffer)', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue({
+        ...mockCategory,
+        name: 'Sports - Basketball',
+        defaultCloseBehavior: CloseBehavior.AUTO_WITH_BUFFER,
+        defaultBufferMinutes: 30,
+      });
       mockMarketRepository.create.mockResolvedValue({
         ...mockMarket,
         closeBehavior: CloseBehavior.AUTO_WITH_BUFFER,
@@ -179,7 +207,7 @@ describe('CreateMarketUseCase', () => {
       const result = await useCase.execute({
         title: 'Basketball Game',
         description: 'Test',
-        category: 'Sports - Basketball',
+        categoryId: 'cat-basketball',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
@@ -191,12 +219,13 @@ describe('CreateMarketUseCase', () => {
 
     it('should validate bufferMinutes when closeBehavior is auto_with_buffer', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
       await expect(
         useCase.execute({
           title: 'Test Market',
           description: 'Test',
-          category: 'Other',
+          categoryId: 'cat-123',
           closesAt: new Date('2025-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           closeBehavior: 'auto_with_buffer',
@@ -208,12 +237,13 @@ describe('CreateMarketUseCase', () => {
 
     it('should reject bufferMinutes when closeBehavior is not auto_with_buffer', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
       await expect(
         useCase.execute({
           title: 'Test Market',
           description: 'Test',
-          category: 'Weather',
+          categoryId: 'cat-123',
           closesAt: new Date('2025-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           closeBehavior: 'auto',
@@ -225,12 +255,13 @@ describe('CreateMarketUseCase', () => {
 
     it('should create GENESIS_MINT ledger entry', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
       mockMarketRepository.create.mockResolvedValue(mockMarket);
 
       await useCase.execute({
         title: 'Test Market',
         description: 'Test',
-        category: 'Weather',
+        categoryId: 'cat-123',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
@@ -261,7 +292,7 @@ describe('CreateMarketUseCase', () => {
     await useCase.execute({
       title: 'Test Market',
       description: 'Test',
-      category: 'Weather',
+      categoryId: 'cat-123',
       closesAt: new Date('2025-12-25T00:00:00Z'),
       seedLiquidity: 10_000_000n,
       createdBy: 'admin-id',
@@ -285,7 +316,7 @@ describe('CreateMarketUseCase', () => {
     await useCase.execute({
       title: 'Test Market',
       description: 'Test',
-      category: 'Weather',
+      categoryId: 'cat-123',
       closesAt: new Date('2025-12-25T00:00:00Z'),
       seedLiquidity: 10_000_000n,
       createdBy: 'admin-id',
@@ -306,6 +337,7 @@ describe('CreateMarketUseCase', () => {
 
   it('should validate future close date', async () => {
     mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+    mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
     const pastDate = new Date('2020-01-01T00:00:00Z');
 
@@ -313,7 +345,7 @@ describe('CreateMarketUseCase', () => {
       useCase.execute({
         title: 'Test Market',
         description: 'Test',
-        category: 'Weather',
+        categoryId: 'cat-123',
         closesAt: pastDate,
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
@@ -323,6 +355,7 @@ describe('CreateMarketUseCase', () => {
   describe('Skewed Genesis', () => {
     it('should create skewed pool with 75% YES probability', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
       mockMarketRepository.create.mockResolvedValue(mockMarket);
 
       const seedLiquidity = 10_000_000n; // 10M micropoints
@@ -330,7 +363,7 @@ describe('CreateMarketUseCase', () => {
       const result = await useCase.execute({
         title: 'Skewed Market',
         description: 'Test',
-        category: 'Weather',
+        categoryId: 'cat-123',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity,
         initialYesPrice: 0.75,
@@ -362,7 +395,7 @@ describe('CreateMarketUseCase', () => {
       const result = await useCase.execute({
         title: 'Skewed Market',
         description: 'Test',
-        category: 'Weather',
+        categoryId: 'cat-123',
         closesAt: new Date('2025-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         initialYesPrice: 0.20,
@@ -375,12 +408,13 @@ describe('CreateMarketUseCase', () => {
 
     it('should throw validation error for invalid initialYesPrice', async () => {
       mockUserRepository.findByRole.mockResolvedValue(mockTreasuryUser);
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
       await expect(
         useCase.execute({
           title: 'Invalid Market',
           description: 'Test',
-          category: 'Weather',
+          categoryId: 'cat-123',
           closesAt: new Date('2025-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           initialYesPrice: 1.5, // Invalid > 0.99
@@ -392,7 +426,7 @@ describe('CreateMarketUseCase', () => {
         useCase.execute({
           title: 'Invalid Market',
           description: 'Test',
-          category: 'Weather',
+          categoryId: 'cat-123',
           closesAt: new Date('2025-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           initialYesPrice: 0.005, // Invalid < 0.01

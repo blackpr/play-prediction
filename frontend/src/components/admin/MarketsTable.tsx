@@ -24,6 +24,7 @@ interface Market {
   imageUrl?: string | null;
   description?: string | null;
   category?: string | null;
+  categoryId?: string | null;
   pool?: {
     yesQty: string;
     noQty: string;
@@ -72,6 +73,7 @@ export function MarketsTable() {
     title: string;
     description?: string | null;
     category?: string | null;
+    categoryId?: string | null;
     imageUrl?: string | null;
     closesAt?: string | null;
     closeBehavior?: 'auto' | 'manual' | 'auto_with_buffer';
@@ -249,6 +251,7 @@ export function MarketsTable() {
                                   title: market.title,
                                   description: market.description,
                                   category: market.category,
+                                  categoryId: market.categoryId,
                                   imageUrl: market.imageUrl,
                                   closesAt: market.closesAt,
                                   closeBehavior: market.closeBehavior,
@@ -335,6 +338,7 @@ export function MarketsTable() {
             title: selectedMarket.title,
             description: selectedMarket.description || null,
             category: selectedMarket.category || null,
+            categoryId: selectedMarket.categoryId || null,
             imageUrl: selectedMarket.imageUrl || null,
             closesAt: selectedMarket.closesAt || null,
             closeBehavior: selectedMarket.closeBehavior,

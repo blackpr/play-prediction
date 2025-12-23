@@ -189,10 +189,14 @@ function MarketDetailPage() {
                   ? `Ends ${formatDistanceToNow(new Date(market.closesAt), { addSuffix: true })}`
                   : 'No closing date'}
               </span>
-              <span className="flex items-center gap-1 text-gray-400">
+              <Link
+                to="/markets"
+                search={{ categoryId: market.categoryId || undefined, status: 'all', page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}
+                className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+              >
                 <Users className="w-3 h-3" />
                 {market.category}
-              </span>
+              </Link>
             </div>
           </div>
         </div>

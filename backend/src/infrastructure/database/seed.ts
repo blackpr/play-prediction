@@ -11,7 +11,8 @@ import {
   PointGrantType,
   TradeAction,
   Side,
-  CloseBehavior
+  CloseBehavior,
+  categories
 } from './drizzle/schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 import { loadEnv } from '../../shared/config/env';
@@ -173,7 +174,51 @@ async function seed() {
     }
 
     // ========================================================================
-    // 2. MARKETS & POOLS
+    // 2. CATEGORIES
+    // ========================================================================
+    console.log('Creating categories...');
+
+    const CATEGORY_DEFAULTS: Record<string, { closeBehavior: string; bufferMinutes: number | null }> = {
+      'Sports - Soccer': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
+      'Sports - Basketball': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 30 },
+      'Sports - Football': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 45 },
+      'Sports - Other': { closeBehavior: CloseBehavior.AUTO_WITH_BUFFER, bufferMinutes: 15 },
+      'Crypto': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
+      'Weather': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
+      'Politics': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
+      'Entertainment': { closeBehavior: CloseBehavior.MANUAL, bufferMinutes: null },
+      'Technology': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
+      'Other': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
+      'Test': { closeBehavior: CloseBehavior.AUTO, bufferMinutes: null },
+    };
+
+    const slugify = (text: string) => text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
+
+    const categoryMap: Record<string, string> = {};
+
+    for (const [name, defaults] of Object.entries(CATEGORY_DEFAULTS)) {
+      const slug = slugify(name);
+      const [category] = await db.insert(categories).values({
+        name,
+        slug,
+        defaultCloseBehavior: defaults.closeBehavior as any,
+        defaultBufferMinutes: defaults.bufferMinutes,
+      }).onConflictDoUpdate({
+        target: categories.slug,
+        set: {
+          name,
+          defaultCloseBehavior: defaults.closeBehavior as any,
+          defaultBufferMinutes: defaults.bufferMinutes,
+          updatedAt: new Date(),
+        }
+      }).returning();
+
+      categoryMap[name] = category.id;
+    }
+    console.log('✅ Categories created');
+
+    // ========================================================================
+    // 3. MARKETS & POOLS
     // ========================================================================
     console.log('Creating markets and pools...');
 
@@ -196,10 +241,12 @@ async function seed() {
         description: `Prediction market for: ${title}`,
         status: status as any,
         category,
+        categoryId: categoryMap[category],
         createdBy: creatorId,
         closesAt,
         createdAt,
-        closeBehavior: CloseBehavior.AUTO,
+        closeBehavior: CATEGORY_DEFAULTS[category]?.closeBehavior as any || CloseBehavior.AUTO,
+        bufferMinutes: CATEGORY_DEFAULTS[category]?.bufferMinutes,
         imageUrl: `https://picsum.photos/seed/${title.replace(/\s/g, '')}/400/300`
       }).returning();
 
@@ -342,9 +389,11 @@ async function seed() {
       status: MarketStatus.RESOLVED,
       resolution: 'YES',
       category: 'Technology',
+      categoryId: categoryMap['Technology'],
       createdBy: treasuryId,
       closesAt: new Date(Date.now() - 86400000),
       resolvedAt: new Date(Date.now() - 43200000),
+      closeBehavior: CloseBehavior.AUTO,
     }).returning();
     await db.insert(liquidityPools).values({ id: resolvedMkt.id, yesQty: 10_000_000n, noQty: 10_000_000n });
 
@@ -354,9 +403,11 @@ async function seed() {
       status: MarketStatus.RESOLVED,
       resolution: 'NO',
       category: 'Entertainment',
+      categoryId: categoryMap['Entertainment'],
       createdBy: treasuryId,
       closesAt: new Date(Date.now() - 86400000 * 2),
       resolvedAt: new Date(Date.now() - 86400000),
+      closeBehavior: CloseBehavior.MANUAL,
     });
 
     // CANCELLED
@@ -366,8 +417,10 @@ async function seed() {
       status: MarketStatus.CANCELLED,
       resolution: 'CANCELLED',
       category: 'Other',
+      categoryId: categoryMap['Other'],
       createdBy: treasuryId,
       closesAt: new Date(Date.now() + 86400000),
+      closeBehavior: CloseBehavior.AUTO,
     });
 
     // PAUSED MARKET WITH POST-EVENT TRADES (for testing trade voiding preview)
@@ -382,32 +435,33 @@ async function seed() {
 
     const [pausedMarket] = existingPausedMarket
       ? await db
-          .update(markets)
-          .set({
-            description: 'Market for testing post-event trade voiding',
-            status: MarketStatus.PAUSED,
-            category: 'Weather',
-            createdBy: treasuryId,
-            closesAt,
-            eventEndedAt: eventEndTime,
-            closeBehavior: CloseBehavior.MANUAL,
-          })
-          .where(eq(markets.id, existingPausedMarket.id))
-          .returning()
+        .update(markets)
+        .set({
+          description: 'Market for testing post-event trade voiding',
+          status: MarketStatus.PAUSED,
+          category: 'Weather',
+          createdBy: treasuryId,
+          closesAt,
+          eventEndedAt: eventEndTime,
+          closeBehavior: CloseBehavior.MANUAL,
+        })
+        .where(eq(markets.id, existingPausedMarket.id))
+        .returning()
       : await db
-          .insert(markets)
-          .values({
-            title: pausedMarketTitle,
-            description: 'Market for testing post-event trade voiding',
-            status: MarketStatus.PAUSED,
-            category: 'Weather',
-            createdBy: treasuryId,
-            closesAt,
-            eventEndedAt: eventEndTime, // Used by RESOLVE-1b UI defaults
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Created 7 days ago
-            closeBehavior: CloseBehavior.MANUAL,
-          })
-          .returning();
+        .insert(markets)
+        .values({
+          title: pausedMarketTitle,
+          description: 'Market for testing post-event trade voiding',
+          status: MarketStatus.PAUSED,
+          category: 'Weather',
+          categoryId: categoryMap['Weather'],
+          createdBy: treasuryId,
+          closesAt,
+          eventEndedAt: eventEndTime, // Used by RESOLVE-1b UI defaults
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Created 7 days ago
+          closeBehavior: CloseBehavior.MANUAL,
+        })
+        .returning();
 
     await db
       .insert(liquidityPools)

@@ -8,6 +8,13 @@
       "when": 1766491824771,
       "tag": "0000_friendly_caretaker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766494896556,
+      "tag": "0001_demonic_arachne",
+      "breakpoints": true
     }
   ]
 }
