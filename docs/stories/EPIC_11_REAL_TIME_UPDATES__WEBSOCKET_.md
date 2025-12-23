@@ -55,11 +55,11 @@
 **Message Type:** `price_update`
 
 **Acceptance Criteria:**
-- [ ] After every trade, broadcast to `market:{marketId}`
-- [ ] Include: yesPrice, noPrice, yesQty, noQty
-- [ ] Include: lastTradePrice, lastTradeSide, lastTradeSize
-- [ ] Include: volume24h
-- [ ] Timestamp in ISO 8601
+- [x] After every trade, broadcast to `market:{marketId}`
+- [x] Include: yesPrice, noPrice, yesQty, noQty
+- [x] Include: lastTradePrice, lastTradeSide, lastTradeSize
+- [x] Include: volume24h
+- [x] Timestamp in ISO 8601
 
 **Message:**
 ```json

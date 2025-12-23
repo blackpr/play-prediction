@@ -10,6 +10,7 @@ describe('BuySharesUseCase', () => {
   let mockTradeLedgerRepository: any;
   let mockUserRepository: any;
   let mockTransactionManager: any;
+  let mockWebSocketManager: any;
 
   beforeEach(() => {
     // Mock repositories
@@ -38,12 +39,17 @@ describe('BuySharesUseCase', () => {
       run: vi.fn((callback) => callback({})), // Execute callback immediately
     };
 
+    mockWebSocketManager = {
+      broadcast: vi.fn(),
+    };
+
     useCase = new BuySharesUseCase({
       marketRepository: mockMarketRepository,
       portfolioRepository: mockPortfolioRepository,
       tradeLedgerRepository: mockTradeLedgerRepository,
       userRepository: mockUserRepository,
       transactionManager: mockTransactionManager,
+      webSocketManager: mockWebSocketManager,
     });
   });
 

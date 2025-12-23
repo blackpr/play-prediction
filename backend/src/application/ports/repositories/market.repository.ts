@@ -109,6 +109,7 @@ export interface MarketRepository {
     tx?: unknown
   ): Promise<Market>;
   count(status?: string): Promise<number>;
+  getVolume24h(marketId: string): Promise<string>;
 }
 
 export interface PriceCandle {

@@ -7,6 +7,7 @@ import { PortfolioRepository } from '../../ports/repositories/portfolio.reposito
 import { TradeLedgerRepository } from '../../ports/repositories/trade-ledger.repository';
 import { UserRepository } from '../../ports/repositories/user.repository';
 import { TransactionManager } from '../../ports/transaction-manager.port';
+import { WebSocketManager } from '../../../infrastructure/websocket/websocket-manager';
 
 export interface SellSharesRequest {
   userId: string;
@@ -35,6 +36,7 @@ export class SellSharesUseCase {
   private readonly tradeLedgerRepository: TradeLedgerRepository;
   private readonly userRepository: UserRepository;
   private readonly transactionManager: TransactionManager;
+  private readonly webSocketManager: WebSocketManager;
 
   constructor({
     marketRepository,
@@ -42,18 +44,21 @@ export class SellSharesUseCase {
     tradeLedgerRepository,
     userRepository,
     transactionManager,
+    webSocketManager,
   }: {
     marketRepository: MarketRepository;
     portfolioRepository: PortfolioRepository;
     tradeLedgerRepository: TradeLedgerRepository;
     userRepository: UserRepository;
     transactionManager: TransactionManager;
+    webSocketManager: WebSocketManager;
   }) {
     this.marketRepository = marketRepository;
     this.portfolioRepository = portfolioRepository;
     this.tradeLedgerRepository = tradeLedgerRepository;
     this.userRepository = userRepository;
     this.transactionManager = transactionManager;
+    this.webSocketManager = webSocketManager;
   }
 
   async execute(request: SellSharesRequest): Promise<SellSharesResponse> {
@@ -68,7 +73,7 @@ export class SellSharesUseCase {
       );
     }
 
-    return await this.transactionManager.run(async (tx) => {
+    const result = await this.transactionManager.run(async (tx) => {
       // 1. Check idempotency key
       if (idempotencyKey) {
         const existingTrade = await this.tradeLedgerRepository.findByIdempotencyKey(
@@ -263,5 +268,25 @@ export class SellSharesUseCase {
         avgExecutionPrice,
       };
     });
+
+    // Broadcast price update (outside transaction)
+    const volume24h = await this.marketRepository.getVolume24h(marketId);
+
+    this.webSocketManager.broadcast(`market:${marketId}`, {
+      type: 'price_update',
+      channel: `market:${marketId}`,
+      data: {
+        marketId,
+        yesQty: result.poolYesAfter.toString(),
+        noQty: result.poolNoAfter.toString(),
+        lastTradePrice: result.avgExecutionPrice,
+        lastTradeSide: side,
+        lastTradeSize: shares.toString(),
+        volume24h,
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    return result;
   }
 }

@@ -559,4 +559,8 @@ export class PostgresMarketRepository implements MarketRepository {
       .where(and(...conditions));
     return Number(result.count);
   }
+
+  async getVolume24h(marketId: string): Promise<string> {
+    return this.get24hVolume(marketId);
+  }
 }

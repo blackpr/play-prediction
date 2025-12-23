@@ -1,23 +1,24 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
-import { useState, useEffect } from 'react'
+import { Activity, ArrowLeft, BarChart2, Clock, TrendingUp, User, Users } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
+import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
+import { Spinner } from '../../components/ui/Spinner'
+import { IntervalSelector, type ChartInterval } from '../../components/market/IntervalSelector'
+import { PriceChart } from '../../components/market/PriceChart'
+import { ProbabilityBar } from '../../components/market/ProbabilityBar'
+import { RecentTrades } from '../../components/market/RecentTrades'
+import { TradeForm } from '../../components/market/TradeForm'
 import {
   marketQueryOptions,
   priceHistoryQueryOptions,
 } from '../../hooks/useMarkets'
-import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
-import { ProbabilityBar } from '../../components/market/ProbabilityBar'
-import { PriceChart } from '../../components/market/PriceChart'
-import { RecentTrades } from '../../components/market/RecentTrades'
-import { TradeForm } from '../../components/market/TradeForm'
-import { IntervalSelector, type ChartInterval } from '../../components/market/IntervalSelector'
 import { formatCompactPoints } from '../../lib/format'
-import { ArrowLeft, Clock, TrendingUp, BarChart2, Users, Activity, User } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { Spinner } from '../../components/ui/Spinner'
+import { useWebSocketContext } from '../../providers/websocket-provider'
 
 export const Route = createFileRoute('/markets/$marketId')({
   loader: async ({ context: { queryClient }, params: { marketId } }) => {
@@ -69,14 +70,14 @@ function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
 }
 
 // Helper function to determine which intervals should be disabled
-function getDisabledIntervals(marketCreatedAt: string): ChartInterval[] {
+function getDisabledIntervals(marketCreatedAt: string): Array<ChartInterval> {
   const now = new Date()
   const createdAt = new Date(marketCreatedAt)
   const ageInMs = now.getTime() - createdAt.getTime()
   const ageInHours = ageInMs / (60 * 60 * 1000)
   const ageInDays = ageInMs / (24 * 60 * 60 * 1000)
 
-  const disabled: ChartInterval[] = []
+  const disabled: Array<ChartInterval> = []
 
   if (ageInHours < 1) disabled.push('1H')
   if (ageInDays < 7) disabled.push('7D')
@@ -87,24 +88,34 @@ function getDisabledIntervals(marketCreatedAt: string): ChartInterval[] {
 
 function MarketDetailPage() {
   const { marketId } = Route.useParams()
+  const { subscribe, unsubscribe } = useWebSocketContext()
+
+  // WebSocket Subscription
+  useEffect(() => {
+    const channel = `market:${marketId}`
+    subscribe(channel)
+    return () => unsubscribe(channel)
+  }, [marketId, subscribe, unsubscribe])
 
   // Fetch Market Data
   const { data: market, isLoading: isMarketLoading, error: marketError } = useQuery(
     marketQueryOptions(marketId)
   )
 
-  // State for selected interval with localStorage persistence
-  const [selectedInterval, setSelectedInterval] = useState<ChartInterval>(() => {
-    if (typeof window === 'undefined') return '24H'
+  // State for selected interval with localStorage persistence protection against hydration
+  const [selectedInterval, setSelectedInterval] = useState<ChartInterval>('24H')
+
+  // Restore from local storage after mount
+  useEffect(() => {
     const stored = localStorage.getItem(`market-chart-interval-${marketId}`)
-    return (stored as ChartInterval) || '24H'
-  })
+    if (stored) {
+      setSelectedInterval(stored as ChartInterval)
+    }
+  }, [marketId])
 
   // Save interval preference to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`market-chart-interval-${marketId}`, selectedInterval)
-    }
+    localStorage.setItem(`market-chart-interval-${marketId}`, selectedInterval)
   }, [selectedInterval, marketId])
 
   // Get interval parameters for API call
@@ -156,7 +167,6 @@ function MarketDetailPage() {
         </Button>
       </Link>
 
-      {/* Header Section */}
       {/* Header Section */}
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row items-start gap-6">
