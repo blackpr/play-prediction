@@ -21,6 +21,7 @@ interface UseWebSocketReturn {
   unsubscribe: (channel: string) => void;
   send: (type: string, payload?: any) => void;
   lastMessage: WebSocketMessage | null;
+  reconnect: () => void;
 }
 
 export function useWebSocket(): UseWebSocketReturn {

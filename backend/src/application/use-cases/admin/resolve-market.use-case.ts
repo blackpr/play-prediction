@@ -186,7 +186,7 @@ export class ResolveMarketUseCase {
 
     // Broadcast WebSocket messages (outside transaction)
     // 1. Broadcast market_resolved to all market subscribers
-    this.deps.webSocketManager.broadcast(`market:${marketId}`, {
+    await this.deps.webSocketManager.broadcast(`market:${marketId}`, {
       type: 'market_resolved',
       channel: `market:${marketId}`,
       data: {
@@ -206,7 +206,7 @@ export class ResolveMarketUseCase {
         // Get updated user balance
         const user = await this.deps.userRepository.findById(portfolio.userId);
 
-        this.deps.webSocketManager.sendToUser(portfolio.userId, {
+        await this.deps.webSocketManager.sendToUser(portfolio.userId, {
           type: 'resolution_payout',
           channel: `user:${portfolio.userId}`,
           data: {
@@ -221,167 +221,128 @@ export class ResolveMarketUseCase {
       }
     }
 
-    // Return result without portfolios (clean up internal data)
-
-    // WebSocket broadcasts (outside transaction)
-    // 1. Broadcast market_resolved to all market subscribers
-    this.deps.webSocketManager.broadcast(`market:${marketId}`, {
-      type: 'market_resolved',
-      channel: `market:${marketId}`,
-      data: {
-        marketId,
-        resolution,
-        resolvedAt: new Date().toISOString(),
-      },
-    });
-
-    // 2. Send resolution_payout to each user who received a payout
-    for (const portfolio of result.portfolios) {
-      const winningShares = resolution === Resolution.YES ? portfolio.yesQty : portfolio.noQty;
-      
-      if (winningShares > 0n) {
-        const payout = winningShares;
-        
-        // Get updated user balance
-        const user = await this.deps.userRepository.findById(portfolio.userId);
-        
-        this.deps.webSocketManager.sendToUser(portfolio.userId, {
-          type: 'resolution_payout',
-          channel: `user:${portfolio.userId}`,
-          data: {
-            marketId,
-            marketTitle,
-            resolution,
-            winningShares: winningShares.toString(),
-            payout: payout.toString(),
-            newBalance: user?.balance.toString() || '0',
-          },
-        });
-      }
-    }
-
     const { portfolios: _, ...cleanResult } = result;
     return cleanResult;
-}
+  }
 
   /**
    * Void a trade and refund the user
    */
   private async voidTrade(
-  trade: {
-  id: string;
-  userId: string;
-  marketId: string;
-  action: string;
-  side: string | null;
-  amountIn: bigint;
-  amountOut: bigint;
-  sharesBefore: bigint | null;
-  sharesAfter: bigint | null;
-},
-  reason: string,
-  tx: import('../../ports/transaction-manager.port').Transaction
-): Promise < void> {
-  // 1. Reverse portfolio changes
-  if(trade.action === TradeAction.BUY) {
-  // For BUY: user paid amountIn, received amountOut shares
-  // Reverse: remove shares, refund amountIn
-  const portfolio = await this.deps.portfolioRepository.findByUserAndMarket(
-    trade.userId,
-    trade.marketId,
-    tx
-  );
-
-  if (portfolio) {
-    const sharesToRemove = trade.amountOut;
-    const costBasisToRemove = trade.amountIn;
-
-    if (trade.side === 'YES') {
-      await this.deps.portfolioRepository.update(
+    trade: {
+      id: string;
+      userId: string;
+      marketId: string;
+      action: string;
+      side: string | null;
+      amountIn: bigint;
+      amountOut: bigint;
+      sharesBefore: bigint | null;
+      sharesAfter: bigint | null;
+    },
+    reason: string,
+    tx: import('../../ports/transaction-manager.port').Transaction
+  ): Promise<void> {
+    // 1. Reverse portfolio changes
+    if (trade.action === TradeAction.BUY) {
+      // For BUY: user paid amountIn, received amountOut shares
+      // Reverse: remove shares, refund amountIn
+      const portfolio = await this.deps.portfolioRepository.findByUserAndMarket(
         trade.userId,
         trade.marketId,
-        {
-          yesQty: portfolio.yesQty - sharesToRemove,
-          yesCostBasis: portfolio.yesCostBasis - costBasisToRemove,
-        },
         tx
       );
-    } else {
-      await this.deps.portfolioRepository.update(
+
+      if (portfolio) {
+        const sharesToRemove = trade.amountOut;
+        const costBasisToRemove = trade.amountIn;
+
+        if (trade.side === 'YES') {
+          await this.deps.portfolioRepository.update(
+            trade.userId,
+            trade.marketId,
+            {
+              yesQty: portfolio.yesQty - sharesToRemove,
+              yesCostBasis: portfolio.yesCostBasis - costBasisToRemove,
+            },
+            tx
+          );
+        } else {
+          await this.deps.portfolioRepository.update(
+            trade.userId,
+            trade.marketId,
+            {
+              noQty: portfolio.noQty - sharesToRemove,
+              noCostBasis: portfolio.noCostBasis - costBasisToRemove,
+            },
+            tx
+          );
+        }
+      }
+
+      // Refund points to user
+      const user = await this.deps.userRepository.findById(trade.userId);
+      if (user) {
+        await this.deps.userRepository.updateBalance(trade.userId, user.balance + trade.amountIn, tx);
+      }
+    } else if (trade.action === TradeAction.SELL) {
+      // For SELL: user sold amountIn shares, received amountOut points
+      // Reverse: add shares back, deduct amountOut points
+      const portfolio = await this.deps.portfolioRepository.findByUserAndMarket(
         trade.userId,
         trade.marketId,
-        {
-          noQty: portfolio.noQty - sharesToRemove,
-          noCostBasis: portfolio.noCostBasis - costBasisToRemove,
-        },
         tx
       );
+
+      if (portfolio) {
+        const sharesToAdd = trade.amountIn;
+
+        if (trade.side === 'YES') {
+          await this.deps.portfolioRepository.update(
+            trade.userId,
+            trade.marketId,
+            {
+              yesQty: portfolio.yesQty + sharesToAdd,
+            },
+            tx
+          );
+        } else {
+          await this.deps.portfolioRepository.update(
+            trade.userId,
+            trade.marketId,
+            {
+              noQty: portfolio.noQty + sharesToAdd,
+            },
+            tx
+          );
+        }
+      }
+
+      // Deduct points from user
+      const user = await this.deps.userRepository.findById(trade.userId);
+      if (user) {
+        await this.deps.userRepository.updateBalance(trade.userId, user.balance - trade.amountOut, tx);
+      }
     }
-  }
 
-  // Refund points to user
-  const user = await this.deps.userRepository.findById(trade.userId);
-  if (user) {
-    await this.deps.userRepository.updateBalance(trade.userId, user.balance + trade.amountIn, tx);
-  }
-} else if (trade.action === TradeAction.SELL) {
-  // For SELL: user sold amountIn shares, received amountOut points
-  // Reverse: add shares back, deduct amountOut points
-  const portfolio = await this.deps.portfolioRepository.findByUserAndMarket(
-    trade.userId,
-    trade.marketId,
-    tx
-  );
-
-  if (portfolio) {
-    const sharesToAdd = trade.amountIn;
-
-    if (trade.side === 'YES') {
-      await this.deps.portfolioRepository.update(
-        trade.userId,
-        trade.marketId,
-        {
-          yesQty: portfolio.yesQty + sharesToAdd,
-        },
-        tx
-      );
-    } else {
-      await this.deps.portfolioRepository.update(
-        trade.userId,
-        trade.marketId,
-        {
-          noQty: portfolio.noQty + sharesToAdd,
-        },
-        tx
-      );
-    }
-  }
-
-  // Deduct points from user
-  const user = await this.deps.userRepository.findById(trade.userId);
-  if (user) {
-    await this.deps.userRepository.updateBalance(trade.userId, user.balance - trade.amountOut, tx);
-  }
-}
-
-// 2. Log the VOID action to trade ledger
-await this.deps.tradeLedgerRepository.create(
-  {
-    userId: trade.userId,
-    marketId: trade.marketId,
-    action: TradeAction.VOID,
-    side: trade.side,
-    amountIn: trade.amountOut, // Reverse: what they got
-    amountOut: trade.amountIn, // Reverse: what they paid (refund)
-    sharesBefore: trade.sharesAfter,
-    sharesAfter: trade.sharesBefore,
-    feePaid: 0n,
-    feeVault: 0n,
-    feeLp: 0n,
-    originalTradeId: trade.id,
-    voidReason: reason,
-  },
-  tx
-);
+    // 2. Log the VOID action to trade ledger
+    await this.deps.tradeLedgerRepository.create(
+      {
+        userId: trade.userId,
+        marketId: trade.marketId,
+        action: TradeAction.VOID,
+        side: trade.side,
+        amountIn: trade.amountOut, // Reverse: what they got
+        amountOut: trade.amountIn, // Reverse: what they paid (refund)
+        sharesBefore: trade.sharesAfter,
+        sharesAfter: trade.sharesBefore,
+        feePaid: 0n,
+        feeVault: 0n,
+        feeLp: 0n,
+        originalTradeId: trade.id,
+        voidReason: reason,
+      },
+      tx
+    );
   }
 }

@@ -9,12 +9,13 @@ interface WebSocketContextType {
   status: WebSocketStatus;
   subscribe: (channel: string) => void;
   unsubscribe: (channel: string) => void;
+  reconnect: () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const { status, subscribe, unsubscribe, lastMessage } = useWebSocket();
+  const { status, subscribe, unsubscribe, lastMessage, reconnect } = useWebSocket();
   const queryClient = useQueryClient();
 
   // Global event handling
@@ -110,7 +111,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, [lastMessage, queryClient]);
 
   return (
-    <WebSocketContext.Provider value={{ status, subscribe, unsubscribe }}>
+    <WebSocketContext.Provider value={{ status, subscribe, unsubscribe, reconnect }}>
       {children}
     </WebSocketContext.Provider>
   );

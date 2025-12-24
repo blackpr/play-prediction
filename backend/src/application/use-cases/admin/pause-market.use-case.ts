@@ -56,7 +56,7 @@ export class PauseMarketUseCase {
     });
 
     // 5. Broadcast WebSocket message
-    this.deps.webSocketManager.broadcast(`market:${marketId}`, {
+    await this.deps.webSocketManager.broadcast(`market:${marketId}`, {
       type: 'market_state',
       channel: `market:${marketId}`,
       data: {

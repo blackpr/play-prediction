@@ -171,7 +171,7 @@
 - [x] States: Connected (green), Connecting (yellow), Disconnected (red)
 - [x] Tooltip with status details
 - [x] Reconnection attempt indicator
-- [ ] Manual reconnect button when disconnected
+- [x] Manual reconnect button when disconnected
 
 ---
 
@@ -215,11 +215,11 @@
 **So that** I don't try to trade on closed markets
 
 **Acceptance Criteria:**
-- [ ] Listen for `market_state` and `market_resolved` messages
-- [ ] Update market status badge immediately
-- [ ] Disable TradeForm if paused/resolved
-- [ ] Show resolution banner if resolved
-- [ ] Refresh market data to get full state
+- [x] Listen for `market_state` and `market_resolved` messages
+- [x] Update market status badge immediately
+- [x] Disable TradeForm if paused/resolved
+- [x] Show resolution banner if resolved
+- [x] Refresh market data to get full state
 
 **References:** WEBSOCKET_PROTOCOL.md Section 5.2
 

@@ -272,7 +272,7 @@ export class SellSharesUseCase {
     // Broadcast price update (outside transaction)
     const volume24h = await this.marketRepository.getVolume24h(marketId);
 
-    this.webSocketManager.broadcast(`market:${marketId}`, {
+    await this.webSocketManager.broadcast(`market:${marketId}`, {
       type: 'price_update',
       channel: `market:${marketId}`,
       data: {
@@ -288,7 +288,7 @@ export class SellSharesUseCase {
     });
 
     // Broadcast anonymized trade event for live feed
-    this.webSocketManager.broadcast(`market:${marketId}`, {
+    await this.webSocketManager.broadcast(`market:${marketId}`, {
       type: 'trade',
       channel: `market:${marketId}`,
       data: {

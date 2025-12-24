@@ -100,6 +100,11 @@ describe('ResolveMarketUseCase', () => {
       run: vi.fn((callback) => callback({})), // Execute callback immediately with mock tx
     };
 
+    const mockWebSocketManager = {
+      broadcast: vi.fn(),
+      sendToUser: vi.fn(),
+    };
+
     useCase = new ResolveMarketUseCase({
       marketRepository: mockMarketRepository,
       portfolioRepository: mockPortfolioRepository,
@@ -107,6 +112,7 @@ describe('ResolveMarketUseCase', () => {
       tradeLedgerRepository: mockTradeLedgerRepository,
       auditLogRepository: mockAuditLogRepository,
       transactionManager: mockTransactionManager,
+      webSocketManager: mockWebSocketManager,
     });
   });
 

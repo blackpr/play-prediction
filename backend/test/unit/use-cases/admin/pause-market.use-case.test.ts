@@ -72,6 +72,7 @@ describe('PauseMarketUseCase', () => {
     useCase = new PauseMarketUseCase({
       marketRepository: mockMarketRepository,
       auditLogRepository: mockAuditLogRepository,
+      webSocketManager: mockWebSocketManager,
     });
   });
 

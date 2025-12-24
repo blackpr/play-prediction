@@ -68,10 +68,16 @@ describe('ActivateMarketUseCase', () => {
     mockAuditLogRepository = {
       create: vi.fn(),
     };
+    const mockWebSocketManager = {
+      broadcast: vi.fn(),
+      sendToUser: vi.fn(),
+    };
+
 
     useCase = new ActivateMarketUseCase({
       marketRepository: mockMarketRepository,
       auditLogRepository: mockAuditLogRepository,
+      webSocketManager: mockWebSocketManager,
     });
   });
 

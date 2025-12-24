@@ -48,7 +48,7 @@ export class ActivateMarketUseCase {
 
     // 5. Broadcast WebSocket messages
     // 5a. Broadcast market_state (DRAFT → ACTIVE)
-    this.deps.webSocketManager.broadcast(`market:${marketId}`, {
+    await this.deps.webSocketManager.broadcast(`market:${marketId}`, {
       type: 'market_state',
       channel: `market:${marketId}`,
       data: {
@@ -60,7 +60,7 @@ export class ActivateMarketUseCase {
     });
 
     // 5b. Broadcast new_market to global channel
-    this.deps.webSocketManager.broadcast('global', {
+    await this.deps.webSocketManager.broadcast('global', {
       type: 'new_market',
       channel: 'global',
       data: {
