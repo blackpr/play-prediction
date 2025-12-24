@@ -803,36 +803,55 @@ await ledgerRepo.insert({
 
 ```
 frontend/src/
-├── routes/                      # File-based routing
+├── routes/                      # File-based routing (TanStack Router)
 │   ├── __root.tsx               # Root layout
 │   ├── index.tsx                # Home page
+│   ├── login.tsx                # Login page
+│   ├── register.tsx             # Registration page
 │   ├── markets/
 │   │   ├── index.tsx            # Markets list
 │   │   └── $marketId.tsx        # Market detail
 │   ├── portfolio/
+│   │   ├── index.tsx            # Portfolio overview
+│   │   └── history.tsx          # Trade history
 │   └── admin/
+│       ├── index.tsx            # Admin dashboard
+│       ├── markets.tsx          # Market management
+│       ├── users.tsx            # User management
+│       └── audit-logs.tsx       # Audit logs
 │
 ├── components/                  # React components
-│   ├── ui/                      # Base UI (Button, Input, Card)
+│   ├── ui/                      # Base UI (shadcn/ui components)
 │   ├── layout/                  # Header, Sidebar, Footer
 │   ├── market/                  # MarketCard, PriceChart, TradeForm
-│   └── portfolio/               # PositionCard, TradeHistory
+│   ├── portfolio/               # PositionCard, TradeHistory
+│   └── admin/                   # Admin-specific components
 │
 ├── api/                         # API client layer
 │   ├── client.ts                # Base fetch client
-│   ├── auth.ts                  # Auth endpoints
+│   ├── types.ts                 # API types
 │   ├── markets.ts               # Market endpoints
-│   └── trading.ts               # Trading endpoints
+│   └── admin.ts                 # Admin endpoints
 │
 ├── hooks/                       # Custom React hooks
 │   ├── useAuth.ts               # Auth state
 │   ├── useMarkets.ts            # Market queries
 │   ├── useWebSocket.ts          # WebSocket connection
-│   └── useTrading.ts            # Trading mutations
+│   ├── useTrading.ts            # Trading mutations
+│   ├── usePortfolio.ts          # Portfolio queries
+│   ├── usePriceAnimation.ts     # Price change animations
+│   └── useDebounce.ts           # Debounce utility
 │
-└── lib/                         # Utilities
-    ├── format.ts                # MicroPoints formatting
-    └── constants.ts             # App constants
+├── lib/                         # Utilities
+│   ├── format.ts                # MicroPoints formatting
+│   ├── utils.ts                 # General utilities
+│   └── constants.ts             # App constants
+│
+├── providers/                   # React context providers
+│   └── QueryProvider.tsx        # TanStack Query setup
+│
+└── utils/                       # Additional utilities
+    └── cn.ts                    # Class name utility (for Tailwind)
 ```
 
 ### 5.4 Key Frontend Patterns
