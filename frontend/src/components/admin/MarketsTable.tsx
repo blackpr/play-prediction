@@ -176,7 +176,6 @@ export function MarketsTable() {
                 <th className="px-6 py-3 text-right">Holders</th>
                 <th className="px-6 py-3 text-right">Volume (24h)</th>
                 <th className="px-6 py-3 text-right">Total Volume</th>
-                <th className="px-6 py-3 text-left">Creator</th>
                 <th className="px-6 py-3 text-right">Created</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
@@ -191,7 +190,6 @@ export function MarketsTable() {
                     <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-12 ml-auto"></div></td>
                     <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-16 ml-auto"></div></td>
                     <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-16 ml-auto"></div></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-24"></div></td>
                     <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-24 ml-auto"></div></td>
                     <td className="px-6 py-4"><div className="h-8 bg-white/5 rounded w-20 ml-auto"></div></td>
                   </tr>
@@ -235,10 +233,7 @@ export function MarketsTable() {
                     <td className="px-6 py-4 text-right font-mono text-text-dim">
                       {market.stats?.totalVolume ? `$${(Number(market.stats.totalVolume) / 1_000_000).toFixed(2)}` : '-'}
                     </td>
-                    <td className="px-6 py-4 text-text-dim text-xs">
-                      {market.creator?.email || 'Unknown'}
-                    </td>
-                    <td className="px-6 py-4 text-right text-text-dim tabular-nums">
+                    <td className="px-6 py-4 text-right tabular-nums">
                       {format(new Date(market.createdAt), 'MMM d, yyyy')}
                     </td>
                     <td className="px-6 py-4 text-right">

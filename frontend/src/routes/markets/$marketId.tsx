@@ -8,7 +8,6 @@ import {
   Clock,
   Eye,
   TrendingUp,
-  User,
   Users,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -367,27 +366,6 @@ function MarketDetailPage() {
                   </div>
                 </div>
 
-                {/* Creator */}
-                {market.creator && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-accent-pink/10 flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-accent-pink" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-text-dim font-mono uppercase tracking-wider">Creator</div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-text truncate">
-                          {market.creator.displayName || market.creator.email}
-                        </span>
-                        {(market.creator.role === 'admin' || market.creator.role === 'treasury') && (
-                          <Badge variant="default" className="text-xs font-mono">
-                            Admin
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
