@@ -42,7 +42,6 @@ export function useWebSocket(): UseWebSocketReturn {
 
     socket.onopen = () => {
       setStatus('connected');
-      console.log('WS Connected');
 
       // Resubscribe to active channels
       subscriptions.current.forEach(channel => {

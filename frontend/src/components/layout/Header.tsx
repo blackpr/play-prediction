@@ -3,6 +3,7 @@ import { UserSection } from './UserSection'
 import { PortfolioLink } from './PortfolioLink'
 import { MobileNav } from './MobileNav'
 import { AdminLink } from './AdminLink'
+import { Logo } from '../ui/Logo'
 
 import { useWebSocketContext } from '../../providers/websocket-provider'
 
@@ -19,9 +20,7 @@ export function Header() {
             search={{ page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
           >
-            <span className="text-2xl" role="img" aria-label="logo">
-              🎯
-            </span>
+            <Logo size="md" />
             <span className="font-display text-xl font-bold text-text">
               Play <span className="text-gradient-cyan">Prediction</span>
             </span>
@@ -29,7 +28,7 @@ export function Header() {
             {/* WS Status */}
             <div
               className={`w-2 h-2 rounded-full transition-colors ${status === 'connected' ? 'bg-yes animate-pulse-glow' :
-                  status === 'connecting' ? 'bg-accent-amber' : 'bg-no'
+                status === 'connecting' ? 'bg-accent-amber' : 'bg-no'
                 }`}
               title={`WebSocket: ${status}`}
             />

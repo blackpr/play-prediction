@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { memo } from 'react'
 import { Github, Twitter, MessageCircle } from 'lucide-react'
 import { GridPattern } from '../ui/GridPattern'
+import { Logo } from '../ui/Logo'
 
 export const Footer = memo(function Footer() {
   const currentYear = new Date().getFullYear()
@@ -19,9 +20,7 @@ export const Footer = memo(function Footer() {
               search={{ page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
             >
-              <span className="text-2xl" role="img" aria-label="logo">
-                🎯
-              </span>
+              <Logo size="md" animated={false} />
               <span className="font-display text-xl font-bold text-text">
                 Play <span className="text-gradient-cyan">Prediction</span>
               </span>
