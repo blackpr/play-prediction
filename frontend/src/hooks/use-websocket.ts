@@ -63,8 +63,13 @@ export function useWebSocket(): UseWebSocketReturn {
 
         // Handle errors
         if (message.type === 'error') {
-          console.error('WS Error:', message.error);
-          toast.error(`WebSocket Error: ${message.error.message}`);
+          // Suppress authentication failed errors (common for guests)
+          if (message.error.message.includes('Authentication failed')) {
+            console.warn('WS Auth Failed (expected for guests):', message.error.message);
+          } else {
+            console.error('WS Error:', message.error);
+            toast.error(`WebSocket Error: ${message.error.message}`);
+          }
         }
       } catch (err) {
         console.error('Failed to parse WS message:', err);

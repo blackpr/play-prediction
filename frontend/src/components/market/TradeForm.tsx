@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { clsx } from 'clsx'
 import { AlertCircle, Settings, TrendingDown, TrendingUp } from 'lucide-react'
@@ -56,6 +57,8 @@ export function TradeForm({ market }: TradeFormProps) {
   const [side, setSide] = useState<TradeSide>('YES')
   const [amount, setAmount] = useState('')
   const [debouncedAmount, setDebouncedAmount] = useState('')
+  const router = useRouter()
+  const { user, isAuthenticated } = useAuth()
 
   // Price animation hooks
   const yesPriceFlash = usePriceFlash(market.yesPrice)
@@ -88,7 +91,6 @@ export function TradeForm({ market }: TradeFormProps) {
     localStorage.setItem('trade-slippage', slippage.toString())
   }, [slippage])
 
-  const { user } = useAuth()
   const { data: position } = usePosition(market.id)
   const buyMutation = useBuyShares()
   const sellMutation = useSellShares()
@@ -220,6 +222,18 @@ export function TradeForm({ market }: TradeFormProps) {
       // Use the amount state variable, not form value
       const amountMicro = parsePoints(amount)
       const amountBigInt = BigInt(amountMicro)
+
+      // Guest Redirect Logic
+      if (!isAuthenticated) {
+        toast.info('Please log in to trade')
+        await router.navigate({
+          to: '/login',
+          search: {
+            redirect: window.location.pathname,
+          },
+        })
+        return
+      }
 
       try {
         if (tab === 'mint') {
@@ -355,16 +369,22 @@ export function TradeForm({ market }: TradeFormProps) {
     const amountMicro = BigInt(parsePoints(amount))
 
     if (tab === 'buy' || tab === 'mint') {
-      const balance = user?.balance ? BigInt(user.balance) : 0n
-      if (amountMicro > balance) {
-        return "You don't have enough points"
+      // Skip balance validation for guests
+      if (isAuthenticated) {
+        const balance = user?.balance ? BigInt(user.balance) : 0n
+        if (amountMicro > balance) {
+          return "You don't have enough points"
+        }
       }
       if (amountMicro < 1000n) { // 0.001
         return 'Minimum trade size is 0.001'
       }
     } else {
-      if (amountMicro > availableShares) {
-        return "You don't have enough shares"
+      // Skip share validation for guests
+      if (isAuthenticated) {
+        if (amountMicro > availableShares) {
+          return "You don't have enough shares"
+        }
       }
       if (amountMicro < 1000n) {
         return 'Minimum size is 0.001'
@@ -789,137 +809,116 @@ export function TradeForm({ market }: TradeFormProps) {
         }}
         title="Confirm Trade"
       >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-gray-700/50">
-            <span className="text-gray-400">Action</span>
-            <span
-              className={clsx(
-                'font-bold',
-                pendingTrade?.action === 'buy' ? 'text-green-400' : 'text-red-400'
-              )}
-            >
-              {pendingTrade?.action === 'buy' ? 'BUY' : 'SELL'} {side}
-            </span>
-          </div>
+        {pendingTrade && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-700/50">
+              <span className="text-gray-400">Action</span>
+              <span
+                className={clsx(
+                  'font-bold',
+                  pendingTrade.action === 'buy' ? 'text-green-400' : 'text-red-400'
+                )}
+              >
+                {pendingTrade.action === 'buy' ? 'Buy' : 'Sell'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Amount</span>
+              <span className="font-mono text-white">
+                {formatPoints(pendingTrade.amountMicro.toString())}
+              </span>
+            </div>
+            {pendingTrade.action === 'buy' ? (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Min Shares Received</span>
+                <span className="font-mono text-white">
+                  {formatPoints(pendingTrade.minOut.toString())}
+                </span>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Min Points Received</span>
+                <span className="font-mono text-white">
+                  {formatPoints(pendingTrade.minOut.toString())}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Estimated Fee</span>
+              <span className="font-mono text-white">
+                {formatPoints(pendingTrade.fee.toString())}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-gray-700/50">
+              <span className="text-gray-400">Price Impact</span>
+              <span
+                className={clsx(
+                  'font-mono',
+                  parseFloat(pendingTrade.impact) > 5
+                    ? 'text-red-400'
+                    : parseFloat(pendingTrade.impact) > 1
+                      ? 'text-yellow-400'
+                      : 'text-green-400'
+                )}
+              >
+                {pendingTrade.impact}%
+              </span>
+            </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Amount</span>
-            <span className="font-mono text-white">
-              {pendingTrade && formatPoints(pendingTrade.amountMicro)}{' '}
-              {pendingTrade?.action === 'buy' ? 'points' : 'shares'}
-            </span>
-          </div>
+            {(pendingTrade.amountMicro >= CONFIRMATION_THRESHOLD || parseFloat(pendingTrade.impact) > 5) && (
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <p className="text-xs text-yellow-200">
+                  You are about to execute a large trade. Please confirm the details above.
+                </p>
+              </div>
+            )}
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Est. Output</span>
-            <span className="font-mono text-white">
-              {pendingTrade && formatPoints(pendingTrade.estOut)}{' '}
-              {pendingTrade?.action === 'buy' ? 'shares' : 'points'}
-            </span>
-          </div>
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="dont-ask-again"
+                checked={dontAskAgain}
+                onChange={(e) => setDontAskAgain(e.target.checked)}
+                className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="dont-ask-again" className="text-sm text-gray-400 select-none cursor-pointer">
+                Don't ask again for large trades
+              </label>
+            </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Min. Output</span>
-            <span className="font-mono text-gray-400">
-              {pendingTrade && formatPoints(pendingTrade.minOut)}{' '}
-              {pendingTrade?.action === 'buy' ? 'shares' : 'points'}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Price Impact</span>
-            <span
-              className={clsx(
-                'font-mono',
-                pendingTrade && parseFloat(pendingTrade.impact) > 0.05
-                  ? 'text-red-400'
-                  : pendingTrade && parseFloat(pendingTrade.impact) > 0.01
-                    ? 'text-yellow-400'
-                    : 'text-white'
-              )}
-            >
-              {pendingTrade
-                ? `${(parseFloat(pendingTrade.impact) * 100).toFixed(2)}%`
-                : '0.00%'}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Fee</span>
-            <span className="font-mono text-white">
-              {pendingTrade && formatPoints(pendingTrade.fee)} points
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-2 pt-2">
-            <input
-              type="checkbox"
-              id="dont-show-again"
-              className="rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500 w-4 h-4"
-              checked={dontAskAgain}
-              onChange={(e) => setDontAskAgain(e.target.checked)}
-            />
-            <label
-              htmlFor="dont-show-again"
-              className="text-sm text-gray-400 select-none cursor-pointer"
-            >
-              Don't ask me again for this session
-            </label>
-          </div>
-
-          <div className="flex gap-3 mt-6">
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => {
-                setShowConfirmation(false)
-                setPendingTrade(null)
-                setDontAskAgain(false)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              className={clsx(
-                'w-full',
-                pendingTrade?.action === 'buy'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              )}
-              onClick={async () => {
-                if (pendingTrade) {
-                  try {
-                    await executeTrade({
-                      action: pendingTrade.action,
-                      amountMicro: pendingTrade.amountMicro,
-                      minOut: pendingTrade.minOut,
-                    })
-
-                    if (dontAskAgain) {
-                      setSkipConfirmation(true)
-                      if (typeof window !== 'undefined') {
-                        sessionStorage.setItem('skip-trade-confirmation', 'true')
-                      }
-                    }
-
-                    // Close modal and reset form state after successful trade
-                    setShowConfirmation(false)
-                    setPendingTrade(null)
-                    setDontAskAgain(false)
-                    setAmount('')
-                    form.reset()
-                  } catch (e) {
-                    // Error handled by executeTrade/toast
-                    // Don't close modal on error so user can retry
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowConfirmation(false)
+                  setPendingTrade(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (dontAskAgain) {
+                    sessionStorage.setItem('skip-trade-confirmation', 'true')
+                    setSkipConfirmation(true)
                   }
-                }
-              }}
-            >
-              Confirm Trade
-            </Button>
+
+                  executeTrade({
+                    action: pendingTrade.action,
+                    amountMicro: pendingTrade.amountMicro,
+                    minOut: pendingTrade.minOut,
+                  })
+                  setShowConfirmation(false)
+                  setPendingTrade(null)
+                }}
+              >
+                Confirm Trade
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
-    </Card >
+    </Card>
   )
 }

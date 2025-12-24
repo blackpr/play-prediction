@@ -1,5 +1,6 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
-import { getPortfolio, getPosition  } from '../api/markets'
+import { getPortfolio, getPosition } from '../api/markets'
+import { useAuth } from './useAuth'
 
 
 export const positionQueryOptions = (marketId: string) =>
@@ -10,7 +11,11 @@ export const positionQueryOptions = (marketId: string) =>
   })
 
 export const usePosition = (marketId: string) => {
-  return useQuery(positionQueryOptions(marketId))
+  const { isAuthenticated } = useAuth()
+  return useQuery({
+    ...positionQueryOptions(marketId),
+    enabled: isAuthenticated,
+  })
 }
 
 export const portfolioQueryOptions = queryOptions({
@@ -19,5 +24,9 @@ export const portfolioQueryOptions = queryOptions({
 })
 
 export const usePortfolio = () => {
-  return useQuery(portfolioQueryOptions)
+  const { isAuthenticated } = useAuth()
+  return useQuery({
+    ...portfolioQueryOptions,
+    enabled: isAuthenticated,
+  })
 }
