@@ -238,6 +238,20 @@ export class BuySharesUseCase {
       // Calculate fees on original amount (not aggregated amount)
       const { netAmount, fee, vaultFee, lpFee } = calculateNetAfterFee(amount);
 
+      // Transfer vault fee to treasury
+      const treasuryUser = await this.userRepository.findByRole('treasury');
+      if (!treasuryUser) {
+        throw new NotFoundError(
+          'Treasury User',
+          'No user with role "treasury" found. Treasury is required for fee collection.'
+        );
+      }
+      await this.userRepository.updateBalance(
+        treasuryUser.id,
+        treasuryUser.balance + vaultFee,
+        tx
+      );
+
       // Calculate swap using CPMM engine with pool state after netting
       // Use aggregated capital: net amount + netting proceeds
       const totalBuyingPower = netAmount + nettingProceeds;

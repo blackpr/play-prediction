@@ -136,6 +136,20 @@ export class SellSharesUseCase {
       // 6. Apply fees to output
       const { netPayout, fee, vaultFee, lpFee } = calculateNetPayout(sellResult.pointsOut);
 
+      // Transfer vault fee to treasury
+      const treasuryUser = await this.userRepository.findByRole('treasury');
+      if (!treasuryUser) {
+        throw new NotFoundError(
+          'Treasury User',
+          'No user with role "treasury" found. Treasury is required for fee collection.'
+        );
+      }
+      await this.userRepository.updateBalance(
+        treasuryUser.id,
+        treasuryUser.balance + vaultFee,
+        tx
+      );
+
       // 7. Verify slippage protection
       if (netPayout < minAmountOut) {
         throw new BusinessLogicError(

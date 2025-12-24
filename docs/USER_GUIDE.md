@@ -257,7 +257,7 @@ All trades have a **2% fee** split as follows:
 
 | Fee Component | Amount | Where It Goes |
 |---------------|--------|---------------|
-| Vault Fee | 1% | Logged to audit trail (not transferred to any account) |
+| Vault Fee | 1% | Transferred to treasury account (platform revenue) |
 | Liquidity Fee | 1% | Injected back into the pool (increases market depth) |
 
 **Important**: 

@@ -316,8 +316,8 @@ Total fee: **2.0%** (200 basis points)
 - **Minting/Merging**: No fees
 
 **Fee Destinations**:
-- **Vault Fee (1%)**: Logged to `trade_ledger.feeVault` for accounting purposes. **Not transferred to any account** - exists only as an audit trail entry.
-- **LP Fee (1%)**: **Injected back into the liquidity pool** on the opposite side of the trade. This increases pool depth over time, improving prices for all traders.
+- **Vault Fee (1%)**: Transferred to treasury account balance. This is platform revenue used for operational costs, point grants, and promotional activities.
+- **LP Fee (1%)**: Injected back into the liquidity pool on the opposite side of the trade. This increases pool depth over time, improving prices for all traders.
 
 ### 3.4 Swap Mathematics
 

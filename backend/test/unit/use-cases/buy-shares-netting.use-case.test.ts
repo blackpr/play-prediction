@@ -42,6 +42,12 @@ describe('BuySharesUseCase - Netting Protocol (MINT-4)', () => {
 
     mockUserRepository = {
       findById: vi.fn(),
+      findByRole: vi.fn().mockResolvedValue({
+        id: 'treasury',
+        balance: 1_000_000_000n, // 1000 Points
+        role: 'treasury',
+      }),
+      updateBalance: vi.fn(),
     };
 
     mockTransactionManager = {
