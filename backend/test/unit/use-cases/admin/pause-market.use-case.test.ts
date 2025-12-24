@@ -72,7 +72,7 @@ describe('PauseMarketUseCase', () => {
     useCase = new PauseMarketUseCase({
       marketRepository: mockMarketRepository,
       auditLogRepository: mockAuditLogRepository,
-      webSocketManager: mockWebSocketManager,
+      webSocketManager: { broadcast: vi.fn(), sendToUser: vi.fn() } as any,
     });
   });
 

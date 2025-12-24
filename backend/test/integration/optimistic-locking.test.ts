@@ -27,6 +27,7 @@ describe('Optimistic Locking Integration Tests', () => {
       tradeLedgerRepository,
       userRepository,
       transactionManager,
+      webSocketManager: { broadcast: () => { }, sendToUser: () => { } } as any,
     });
   });
 

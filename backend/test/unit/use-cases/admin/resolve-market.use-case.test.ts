@@ -112,7 +112,7 @@ describe('ResolveMarketUseCase', () => {
       tradeLedgerRepository: mockTradeLedgerRepository,
       auditLogRepository: mockAuditLogRepository,
       transactionManager: mockTransactionManager,
-      webSocketManager: mockWebSocketManager,
+      webSocketManager: { broadcast: vi.fn(), sendToUser: vi.fn() } as any,
     });
   });
 

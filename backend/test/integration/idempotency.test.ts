@@ -29,6 +29,7 @@ describe('Idempotency Integration Tests', () => {
       tradeLedgerRepository,
       userRepository,
       transactionManager,
+      webSocketManager: { broadcast: () => { }, sendToUser: () => { } } as any,
     });
 
     sellSharesUseCase = new SellSharesUseCase({
@@ -37,6 +38,7 @@ describe('Idempotency Integration Tests', () => {
       tradeLedgerRepository,
       userRepository,
       transactionManager,
+      webSocketManager: { broadcast: () => { }, sendToUser: () => { } } as any,
     });
   });
 

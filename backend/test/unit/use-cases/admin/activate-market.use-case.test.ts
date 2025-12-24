@@ -77,7 +77,7 @@ describe('ActivateMarketUseCase', () => {
     useCase = new ActivateMarketUseCase({
       marketRepository: mockMarketRepository,
       auditLogRepository: mockAuditLogRepository,
-      webSocketManager: mockWebSocketManager,
+      webSocketManager: { broadcast: vi.fn(), sendToUser: vi.fn() } as any,
     });
   });
 

@@ -53,6 +53,7 @@ describe('BuySharesUseCase - Netting Protocol (MINT-4)', () => {
       tradeLedgerRepository: mockTradeLedgerRepository,
       userRepository: mockUserRepository,
       transactionManager: mockTransactionManager,
+      webSocketManager: { broadcast: vi.fn(), sendToUser: vi.fn() } as any,
     });
   });
 
