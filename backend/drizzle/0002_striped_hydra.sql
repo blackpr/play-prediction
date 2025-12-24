@@ -1,0 +1,1 @@
+ALTER TABLE "markets" ADD COLUMN "activates_at" timestamp with time zone;

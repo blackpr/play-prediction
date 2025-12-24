@@ -11,8 +11,8 @@
 **Endpoint:** `GET /v1/users/me`
 
 **Acceptance Criteria:**
-- [ ] Return same data as AUTH-4
-- [ ] Include formatted balance info
+- [x] Return same data as AUTH-4
+- [x] Include formatted balance info
 
 **References:** API_SPECIFICATION.md Section 4.2.1
 
@@ -25,14 +25,14 @@
 **So that** I always know my points
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/layout/Header.tsx`
-- [ ] Show logo and navigation links
-- [ ] Markets link, Portfolio link (if authenticated)
-- [ ] Balance display with wallet icon
-- [ ] Format balance using `formatPoints()`
-- [ ] Sign In / Get Started buttons if not authenticated
-- [ ] Sign Out button if authenticated
-- [ ] Loading skeleton while auth loading
+- [x] Create `src/components/layout/Header.tsx`
+- [x] Show logo and navigation links
+- [x] Markets link, Portfolio link (if authenticated)
+- [x] Balance display with wallet icon
+- [x] Format balance using `formatPoints()`
+- [x] Sign In / Get Started buttons if not authenticated
+- [x] Sign Out button if authenticated
+- [x] Loading skeleton while auth loading
 
 **References:** FRONTEND_COMPONENTS.md Section 3.1
 
@@ -45,12 +45,12 @@
 **So that** MicroPoints display correctly
 
 **Acceptance Criteria:**
-- [ ] Create `src/lib/format.ts`
-- [ ] `formatPoints(microPoints)` - "1,000.00" format
-- [ ] `formatCompactPoints(microPoints)` - "10K", "1.5M" format
-- [ ] `parsePoints(string)` - convert to MicroPoints string
-- [ ] Handle BigInt serialization (strings in JSON)
-- [ ] Scale: 1 Point = 1,000,000 MicroPoints
+- [x] Create `src/lib/format.ts`
+- [x] `formatPoints(microPoints)` - "1,000.00" format
+- [x] `formatCompactPoints(microPoints)` - "10K", "1.5M" format
+- [x] `parsePoints(string)` - convert to MicroPoints string
+- [x] Handle BigInt serialization (strings in JSON)
+- [x] Scale: 1 Point = 1,000,000 MicroPoints
 
 **References:** FRONTEND_COMPONENTS.md Section 8.1
 
@@ -69,9 +69,11 @@
 - `pageSize` (default: 20)
 
 **Acceptance Criteria:**
-- [ ] Query `point_grants` table for user
-- [ ] Return paginated results
-- [ ] Include grant type, amount, balance after, reason, granted by, date
+- [x] Query `point_grants` table for user
+- [x] Return paginated results
+- [x] Include grant type, amount, balance after, reason, granted by, date
+
+
 
 **References:** API_SPECIFICATION.md Section 4.2.2
 
@@ -84,11 +86,11 @@
 **So that** I can see bonuses and grants
 
 **Acceptance Criteria:**
-- [ ] Create points history component/page
-- [ ] Display list of grants
-- [ ] Show type badge (Registration, Admin Grant, etc.)
-- [ ] Show amount and running balance
-- [ ] Pagination
+- [x] Create points history component/page
+- [x] Display list of grants
+- [x] Show type badge (Registration, Admin Grant, etc.)
+- [x] Show amount and running balance
+- [x] Pagination
 
 ---
 
@@ -101,13 +103,13 @@
 **Route:** `/`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/index.tsx`
-- [ ] Hero section with tagline and CTA
-- [ ] Featured/trending markets section
-- [ ] How it works section (3 steps)
-- [ ] Call to action for registration
-- [ ] Responsive design
-- [ ] Animated elements (subtle)
+- [x] Create route at `src/routes/index.tsx`
+- [x] Hero section with tagline and CTA
+- [x] Featured/trending markets section
+- [x] How it works section (3 steps)
+- [x] Call to action for registration
+- [x] Responsive design
+- [x] Animated elements (subtle)
 
 **Sections:**
 1. Hero: "Predict the Future. Trade Your Knowledge."
@@ -124,12 +126,12 @@
 **So that** I can access important links
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/layout/Footer.tsx`
-- [ ] Logo and tagline
-- [ ] Navigation links
-- [ ] Social links (placeholder)
-- [ ] Copyright notice
-- [ ] Responsive layout (stacked on mobile)
+- [x] Create `src/components/layout/Footer.tsx`
+- [x] Logo and tagline
+- [x] Navigation links
+- [x] Social links (placeholder)
+- [x] Copyright notice
+- [x] Responsive layout (stacked on mobile)
 
 ---
 
@@ -140,13 +142,13 @@
 **So that** I get feedback on my actions
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/ui/Toast.tsx`
-- [ ] Create toast context/provider
-- [ ] Support variants: success, error, warning, info
-- [ ] Auto-dismiss after 5 seconds
-- [ ] Manual dismiss button
-- [ ] Stack multiple toasts
-- [ ] Position: bottom-right
+- [x] Create `src/components/ui/Toast.tsx`
+- [x] Create toast context/provider
+- [x] Support variants: success, error, warning, info
+- [x] Auto-dismiss after 5 seconds
+- [x] Manual dismiss button
+- [x] Stack multiple toasts
+- [x] Position: bottom-right
 
 **Usage:**
 ```typescript
@@ -164,11 +166,11 @@ toast.error('Insufficient balance')
 **So that** I see placeholder content while data loads
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/ui/Skeleton.tsx`
-- [ ] Create `src/components/market/MarketCardSkeleton.tsx`
-- [ ] Create `src/components/portfolio/PositionCardSkeleton.tsx`
-- [ ] Pulse animation
-- [ ] Match dimensions of real components
+- [x] Create `src/components/ui/Skeleton.tsx`
+- [x] Create `src/components/market/MarketCardSkeleton.tsx`
+- [x] Create `src/components/portfolio/PositionCardSkeleton.tsx`
+- [x] Pulse animation
+- [x] Match dimensions of real components
 
 ---
 
@@ -181,10 +183,10 @@ toast.error('Insufficient balance')
 **Route:** Catch-all route
 
 **Acceptance Criteria:**
-- [ ] Clear "Page Not Found" message
-- [ ] Link back to home
-- [ ] Link to markets
-- [ ] Consistent with site design
+- [x] Clear "Page Not Found" message
+- [x] Link back to home
+- [x] Link to markets
+- [x] Consistent with site design
 
 ---
 
@@ -195,12 +197,12 @@ toast.error('Insufficient balance')
 **So that** I can navigate on small screens
 
 **Acceptance Criteria:**
-- [ ] Hamburger menu icon on mobile
-- [ ] Slide-out drawer or dropdown menu
-- [ ] All navigation links accessible
-- [ ] Balance displayed in mobile nav
-- [ ] Close on navigation
-- [ ] Close on outside click
+- [x] Hamburger menu icon on mobile
+- [x] Slide-out drawer or dropdown menu
+- [x] All navigation links accessible
+- [x] Balance displayed in mobile nav
+- [x] Close on navigation
+- [x] Close on outside click
 
 ---
 
@@ -211,13 +213,13 @@ toast.error('Insufficient balance')
 **So that** the app doesn't crash completely on errors
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/ErrorBoundary.tsx`
-- [ ] Catch JavaScript errors in component tree
-- [ ] Display friendly error message
-- [ ] Provide "Try Again" / "Go Home" buttons
-- [ ] Log errors to monitoring service (optional)
-- [ ] Preserve navigation ability
-- [ ] Different styles for different error types
+- [x] Create `src/components/ErrorBoundary.tsx`
+- [x] Catch JavaScript errors in component tree
+- [x] Display friendly error message
+- [x] Provide "Try Again" / "Go Home" buttons
+- [x] Log errors to monitoring service (optional)
+- [x] Preserve navigation ability
+- [x] Different styles for different error types
 
 **References:** FRONTEND_STATE.md Section 8
 
@@ -230,14 +232,14 @@ toast.error('Insufficient balance')
 **So that** I can use it with assistive technologies
 
 **Acceptance Criteria:**
-- [ ] All interactive elements keyboard navigable
-- [ ] Proper focus management on modals
-- [ ] ARIA labels on all buttons and inputs
-- [ ] Color contrast meets WCAG AA standards
-- [ ] Screen reader announcements for dynamic content
-- [ ] Skip to main content link
-- [ ] Form error announcements
-- [ ] Trade confirmation announced to screen readers
+- [x] All interactive elements keyboard navigable
+- [x] Proper focus management on modals
+- [x] ARIA labels on all buttons and inputs
+- [x] Color contrast meets WCAG AA standards
+- [x] Screen reader announcements for dynamic content
+- [x] Skip to main content link
+- [x] Form error announcements
+- [x] Trade confirmation announced to screen readers
 
 ---
 
@@ -248,10 +250,10 @@ toast.error('Insufficient balance')
 **So that** I understand why actions might fail
 
 **Acceptance Criteria:**
-- [ ] Detect online/offline status
-- [ ] Show banner when offline
-- [ ] Queue actions while offline (optional)
-- [ ] Show reconnection status
-- [ ] Different indicator from WebSocket status
+- [x] Detect online/offline status
+- [x] Show banner when offline
+- [x] Queue actions while offline (optional)
+- [x] Show reconnection status
+- [x] Different indicator from WebSocket status
 
 ---

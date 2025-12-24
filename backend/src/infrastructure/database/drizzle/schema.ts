@@ -72,6 +72,7 @@ export const Side = {
 export const users = pgTable('users', {
   id: uuid('id').primaryKey(), // References auth.users(id) - set by trigger
   email: varchar('email', { length: 255 }).notNull().unique(),
+  displayName: varchar('display_name', { length: 100 }),
   balance: bigint('balance', { mode: 'bigint' }).notNull().default(sql`0`),
   role: varchar('role', { length: 20 }).notNull().default('user'),
   isActive: boolean('is_active').notNull().default(true),
@@ -81,8 +82,33 @@ export const users = pgTable('users', {
   return {
     emailIdx: uniqueIndex('idx_users_email').on(table.email),
     roleIdx: index('idx_users_role').on(table.role).where(sql`is_active = true`),
+    // GIN trigram index for email search (supports LIKE/ILIKE queries)
+    emailSearchIdx: index('idx_users_email_search').using('gin', sql`${table.email} gin_trgm_ops`),
     balanceCheck: check('users_balance_non_negative', sql`${table.balance} >= 0`),
     roleCheck: check('users_role_valid', sql`${table.role} IN ('user', 'admin', 'treasury')`),
+  }
+});
+
+export const categories = pgTable('categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  defaultCloseBehavior: varchar('default_close_behavior', { length: 20 }).notNull().default('auto'),
+  defaultBufferMinutes: integer('default_buffer_minutes'), // Only used when behavior = 'auto_with_buffer'
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    slugIdx: uniqueIndex('idx_categories_slug').on(table.slug),
+    sortIdx: index('idx_categories_sort').on(table.sortOrder),
+    closeBehaviorCheck: check('categories_close_behavior_valid', sql`${table.defaultCloseBehavior} IN ('auto', 'manual', 'auto_with_buffer')`),
+    bufferCheck: check('categories_buffer_valid', sql`
+        (${table.defaultCloseBehavior} = 'auto_with_buffer' AND ${table.defaultBufferMinutes} IS NOT NULL AND ${table.defaultBufferMinutes} > 0)
+        OR (${table.defaultCloseBehavior} != 'auto_with_buffer' AND ${table.defaultBufferMinutes} IS NULL)
+    `),
   }
 });
 
@@ -93,8 +119,10 @@ export const markets = pgTable('markets', {
   status: varchar('status', { length: 20 }).notNull().default('DRAFT'),
   resolution: varchar('resolution', { length: 10 }),
   imageUrl: varchar('image_url', { length: 2048 }),
-  category: varchar('category', { length: 100 }),
+  category: varchar('category', { length: 100 }), // Keep for migration
+  categoryId: uuid('category_id').references(() => categories.id),
   closesAt: timestamp('closes_at', { withTimezone: true }),
+  activatesAt: timestamp('activates_at', { withTimezone: true }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   // When the event actually ended (for voiding post-event trades)
   // See EDGE_CASES.md Section 6.2.2 for details
@@ -111,9 +139,13 @@ export const markets = pgTable('markets', {
     statusIdx: index('idx_markets_status').on(table.status),
     statusClosesIdx: index('idx_markets_status_closes').on(table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
     categoryIdx: index('idx_markets_category').on(table.category).where(sql`status = 'ACTIVE'`),
+    categoryIdIdx: index('idx_markets_category_id').on(table.categoryId),
     createdByIdx: index('idx_markets_created_by').on(table.createdBy),
     // Index for scheduler jobs to find markets needing auto-close by behavior type
     closeBehaviorIdx: index('idx_markets_close_behavior').on(table.closeBehavior, table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
+    // GIN trigram indexes for text search (supports ILIKE queries)
+    titleSearchIdx: index('idx_markets_title_trgm').using('gin', sql`${table.title} gin_trgm_ops`),
+    descriptionSearchIdx: index('idx_markets_description_trgm').using('gin', sql`${table.description} gin_trgm_ops`),
     statusCheck: check('markets_status_valid', sql`${table.status} IN ('DRAFT', 'ACTIVE', 'PAUSED', 'RESOLVED', 'CANCELLED')`),
     resolutionCheck: check('markets_resolution_valid', sql`${table.resolution} IS NULL OR ${table.resolution} IN ('YES', 'NO', 'CANCELLED')`),
     resolutionStatusCheck: check('markets_resolution_requires_status', sql`
@@ -232,6 +264,22 @@ export const pointGrants = pgTable('point_grants', {
   }
 });
 
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  adminId: uuid('admin_id').notNull().references(() => users.id),
+  action: varchar('action', { length: 50 }).notNull(),
+  entityType: varchar('entity_type', { length: 50 }),
+  entityId: uuid('entity_id'),
+  details: text('details'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    adminIdIdx: index('idx_audit_logs_admin').on(table.adminId, table.createdAt),
+    actionIdx: index('idx_audit_logs_action').on(table.action, table.createdAt),
+    entityIdx: index('idx_audit_logs_entity').on(table.entityId, table.entityType),
+  }
+});
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -241,12 +289,21 @@ export const usersRelations = relations(users, ({ many }) => ({
   trades: many(tradeLedger),
   createdMarkets: many(markets),
   pointGrants: many(pointGrants),
+  auditLogs: many(auditLogs),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  markets: many(markets),
 }));
 
 export const marketsRelations = relations(markets, ({ one, many }) => ({
   creator: one(users, {
     fields: [markets.createdBy],
     references: [users.id],
+  }),
+  category: one(categories, {
+    fields: [markets.categoryId],
+    references: [categories.id],
   }),
   pool: one(liquidityPools, {
     fields: [markets.id],
@@ -293,6 +350,14 @@ export const pointGrantsRelations = relations(pointGrants, ({ one }) => ({
   grantedByUser: one(users, {
     fields: [pointGrants.grantedBy],
     references: [users.id],
+    relationName: 'pointGrantsGrantedBy'
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  admin: one(users, {
+    fields: [auditLogs.adminId],
+    references: [users.id],
   }),
 }));
 
@@ -317,3 +382,9 @@ export type NewTradeLedgerEntry = typeof tradeLedger.$inferInsert;
 
 export type PointGrant = typeof pointGrants.$inferSelect;
 export type NewPointGrant = typeof pointGrants.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;

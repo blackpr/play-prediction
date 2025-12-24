@@ -669,20 +669,20 @@ app.get('/users/:id', async (request) => {
 **So that** we can run background tasks reliably and reuse it across features
 
 **Acceptance Criteria:**
-- [ ] Add dependencies: `bullmq`, `ioredis`
-- [ ] Create Redis connection utility: `src/infrastructure/redis/connection.ts`
-- [ ] Create queue factory: `src/infrastructure/jobs/queue-factory.ts`
-- [ ] Create worker factory: `src/infrastructure/jobs/worker-factory.ts`
-- [ ] Create QueueService for adding jobs: `src/infrastructure/jobs/queue-service.ts`
-- [ ] Add environment variables:
+- [x] Add dependencies: `bullmq`, `ioredis`
+- [x] Create Redis connection utility: `src/infrastructure/redis/connection.ts`
+- [x] Create queue factory: `src/infrastructure/jobs/queue-factory.ts`
+- [x] Create worker factory: `src/infrastructure/jobs/worker-factory.ts`
+- [x] Create QueueService for adding jobs: `src/infrastructure/jobs/queue-service.ts`
+- [x] Add environment variables:
   ```bash
   REDIS_URL=redis://localhost:6379
   REDIS_PASSWORD=
   WORKER_CONCURRENCY=10
   ENABLE_WORKER=true
   ```
-- [ ] Create connection health check
-- [ ] Handle Redis connection errors gracefully
+- [x] Create connection health check
+- [x] Handle Redis connection errors gracefully
 
 **Folder Structure:**
 ```
@@ -729,14 +729,14 @@ interface QueueService {
 **So that** background jobs don't affect API performance
 
 **Acceptance Criteria:**
-- [ ] Create worker entry point: `src/worker.ts`
-- [ ] Register all job handlers on startup
-- [ ] Graceful shutdown handling (finish current jobs)
-- [ ] Add npm script: `"worker": "tsx src/worker.ts"`
-- [ ] Add npm script: `"worker:dev": "tsx watch src/worker.ts"`
-- [ ] Log job start, completion, and failures
-- [ ] Emit metrics for job processing times
-- [ ] Health check endpoint for worker process
+- [x] Create worker entry point: `src/worker.ts`
+- [x] Register all job handlers on startup
+- [x] Graceful shutdown handling (finish current jobs)
+- [x] Add npm script: `"worker": "tsx src/worker.ts"`
+- [x] Add npm script: `"worker:dev": "tsx watch src/worker.ts"`
+- [x] Log job start, completion, and failures
+- [x] Emit metrics for job processing times
+- [x] Health check endpoint for worker process
 
 **Worker Entry Point:**
 ```typescript
@@ -781,17 +781,17 @@ process.on('SIGTERM', async () => {
 **So that** I can test background jobs during development
 
 **Acceptance Criteria:**
-- [ ] Add Redis to local development (Docker or Supabase self-hosted)
-- [ ] Update `supabase/config.toml` or create `docker-compose.yml` for Redis
-- [ ] Update root `package.json` dev script to start Redis
-- [ ] Create CLI commands for job management:
+- [x] Add Redis to local development (Docker or Supabase self-hosted)
+- [x] Update `supabase/config.toml` or create `docker-compose.yml` for Redis
+- [x] Update root `package.json` dev script to start Redis
+- [x] Create CLI commands for job management:
   ```bash
   npm run job:trigger <queue> <jobType>  # Manually trigger a job
   npm run job:stats                       # Show queue statistics
   npm run job:clear <queue>              # Clear failed jobs
   ```
-- [ ] Add BullMQ Board (optional) for visual queue management
-- [ ] Document job testing workflow in README
+- [x] Add BullMQ Board (optional) for visual queue management
+- [x] Document job testing workflow in README
 
 **Docker Compose (if not using Supabase Redis):**
 ```yaml
@@ -821,18 +821,18 @@ volumes:
 **So that** I can detect and fix issues quickly
 
 **Acceptance Criteria:**
-- [ ] Expose queue metrics:
+- [x] Expose queue metrics:
   - `jobs_processed_total` (counter, by queue and status)
   - `jobs_processing_duration_seconds` (histogram)
   - `jobs_waiting_count` (gauge, per queue)
   - `jobs_failed_total` (counter)
-- [ ] Add health check endpoint: `GET /health/worker`
-- [ ] Log job failures with full context
-- [ ] Alert on:
+- [x] Add health check endpoint: `GET /health/worker`
+- [x] Log job failures with full context
+- [x] Alert on:
   - Job failure rate > 5%
   - Queue depth > 1000 jobs
   - Job processing time > 5 minutes
-- [ ] Optional: BullMQ Board integration for admin UI
+- [x] Optional: BullMQ Board integration for admin UI
 
 **Health Check Response:**
 ```json

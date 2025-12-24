@@ -50,6 +50,22 @@ backend/
 
 ---
 
+## 🗺️ Quick File Glossary
+*Use this to quickly locate common files.*
+
+| Concept | Locations |
+|---------|-----------|
+| **Routes** | `src/presentation/fastify/routes/` |
+| **Middlewares** | `src/presentation/fastify/middleware/` |
+| **Use Cases** | `src/application/use-cases/` |
+| **Repositories** | `src/infrastructure/database/repositories/` |
+| **Entities** | `src/domain/entities/` |
+| **Main Server** | `src/main.ts` |
+| **DI Container** | `src/shared/container/index.ts` |
+| **Env Vars** | `src/shared/config/env.ts` |
+
+---
+
 ## 🚀 Entry Point
 
 The app starts from `bootstrap.ts`, NOT `main.ts`:
@@ -88,6 +104,38 @@ diContainer.register({
   // Scoped (one per request)
   tradingService: asClass(TradingService).scoped(),
 });
+
+### 🚨 Critical: Factory Function Pattern (NO Decorators)
+
+We use **Awilix** with the **Proxy Pattern**. Classes do NOT use decorators.
+
+**WRONG (Do NOT do this):**
+```typescript
+// ❌ NO decorators, NO tsyringe
+@injectable() 
+export class Service {
+  constructor(@inject('Repo') repo: Repo) {}
+}
+```
+
+**CORRECT (Do this):**
+```typescript
+// ✅ Use interface for dependencies
+interface Dependencies {
+  userRepository: UserRepository;
+  db: DrizzleDB;
+}
+
+export class Service {
+  private readonly userRepo: UserRepository;
+  private readonly db: DrizzleDB;
+
+  // ✅ Destructure dependencies in constructor
+  constructor({ userRepository, db }: Dependencies) {
+    this.userRepo = userRepository;
+    this.db = db;
+  }
+}
 ```
 
 ### Using in Routes
@@ -202,12 +250,15 @@ npx drizzle-kit migrate
 const db = request.diScope.resolve('db');
 
 // Query
+// Query
 const users = await db.select().from(users).where(eq(users.id, id));
 
-// Transaction
-await db.transaction(async (tx) => {
-  await tx.insert(users).values({ ... });
-  await tx.insert(pointGrants).values({ ... });
+// Transaction (Use TransactionManager in Use Cases)
+// Do NOT use db.transaction() directly in Application layer.
+// Inject 'transactionManager' and pass 'tx' to repositories.
+await transactionManager.run(async (tx) => {
+  await userRepository.save(user, tx);
+  await pointGrantRepository.create(grant, tx);
 });
 ```
 
@@ -258,6 +309,20 @@ server.post('/trade', withRateLimit(RateLimitType.TRADING), handler);
 ---
 
 ## 🧪 Testing
+
+We use **Vitest**, NOT Jest.
+
+**WRONG (Do NOT do this):**
+```typescript
+import { jest } from '@jest/globals'; // ❌
+const mock = jest.fn();
+```
+
+**CORRECT (Do this):**
+```typescript
+import { describe, it, expect, vi } from 'vitest'; // ✅
+const mock = vi.fn();
+```
 
 ```bash
 npm test                    # Run all tests
@@ -314,6 +379,7 @@ await queueService.addRepeatable('maintenance', {
 ### New Repository
 
 1. Define interface in `application/ports/repositories/`
+   - MUST accept optional `tx?: Transaction` for atomic operations
 2. Implement in `infrastructure/database/repositories/`
 3. Register in `shared/container/index.ts`
 4. Add type to `shared/container/types.ts`

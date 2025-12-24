@@ -18,9 +18,15 @@ const mockRedis = {
 };
 
 vi.mock('ioredis', () => {
-  return {
-    default: vi.fn().mockImplementation(() => mockRedis)
+  class MockRedis {
+    constructor() {
+      Object.assign(this, mockRedis);
+    }
   }
+  return {
+    default: MockRedis,
+    Redis: MockRedis,
+  };
 });
 
 describe('Circuit Breaker Service', () => {

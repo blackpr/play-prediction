@@ -17,6 +17,56 @@ import { diContainer, fastifyAwilixPlugin } from '@fastify/awilix';
 import type { FastifyInstance } from 'fastify';
 import { createDatabase } from '../../infrastructure/database';
 import { RedisCircuitBreakerService } from '../../infrastructure/circuit-breakers/circuit-breaker.service';
+import { PostgresUserRepository } from '../../infrastructure/database/repositories/postgres-user.repository';
+import { PostgresPointGrantRepository } from '../../infrastructure/database/repositories/postgres-point-grant.repository';
+import { SupabaseAuthService } from '../../infrastructure/auth/supabase-auth.service';
+import { RegisterUseCase } from '../../application/use-cases/auth/register.use-case';
+import { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
+import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
+import { MeUseCase } from '../../application/use-cases/auth/me.use-case';
+import { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case';
+import { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case';
+import { GetPointsHistoryUseCase } from '../../application/use-cases/users/get-points-history.use-case';
+import { DrizzleTransactionManager } from '../../infrastructure/transaction/drizzle-transaction-manager';
+import { PostgresMarketRepository } from '../../infrastructure/database/repositories/postgres-market.repository';
+import { GetMarketsUseCase } from '../../application/use-cases/markets/get-markets.use-case';
+import { GetMarketUseCase } from '../../application/use-cases/markets/get-market.use-case';
+import { GetMarketPriceHistoryUseCase } from '../../application/use-cases/markets/get-market-price-history.use-case';
+import { GetMarketTradesUseCase } from '../../application/use-cases/get-market-trades.use-case';
+import { PostgresPortfolioRepository } from '../../infrastructure/database/repositories/postgres-portfolio.repository';
+import { PostgresTradeLedgerRepository } from '../../infrastructure/database/repositories/postgres-trade-ledger.repository';
+import { BuySharesUseCase } from '../../application/use-cases/trading/buy-shares.use-case';
+import { SellSharesUseCase } from '../../application/use-cases/trading/sell-shares.use-case';
+import { GetQuoteUseCase } from '../../application/use-cases/trading/get-quote.use-case';
+import { MintSharesUseCase } from '../../application/use-cases/trading/mint-shares.use-case';
+import { MergeSharesUseCase } from '../../application/use-cases/trading/merge-shares.use-case';
+import { GetPositionUseCase } from '../../application/use-cases/portfolio/get-position.use-case';
+import { GetPortfolioUseCase } from '../../application/use-cases/portfolio/get-portfolio.use-case';
+import { GetPortfolioHistoryUseCase } from '../../application/use-cases/portfolio/get-portfolio-history.use-case';
+import { CreateMarketUseCase } from '../../application/use-cases/admin/create-market.use-case';
+import { UpdateMarketUseCase } from '../../application/use-cases/admin/update-market.use-case';
+import { ActivateMarketUseCase } from '../../application/use-cases/admin/activate-market.use-case';
+import { PauseMarketUseCase } from '../../application/use-cases/admin/pause-market.use-case';
+import { ResumeMarketUseCase } from '../../application/use-cases/admin/resume-market.use-case';
+import { ExtendMarketCloseTimeUseCase } from '../../application/use-cases/admin/extend-market-close-time.use-case';
+import { GetAdminStatsUseCase } from '../../application/use-cases/admin/get-admin-stats.use-case';
+import { ResolveMarketUseCase } from '../../application/use-cases/admin/resolve-market.use-case';
+import { CancelMarketUseCase } from '../../application/use-cases/admin/cancel-market.use-case';
+import { GrantPointsUseCase } from '../../application/use-cases/admin/grant-points.use-case';
+import { ListUsersUseCase } from '../../application/use-cases/admin/list-users.use-case';
+import { GetUserDetailUseCase } from '../../application/use-cases/admin/get-user-detail.use-case';
+import { GetAdminMarketsUseCase } from '../../application/use-cases/admin/get-admin-markets.use-case';
+import { PostgresAuditLogRepository } from '@/infrastructure/repositories/postgres-audit-log.repository';
+import { GetAuditLogUseCase } from '@/application/use-cases/admin/get-audit-log.use-case';
+import { PostgresCategoryRepository } from '../../infrastructure/database/repositories/postgres-category.repository';
+import { ListCategoriesUseCase } from '../../application/use-cases/admin/list-categories.use-case';
+import { CreateCategoryUseCase } from '../../application/use-cases/admin/create-category.use-case';
+import { UpdateCategoryUseCase } from '../../application/use-cases/admin/update-category.use-case';
+import { DeleteCategoryUseCase } from '../../application/use-cases/admin/delete-category.use-case';
+import { WebSocketManager } from '../../infrastructure/websocket/websocket-manager';
+import { RedisPubSubService } from '../../infrastructure/websocket/redis-pubsub.service';
+
+
 
 // Import types for module augmentation
 import './types';
@@ -43,17 +93,22 @@ export function registerDependencies(): void {
     db: asFunction(() => createDatabase()).singleton(),
   });
 
+  diContainer.register({
+    transactionManager: asClass(DrizzleTransactionManager).singleton(),
+  });
+
   // ========================================
   // Repositories
   // ========================================
 
-  // Register repositories as they're implemented:
-  // diContainer.register({
-  //   userRepository: asClass(PostgresUserRepository).singleton(),
-  //   marketRepository: asClass(PostgresMarketRepository).singleton(),
-  //   portfolioRepository: asClass(PostgresPortfolioRepository).singleton(),
-  //   tradeLedgerRepository: asClass(PostgresTradeLedgerRepository).singleton(),
-  // });
+  diContainer.register({
+    userRepository: asClass(PostgresUserRepository).singleton(),
+    pointGrantRepository: asClass(PostgresPointGrantRepository).singleton(),
+    marketRepository: asClass(PostgresMarketRepository).singleton(),
+    portfolioRepository: asClass(PostgresPortfolioRepository).singleton(),
+    tradeLedgerRepository: asClass(PostgresTradeLedgerRepository).singleton(),
+    categoryRepository: asClass(PostgresCategoryRepository).singleton(),
+  });
 
   // ========================================
   // Domain Services
@@ -61,25 +116,69 @@ export function registerDependencies(): void {
 
   diContainer.register({
     circuitBreakerService: asClass(RedisCircuitBreakerService).singleton(),
+    redisPubSubService: asClass(RedisPubSubService).singleton(),
+    webSocketManager: asFunction(() => WebSocketManager.getInstance()).singleton(),
   });
-
-  // Register domain services as they're implemented:
-  // diContainer.register({
-  //   pricingService: asClass(CPMMPricingService).singleton(),
-  //   tradingService: asClass(TradingService).singleton(),
-  // });
 
   // ========================================
   // Application Services / Use Cases
   // ========================================
 
-  // Register use cases as they're implemented:
-  // diContainer.register({
-  //   createMarketUseCase: asClass(CreateMarketUseCase).scoped(),
-  //   executeBuyUseCase: asClass(ExecuteBuyUseCase).scoped(),
-  //   executeSellUseCase: asClass(ExecuteSellUseCase).scoped(),
-  // });
+  diContainer.register({
+    // AuthService needs to be SCOPED because it depends on request/reply which are request-scoped
+    // But we need to make sure Awilix injects them. 
+    // Usually 'req' / 'reply' are available in the scope if using fastify-awilix.
+    // We'll trust standard injection by name/type or rely on the class structure.
+    // If SupabaseAuthService constructor asks for specific names, we must match.
+    // SupabaseAuthService(request: FastifyRequest, reply: FastifyReply)
+    // Services
+    authService: asClass(SupabaseAuthService).scoped(), // Modified to asClass
+
+    // Use Cases
+    loginUseCase: asClass(LoginUseCase).scoped(),
+    logoutUseCase: asClass(LogoutUseCase).scoped(),
+    registerUseCase: asClass(RegisterUseCase).scoped(),
+    meUseCase: asClass(MeUseCase).scoped(),
+    forgotPasswordUseCase: asClass(ForgotPasswordUseCase).scoped(),
+    resetPasswordUseCase: asClass(ResetPasswordUseCase).scoped(),
+    getPointsHistoryUseCase: asClass(GetPointsHistoryUseCase).scoped(),
+    getMarketsUseCase: asClass(GetMarketsUseCase).scoped(),
+    getMarketUseCase: asClass(GetMarketUseCase).scoped(),
+    getMarketPriceHistoryUseCase: asClass(GetMarketPriceHistoryUseCase).scoped(),
+    getMarketTradesUseCase: asClass(GetMarketTradesUseCase).scoped(),
+    buySharesUseCase: asClass(BuySharesUseCase).scoped(),
+    sellSharesUseCase: asClass(SellSharesUseCase).scoped(),
+    getQuoteUseCase: asClass(GetQuoteUseCase).scoped(),
+    mintSharesUseCase: asClass(MintSharesUseCase).scoped(),
+    mergeSharesUseCase: asClass(MergeSharesUseCase).scoped(),
+    getPositionUseCase: asClass(GetPositionUseCase).scoped(),
+    getPortfolioUseCase: asClass(GetPortfolioUseCase).scoped(),
+    getPortfolioHistoryUseCase: asClass(GetPortfolioHistoryUseCase).scoped(),
+    createMarketUseCase: asClass(CreateMarketUseCase).scoped(),
+    updateMarketUseCase: asClass(UpdateMarketUseCase).scoped(),
+    activateMarketUseCase: asClass(ActivateMarketUseCase).scoped(),
+    pauseMarketUseCase: asClass(PauseMarketUseCase).scoped(),
+    resumeMarketUseCase: asClass(ResumeMarketUseCase).scoped(),
+    extendMarketCloseTimeUseCase: asClass(ExtendMarketCloseTimeUseCase).scoped(),
+    resolveMarketUseCase: asClass(ResolveMarketUseCase).scoped(),
+    cancelMarketUseCase: asClass(CancelMarketUseCase).scoped(),
+    grantPointsUseCase: asClass(GrantPointsUseCase).scoped(),
+    listUsersUseCase: asClass(ListUsersUseCase).scoped(),
+    getUserDetailUseCase: asClass(GetUserDetailUseCase).scoped(),
+    getAdminStatsUseCase: asClass(GetAdminStatsUseCase).scoped(),
+    getAdminMarketsUseCase: asClass(GetAdminMarketsUseCase).scoped(),
+
+    auditLogRepository: asClass(PostgresAuditLogRepository).singleton(),
+    getAuditLogUseCase: asClass(GetAuditLogUseCase).scoped(),
+
+    // Categories
+    listCategoriesUseCase: asClass(ListCategoriesUseCase).scoped(),
+    createCategoryUseCase: asClass(CreateCategoryUseCase).scoped(),
+    updateCategoryUseCase: asClass(UpdateCategoryUseCase).scoped(),
+    deleteCategoryUseCase: asClass(DeleteCategoryUseCase).scoped(),
+  });
 }
+
 
 /**
  * Configure and register the Awilix plugin with Fastify.
@@ -99,6 +198,15 @@ export async function registerContainer(app: FastifyInstance): Promise<void> {
 
   // Register all application dependencies
   registerDependencies();
+
+  // Register request and reply in the scope so they can be injected
+  app.addHook('onRequest', (request, reply, done) => {
+    request.diScope.register({
+      request: asValue(request),
+      reply: asValue(reply),
+    });
+    done();
+  });
 }
 
 // Re-export commonly used items for convenience

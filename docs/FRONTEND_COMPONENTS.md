@@ -227,75 +227,81 @@ Input.displayName = 'Input'
 
 ```tsx
 // src/components/ui/Card.tsx
-import { clsx } from 'clsx'
+import * as React from 'react'
+import { cn } from '../../utils'
 
-interface CardProps {
-  children: React.ReactNode
-  className?: string
-  variant?: 'default' | 'elevated' | 'outlined'
-  padding?: 'none' | 'sm' | 'md' | 'lg'
-}
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      'rounded-xl border border-gray-800 bg-gray-950 text-gray-100 shadow',
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = 'Card'
 
-const variantStyles = {
-  default: 'bg-gray-900',
-  elevated: 'bg-gray-800 shadow-xl',
-  outlined: 'bg-transparent border border-gray-700',
-}
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    {...props}
+  />
+))
+CardHeader.displayName = 'CardHeader'
 
-const paddingStyles = {
-  none: '',
-  sm: 'p-3',
-  md: 'p-4 md:p-6',
-  lg: 'p-6 md:p-8',
-}
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn('font-semibold leading-none tracking-tight', className)}
+    {...props}
+  />
+))
+CardTitle.displayName = 'CardTitle'
 
-export function Card({
-  children,
-  className,
-  variant = 'default',
-  padding = 'md',
-}: CardProps) {
-  return (
-    <div
-      className={clsx(
-        'rounded-xl',
-        variantStyles[variant],
-        paddingStyles[padding],
-        className
-      )}
-    >
-      {children}
-    </div>
-  )
-}
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn('text-sm text-gray-400', className)}
+    {...props}
+  />
+))
+CardDescription.displayName = 'CardDescription'
 
-export function CardHeader({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div className={clsx('mb-4', className)}>
-      {children}
-    </div>
-  )
-}
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+))
+CardContent.displayName = 'CardContent'
 
-export function CardTitle({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <h3 className={clsx('text-xl font-semibold text-white', className)}>
-      {children}
-    </h3>
-  )
-}
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn('flex items-center p-6 pt-0', className)}
+    {...props}
+  />
+))
+CardFooter.displayName = 'CardFooter'
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 ```
 
 ### 2.4 Modal
@@ -523,6 +529,44 @@ export function Header() {
 
 ---
 
+### 3.2 NotFoundPage
+
+```tsx
+// src/components/NotFoundPage.tsx
+import { Link } from '@tanstack/react-router'
+import { ArrowLeft, Home, TrendingUp } from 'lucide-react'
+import { Button } from './ui/Button'
+
+export function NotFoundPage() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="relative z-10 space-y-8 max-w-lg mx-auto text-center">
+        <h1 className="text-9xl font-black text-white/5">404</h1>
+        <h2 className="text-3xl font-bold text-white">Page Not Found</h2>
+        <p className="text-lg text-gray-400">
+          Sorry, we couldn't find the page you're looking for.
+        </p>
+        
+        <div className="flex gap-4 justify-center">
+          <Link to="/">
+            <Button size="lg" leftIcon={<Home className="w-4 h-4" />}>
+              Go Home
+            </Button>
+          </Link>
+          <Link to="/markets">
+            <Button variant="ghost" size="lg" leftIcon={<TrendingUp className="w-4 h-4" />}>
+              Browse Markets
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
 ## 4. Market Components
 
 ### 4.1 Market Card
@@ -607,11 +651,13 @@ function StatusBadge({ status }: { status: Market['status'] }) {
 ```tsx
 // src/components/market/ProbabilityBar.tsx
 import { clsx } from 'clsx'
+import { cn } from '../../lib/utils'
 
 interface ProbabilityBarProps {
   yesPercent: number
   showLabels?: boolean
   size?: 'sm' | 'md' | 'lg'
+  className?: string
 }
 
 const sizeStyles = {
@@ -624,38 +670,43 @@ export function ProbabilityBar({
   yesPercent,
   showLabels = false,
   size = 'md',
+  className,
 }: ProbabilityBarProps) {
-  const noPercent = 100 - yesPercent
+  const saneYesPercent = isNaN(yesPercent) ? 50 : Math.min(100, Math.max(0, yesPercent))
+  const saneNoPercent = 100 - saneYesPercent
   
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', className)}>
       {showLabels && (
-        <div className="flex justify-between text-sm">
-          <span className="text-green-400 font-medium">
-            Yes {yesPercent.toFixed(1)}%
+        <div className="flex justify-between text-sm font-medium">
+          <span className="text-emerald-400">
+            Yes {saneYesPercent.toFixed(0)}%
           </span>
-          <span className="text-red-400 font-medium">
-            No {noPercent.toFixed(1)}%
+          <span className="text-rose-400">
+            No {saneNoPercent.toFixed(0)}%
           </span>
         </div>
       )}
+      
       <div
         className={clsx(
-          'w-full rounded-full overflow-hidden bg-red-600',
+          'w-full flex overflow-hidden rounded-full bg-rose-500/20',
           sizeStyles[size]
         )}
       >
         <div
-          className="h-full bg-green-500 transition-all duration-500"
-          style={{ width: `${yesPercent}%` }}
+          className="bg-emerald-500 transition-all duration-500"
+          style={{ width: `${saneYesPercent}%` }}
+        />
+        <div
+          className="bg-rose-500 transition-all duration-500"
+          style={{ width: `${saneNoPercent}%` }}
         />
       </div>
     </div>
   )
 }
 ```
-
-### 4.3 Price Chart
 
 ```tsx
 // src/components/market/PriceChart.tsx
@@ -668,22 +719,104 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { Card, CardHeader, CardTitle } from '../ui/Card'
-
-interface PricePoint {
-  timestamp: string
-  yesPrice: number
-  noPrice: number
-}
+import type { PricePoint } from '../../api/types'
 
 interface PriceChartProps {
-  data: PricePoint[]
+  data: PricePoint[]  // OHLC candle data from backend
   height?: number
+  className?: string
 }
 
-export function PriceChart({ data, height = 300 }: PriceChartProps) {
+export function PriceChart({ data, height = 300, className }: PriceChartProps) {
+  const hasData = data && data.length > 0
+
+  // Transform OHLC candle data to simple price points for the chart
+  // We use the close prices for both YES and NO (NO = 1 - YES)
+  const chartData = hasData ? data.map(candle => ({
+    timestamp: candle.timestamp,
+    yesPrice: parseFloat(candle.yesClose),
+    noPrice: 1 - parseFloat(candle.yesClose),
+  })) : []
+
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
+        <CardTitle>Price History</CardTitle>
+      </CardHeader>
+
+      <div className="p-4 pt-0 w-full" style={{ height }}>
+        {hasData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <XAxis
+                dataKey="timestamp"
+                stroke="#606070"
+                fontSize={12}
+                tickFormatter={(value) => {
+                  const date = new Date(value)
+                  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }}
+                minTickGap={50}
+              />
+              <YAxis
+                stroke="#606070"
+                fontSize={12}
+                domain={[0, 1]}
+                tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1a1a24',
+                  border: '1px solid #2a2a36',
+                  borderRadius: '8px',
+                  color: '#fff'
+                }}
+                labelFormatter={(value) => new Date(value).toLocaleString()}
+                formatter={(value: number, name: string) => [
+                  `${(value * 100).toFixed(1)}%`,
+                  name === 'yesPrice' ? 'Yes' : 'No',
+                ]}
+              />
+              <Line
+                type="monotone"
+                dataKey="yesPrice"
+                stroke="#10b981" // emerald-500
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+                name="yesPrice"
+                animationDuration={500}
+              />
+              <Line
+                type="monotone"
+                dataKey="noPrice"
+                stroke="#f43f5e" // rose-500
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+                name="noPrice"
+                animationDuration={500}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center text-gray-400">
+            No price history available
+          </div>
+        )}
+      </div>
+    </Card>
+  )
+}
+```
+
+**Key Features:**
+- Transforms OHLC candle data from backend to chart-ready format
+- Uses close prices (`yesClose`) for visualization
+- Displays green line for YES prices, red line for NO prices
+- Handles empty state gracefully
+- Responsive container with configurable height
+- Formatted tooltips showing percentages and timestamps
         <CardTitle>Price History</CardTitle>
       </CardHeader>
       
@@ -742,248 +875,138 @@ export function PriceChart({ data, height = 300 }: PriceChartProps) {
 
 ```tsx
 // src/components/market/TradeForm.tsx
-import { useState } from 'react'
-import { useForm } from '@tanstack/react-form'
-import { useBuyShares, useSellShares } from '../../hooks/useTrading'
+import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useBuyShares, useSellShares, useQuote } from '../../hooks/useTrading'
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
 import { Button } from '../ui/Button'
-import { Card, CardHeader, CardTitle } from '../ui/Card'
-import { formatPoints, parsePoints, calculateEstimatedShares } from '../../lib/format'
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
+import { Modal } from '../ui/Modal'
+import { formatPoints, parsePoints } from '../../lib/format'
 import { clsx } from 'clsx'
+import { Settings, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import type { Market } from '../../api/types'
 
-interface TradeFormProps {
-  market: Market
-}
+// Helper to calculate slippage-adjusted minimum output
+// Helper to convert backend errors to user-friendly messages
 
-type TradeTab = 'buy' | 'sell'
-type TradeSide = 'YES' | 'NO'
-
-export function TradeForm({ market }: TradeFormProps) {
-  const [tab, setTab] = useState<TradeTab>('buy')
-  const [side, setSide] = useState<TradeSide>('YES')
+export function TradeForm({ market }: { market: Market }) {
+  const [tab, setTab] = useState<'buy' | 'sell'>('buy')
+  const [side, setSide] = useState<'YES' | 'NO'>('YES')
+  const [amount, setAmount] = useState('')
+  const [debouncedAmount, setDebouncedAmount] = useState('')
   
+  // Settings & State
+  const [slippage, setSlippage] = useState(0.5) // Persisted in localStorage
+  const [showSettings, setShowSettings] = useState(false)
+  const [skipConfirmation, setSkipConfirmation] = useState(false) // Persisted in sessionStorage
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [pendingTrade, setPendingTrade] = useState<any>(null)
+
+  // Hooks
   const { user } = useAuth()
   const { data: position } = usePosition(market.id)
   const buyMutation = useBuyShares()
   const sellMutation = useSellShares()
   
-  const form = useForm({
-    defaultValues: {
-      amount: '',
-    },
-    onSubmit: async ({ value }) => {
-      const amountMicro = parsePoints(value.amount)
-      
-      if (tab === 'buy') {
-        await buyMutation.mutateAsync({
-          marketId: market.id,
-          side,
-          amount: amountMicro,
-        })
-      } else {
-        await sellMutation.mutateAsync({
-          marketId: market.id,
-          side,
-          shares: amountMicro,
-        })
-      }
-      
-      form.reset()
-    },
+  // Quote Fetching
+  const { data: quote } = useQuote(market.id, {
+    side,
+    action: tab === 'buy' ? 'BUY' : 'SELL',
+    amount: parsePoints(debouncedAmount || '0')
   })
-  
-  const currentPrice = side === 'YES' ? market.pool.yesPrice : market.pool.noPrice
-  const availableShares = side === 'YES'
-    ? BigInt(position?.yesShares ?? '0')
-    : BigInt(position?.noShares ?? '0')
-  
+
+  // 1. Execute Trade Logic
+  const executeTrade = async (tradeParams: any) => {
+    try {
+      const result = tab === 'buy' 
+        ? await buyMutation.mutateAsync({ ... }) 
+        : await sellMutation.mutateAsync({ ... })
+        
+      toast.success(`Trade Executed: ${side} shares`)
+      // Optimistic Update
+      queryClient.setQueryData(['portfolio', market.id], { ...result.newPosition, marketId: market.id })
+    } catch (error) {
+      toast.error('Trade Failed')
+    }
+  }
+
+  // 2. Form Submission Handler
+  const onSubmit = async () => {
+    const amountMicro = parsePoints(amount)
+    const slippageBps = BigInt(Math.round(slippage * 100))
+    // Calculate Min Output...
+    
+    // Check Confirmation Thresholds (Amount > 100 pts OR Impact > 10%)
+    if ((amountBigInt >= 100_000_000n || impact > 0.1) && !skipConfirmation) {
+      setPendingTrade({ ... })
+      setShowConfirmation(true)
+      return
+    }
+
+    await executeTrade({ amountMicro, minOut })
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row justify-between">
         <CardTitle>Trade</CardTitle>
+        <button onClick={() => setShowSettings(!showSettings)}>
+          <Settings className="w-5 h-5" />
+        </button>
       </CardHeader>
       
-      {/* Buy/Sell tabs */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setTab('buy')}
-          className={clsx(
-            'flex-1 py-2 rounded-lg font-medium transition-colors',
-            tab === 'buy'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          )}
-        >
-          Buy
-        </button>
-        <button
-          onClick={() => setTab('sell')}
-          className={clsx(
-            'flex-1 py-2 rounded-lg font-medium transition-colors',
-            tab === 'sell'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          )}
-        >
-          Sell
-        </button>
-      </div>
-      
-      {/* Side selection */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setSide('YES')}
-          className={clsx(
-            'flex-1 py-3 rounded-lg font-medium transition-colors',
-            side === 'YES'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-green-600/20'
-          )}
-        >
-          Yes {(market.pool.yesPrice * 100).toFixed(0)}¢
-        </button>
-        <button
-          onClick={() => setSide('NO')}
-          className={clsx(
-            'flex-1 py-3 rounded-lg font-medium transition-colors',
-            side === 'NO'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-red-600/20'
-          )}
-        >
-          No {(market.pool.noPrice * 100).toFixed(0)}¢
-        </button>
-      </div>
-      
-      {/* Amount input */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          form.handleSubmit()
-        }}
-      >
-        <form.Field
-          name="amount"
-          validators={{
-            onChange: ({ value }) => {
-              if (!value) return 'Amount is required'
-              const num = parseFloat(value)
-              if (isNaN(num) || num <= 0) return 'Invalid amount'
-              if (tab === 'buy') {
-                const micro = parsePoints(value)
-                if (BigInt(micro) > BigInt(user?.balance ?? '0')) {
-                  return 'Insufficient balance'
-                }
-              }
-              return undefined
-            },
-          }}
-        >
-          {(field) => (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-400 mb-1">
-                {tab === 'buy' ? 'Amount (Points)' : 'Shares to Sell'}
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  className={clsx(
-                    'w-full px-4 py-3 bg-gray-800 border rounded-lg',
-                    'text-white text-lg font-mono',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    field.state.meta.errors.length
-                      ? 'border-red-500'
-                      : 'border-gray-700'
-                  )}
-                />
-                {tab === 'buy' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const max = formatPoints(user?.balance ?? '0')
-                      field.handleChange(max)
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    MAX
-                  </button>
-                )}
-              </div>
-              {field.state.meta.errors.length > 0 && (
-                <p className="mt-1 text-sm text-red-400">
-                  {field.state.meta.errors.join(', ')}
-                </p>
-              )}
-            </div>
-          )}
-        </form.Field>
+      {showSettings && (
+         /* Slippage Selector (0.1%, 0.5%, 1%, Custom) */
+         <div>...</div>
+      )}
+
+      <CardContent>
+        {/* Tabs & Side Selection */}
+        {/* Amount Input with MAX button */}
         
-        {/* Estimate */}
-        <form.Subscribe selector={(state) => state.values.amount}>
-          {(amount) => {
-            if (!amount) return null
-            const estimated = calculateEstimatedShares(
-              parsePoints(amount),
-              market.pool,
-              side
-            )
-            return (
-              <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Estimated shares</span>
-                  <span className="font-mono">{formatPoints(estimated)}</span>
-                </div>
-                <div className="flex justify-between text-sm mt-1">
-                  <span className="text-gray-400">Avg. price</span>
-                  <span className="font-mono">
-                    {(currentPrice * 100).toFixed(1)}¢
-                  </span>
-                </div>
-              </div>
-            )
-          }}
-        </form.Subscribe>
-        
-        {/* Submit */}
-        <form.Subscribe
-          selector={(state) => [state.isSubmitting, state.canSubmit]}
-        >
-          {([isSubmitting, canSubmit]) => (
-            <Button
-              type="submit"
-              variant={side === 'YES' ? 'yes' : 'no'}
-              size="lg"
-              className="w-full"
-              isLoading={isSubmitting}
-              disabled={!canSubmit}
-            >
-              {tab === 'buy' ? 'Buy' : 'Sell'} {side}
-            </Button>
-          )}
-        </form.Subscribe>
-      </form>
-      
-      {/* Balance info */}
-      <div className="mt-4 pt-4 border-t border-gray-700">
-        <div className="flex justify-between text-sm text-gray-400">
-          <span>Balance</span>
-          <span className="font-mono">{formatPoints(user?.balance ?? '0')} pts</span>
-        </div>
-        {position && (
-          <div className="flex justify-between text-sm text-gray-400 mt-1">
-            <span>Your {side} shares</span>
-            <span className="font-mono">
-              {formatPoints(side === 'YES' ? position.yesShares : position.noShares)}
-            </span>
+        {/* Quote Preview */}
+        {quote && (
+          <div className="p-4 bg-gray-800/50 rounded-lg">
+             <div className="flex justify-between">
+               <span>Est. Output</span>
+               <span>{formatPoints(quote.estimatedSharesOut)}</span>
+             </div>
+             <div className="flex justify-between">
+               <span>Price Impact</span>
+               <span className={quote.priceImpact > 0.05 ? 'text-red-400' : 'text-green-400'}>
+                 {quote.priceImpact}%
+               </span>
+             </div>
+             {quote.priceImpact > 0.01 && <div className="text-yellow-400">High Impact</div>}
           </div>
         )}
-      </div>
+
+        <Button onClick={onSubmit} isLoading={buyMutation.isPending || sellMutation.isPending}>
+          {tab === 'buy' ? 'Buy' : 'Sell'} {side}
+        </Button>
+      </CardContent>
+
+      <Modal isOpen={showConfirmation} title="Confirm Trade">
+         {/* Trade Details Snapshot */}
+         <div className="space-y-4">
+            <div>Amount: {formatPoints(pendingTrade?.amountMicro)}</div>
+            <div>Est. Output: {formatPoints(pendingTrade?.estOut)}</div>
+            <div>Min. Output: {formatPoints(pendingTrade?.minOut)}</div>
+            
+            {/* Don't ask again checkbox */}
+            <label>
+              <input type="checkbox" onChange={...} /> Don't ask again
+            </label>
+            
+            <div className="flex gap-2">
+               <Button variant="secondary" onClick={() => setShowConfirmation(false)}>Cancel</Button>
+               <Button onClick={() => executeTrade(pendingTrade)}>Confirm</Button>
+            </div>
+         </div>
+      </Modal>
     </Card>
   )
 }

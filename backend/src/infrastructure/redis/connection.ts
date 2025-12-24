@@ -1,42 +1,56 @@
-import Redis from 'ioredis';
-import { getEnv } from '../../shared/config/env';
+import { Redis } from 'ioredis';
+import { requireEnv } from '../../shared/config/env';
 
-let redisInstance: Redis | undefined;
+/**
+ * Shared Redis client instance for general application use (caching, rate limiting).
+ * Kept as a singleton to avoid connection overhead.
+ */
+let redisClient: Redis | null = null;
 
-export function createRedisClient(): Redis {
-  if (redisInstance) {
-    return redisInstance;
-  }
+/**
+ * Returns the shared Redis client singleton.
+ * Initializes it if it doesn't exist.
+ */
+export function getRedisClient(): Redis {
+  if (!redisClient) {
+    redisClient = createRedisConnection();
 
-  const redisUrl = getEnv('REDIS_URL', 'redis://localhost:6379');
-
-  redisInstance = new Redis(redisUrl, {
-    maxRetriesPerRequest: 3,
-    lazyConnect: true,
-    retryStrategy(times) {
-      if (times > 3) {
-        return null; // Stop retrying
-      }
-      return Math.min(times * 50, 2000);
-    },
-  });
-
-  redisInstance.on('error', (err) => {
-    console.error('Redis error:', err);
-  });
-
-  redisInstance.on('connect', () => {
-    console.log('✓ Redis connected');
-  });
-
-  return redisInstance;
-}
-
-export function closeRedisConnection(): Promise<void> {
-  if (redisInstance) {
-    return redisInstance.quit().then(() => {
-      redisInstance = undefined;
+    // Global error handler for the shared client
+    redisClient.on('error', (err) => {
+      console.error('[Redis] Shared client error:', err);
     });
   }
-  return Promise.resolve();
+  return redisClient;
+}
+
+/**
+ * Creates a NEW Redis connection.
+ * Used by BullMQ which requires dedicated blocking connections.
+ * 
+ * @param options Optional overrides for Redis configuration
+ */
+export function createRedisConnection(options?: any): Redis {
+  const connection = new Redis(requireEnv('REDIS_URL'), {
+    maxRetriesPerRequest: null, // Required by BullMQ
+    enableReadyCheck: false,
+    ...options,
+  });
+
+  connection.on('ready', () => {
+    // console.log('[Redis] Connection ready'); // Too noisy for every worker connection
+  });
+
+  return connection;
+}
+
+/**
+ * Closes the shared Redis client.
+ * Should be called on application shutdown.
+ */
+export async function closeRedis(): Promise<void> {
+  if (redisClient) {
+    await redisClient.quit();
+    redisClient = null;
+    console.log('[Redis] Shared client closed');
+  }
 }

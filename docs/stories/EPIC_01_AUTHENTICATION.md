@@ -9,14 +9,14 @@
 **So that** routes can be protected
 
 **Acceptance Criteria:**
-- [ ] Create `createSupabaseClient(req, reply)` function using @supabase/ssr
-- [ ] Parse cookies from request headers
-- [ ] Set cookies on response headers
-- [ ] Always use `supabase.auth.getUser()` for validation (NEVER `getSession()`)
-- [ ] Create `authMiddleware` - populates `request.user` if authenticated
-- [ ] Create `requireAuth` - returns 401 if not authenticated
-- [ ] Create `requireAdmin` - returns 403 if not admin role
-- [ ] Attach user to request: `{ id, email, role }`
+- [x] Create `createSupabaseClient(req, reply)` function using @supabase/ssr
+- [x] Parse cookies from request headers
+- [x] Set cookies on response headers
+- [x] Always use `supabase.auth.getUser()` for validation (NEVER `getSession()`)
+- [x] Create `authMiddleware` - populates `request.user` if authenticated
+- [x] Create `requireAuth` - returns 401 if not authenticated
+- [x] Create `requireAdmin` - returns 403 if not admin role
+- [x] Attach user to request: `{ id, email, role }`
 
 **Implementation Notes:**
 ```typescript
@@ -48,14 +48,14 @@ const { data: { session } } = await supabase.auth.getSession();
 ```
 
 **Acceptance Criteria:**
-- [ ] Validate email format and password strength
-- [ ] Create Supabase Auth user via `supabase.auth.signUp()`
-- [ ] Create user profile in `users` table (Drizzle transaction)
-- [ ] Grant welcome bonus (REGISTRATION_BONUS_AMOUNT from config)
-- [ ] Log bonus to `point_grants` table
-- [ ] Return user data (without password)
-- [ ] Handle EMAIL_ALREADY_EXISTS error (409)
-- [ ] Handle INVALID_EMAIL, WEAK_PASSWORD errors (400)
+- [x] Validate email format and password strength
+- [x] Create Supabase Auth user via `supabase.auth.signUp()`
+- [x] Create user profile in `users` table (Drizzle transaction)
+- [x] Grant welcome bonus (REGISTRATION_BONUS_AMOUNT from config)
+- [x] Log bonus to `point_grants` table
+- [x] Return user data (without password)
+- [x] Handle EMAIL_ALREADY_EXISTS error (409)
+- [x] Handle INVALID_EMAIL, WEAK_PASSWORD errors (400)
 
 **Response (201):**
 ```json
@@ -97,14 +97,14 @@ const { data: { session } } = await supabase.auth.getSession();
 ```
 
 **Acceptance Criteria:**
-- [ ] Login: Call `supabase.auth.signInWithPassword()`
-- [ ] Session cookie set automatically via @supabase/ssr
-- [ ] Return user profile from `users` table
-- [ ] Handle INVALID_CREDENTIALS (401)
-- [ ] Handle EMAIL_NOT_CONFIRMED (401)
-- [ ] Handle ACCOUNT_DISABLED (403)
-- [ ] Logout: Call `supabase.auth.signOut()`
-- [ ] Clear session cookies
+- [x] Login: Call `supabase.auth.signInWithPassword()`
+- [x] Session cookie set automatically via @supabase/ssr
+- [x] Return user profile from `users` table
+- [x] Handle INVALID_CREDENTIALS (401)
+- [x] Handle EMAIL_NOT_CONFIRMED (401)
+- [x] Handle ACCOUNT_DISABLED (403)
+- [x] Logout: Call `supabase.auth.signOut()`
+- [x] Clear session cookies
 
 **References:** API_SPECIFICATION.md Sections 4.1.2, 4.1.3
 
@@ -119,10 +119,10 @@ const { data: { session } } = await supabase.auth.getSession();
 **Endpoint:** `GET /v1/auth/me`
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] Return user from `users` table
-- [ ] Include balance in MicroPoints (as string)
-- [ ] Return 401 if not authenticated
+- [x] Require authentication
+- [x] Return user from `users` table
+- [x] Include balance in MicroPoints (as string)
+- [x] Return 401 if not authenticated
 
 **Response (200):**
 ```json
@@ -152,14 +152,14 @@ const { data: { session } } = await supabase.auth.getSession();
 **Route:** `/login`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/login.tsx`
-- [ ] Use TanStack Form for form state
-- [ ] Email input with validation
-- [ ] Password input
-- [ ] Show error messages from API
-- [ ] Redirect to ?redirect param or /markets on success
-- [ ] Link to registration page
-- [ ] Style with dark theme
+- [x] Create route at `src/routes/login.tsx`
+- [x] Use TanStack Form for form state
+- [x] Email input with validation
+- [x] Password input
+- [x] Show error messages from API
+- [x] Redirect to ?redirect param or /markets on success
+- [x] Link to registration page
+- [x] Style with dark theme
 
 **References:** FRONTEND_ARCHITECTURE.md Section 6.2
 
@@ -174,13 +174,13 @@ const { data: { session } } = await supabase.auth.getSession();
 **Route:** `/register`
 
 **Acceptance Criteria:**
-- [ ] Create route at `src/routes/register.tsx`
-- [ ] Email input with validation
-- [ ] Password input with strength requirements
-- [ ] Confirm password field
-- [ ] Show error messages from API
-- [ ] Show success message about email confirmation
-- [ ] Link to login page
+- [x] Create route at `src/routes/register.tsx`
+- [x] Email input with validation
+- [x] Password input with strength requirements
+- [x] Confirm password field
+- [x] Show error messages from API
+- [x] Show success message about email confirmation
+- [x] Link to login page
 
 ---
 
@@ -191,12 +191,12 @@ const { data: { session } } = await supabase.auth.getSession();
 **So that** components can access user info
 
 **Acceptance Criteria:**
-- [ ] Create `src/hooks/useAuth.ts`
-- [ ] Create `authQueryOptions` for TanStack Query
-- [ ] `useAuth()` returns `{ user, isAuthenticated, isLoading }`
-- [ ] `useLogin()` mutation with cache update
-- [ ] `useLogout()` mutation that clears all queries
-- [ ] `useRegister()` mutation
+- [x] Create `src/hooks/useAuth.ts`
+- [x] Create `authQueryOptions` for TanStack Query
+- [x] `useAuth()` returns `{ user, isAuthenticated, isLoading }`
+- [x] `useLogin()` mutation with cache update
+- [x] `useLogout()` mutation that clears all queries
+- [x] `useRegister()` mutation
 
 **References:** FRONTEND_ARCHITECTURE.md Section 6.1, FRONTEND_STATE.md Section 3
 
@@ -209,10 +209,10 @@ const { data: { session } } = await supabase.auth.getSession();
 **So that** certain pages require authentication
 
 **Acceptance Criteria:**
-- [ ] Use TanStack Router's `beforeLoad` for auth check
-- [ ] Redirect to /login if not authenticated
-- [ ] Pass redirect URL in search params
-- [ ] Create reusable auth check pattern
+- [x] Use TanStack Router's `beforeLoad` for auth check
+- [x] Redirect to /login if not authenticated
+- [x] Pass redirect URL in search params
+- [x] Create reusable auth check pattern
 
 **Example:**
 ```typescript
@@ -246,9 +246,9 @@ export const Route = createFileRoute('/portfolio/')({
 - `type` - email or signup
 
 **Acceptance Criteria:**
-- [ ] Verify OTP with Supabase
-- [ ] Redirect to frontend on success
-- [ ] Handle errors gracefully
+- [x] Verify OTP with Supabase
+- [x] Redirect to frontend on success
+- [x] Handle errors gracefully
 
 **References:** API_SPECIFICATION.md Section 4.1.4
 
@@ -265,21 +265,21 @@ export const Route = createFileRoute('/portfolio/')({
 - `POST /v1/auth/reset-password` - Set new password with token
 
 **Acceptance Criteria:**
-- [ ] Forgot Password: Call `supabase.auth.resetPasswordForEmail()`
-- [ ] Send reset email with secure token link
-- [ ] Reset Password: Validate token and update password
-- [ ] Invalidate all existing sessions after password change
-- [ ] Return appropriate error messages
-- [ ] Rate limit: Max 3 reset requests per email per hour
+- [x] Forgot Password: Call `supabase.auth.resetPasswordForEmail()`
+- [x] Send reset email with secure token link
+- [x] Reset Password: Validate token and update password
+- [x] Invalidate all existing sessions after password change
+- [x] Return appropriate error messages
+- [x] Rate limit: Max 3 reset requests per email per hour
 
 **Frontend:**
-- [ ] Create `/forgot-password` route
-- [ ] Email input form with validation
-- [ ] Success message: "Check your email for reset link"
-- [ ] Create `/reset-password` route (with token in URL)
-- [ ] New password + confirm password inputs
-- [ ] Password strength requirements display
-- [ ] Success message + redirect to login
+- [x] Create `/forgot-password` route
+- [x] Email input form with validation
+- [x] Success message: "Check your email for reset link"
+- [x] Create `/reset-password` route (with token in URL)
+- [x] New password + confirm password inputs
+- [x] Password strength requirements display
+- [x] Success message + redirect to login
 
 **References:** EDGE_CASES.md Section 5
 
@@ -292,12 +292,12 @@ export const Route = createFileRoute('/portfolio/')({
 **So that** I don't lose my work and can re-authenticate
 
 **Acceptance Criteria:**
-- [ ] Detect 401 responses from API
-- [ ] Show session expiry modal/notification
-- [ ] Preserve current URL for redirect after re-login
-- [ ] Clear stale cache data
-- [ ] Redirect to login with return URL
-- [ ] On WebSocket: Handle SESSION_EXPIRED close code (4000)
+- [x] Detect 401 responses from API
+- [x] Show session expiry modal/notification
+- [x] Preserve current URL for redirect after re-login
+- [x] Clear stale cache data
+- [x] Redirect to login with return URL
+- [x] On WebSocket: Handle SESSION_EXPIRED close code (4000)
 
 **References:** WEBSOCKET_PROTOCOL.md Section 7.2, EDGE_CASES.md Section 5.0
 
@@ -310,13 +310,13 @@ export const Route = createFileRoute('/portfolio/')({
 **So that** users receive professional-looking emails
 
 **Acceptance Criteria:**
-- [ ] Configure Supabase email templates in project settings
-- [ ] Design welcome/verification email template
-- [ ] Design password reset email template
-- [ ] Test email delivery with Inbucket locally
-- [ ] Verify email links work correctly
-- [ ] Include branding (logo, colors)
-- [ ] Mobile-responsive email layout
+- [x] Configure Supabase email templates in project settings
+- [x] Design welcome/verification email template
+- [x] Design password reset email template
+- [x] Test email delivery with Inbucket locally
+- [x] Verify email links work correctly
+- [x] Include branding (logo, colors)
+- [x] Mobile-responsive email layout
 
 **Email Templates to Configure:**
 1. **Confirm Signup** - Sent after registration

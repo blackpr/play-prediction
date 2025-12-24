@@ -1,24 +1,32 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+} from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 
-import Header from '../components/Header'
+import { Toaster } from 'sonner'
+
+import { Header } from '../components/layout/Header'
+import { Footer } from '../components/layout/Footer'
+import { NetworkStatus } from '../components/ui/NetworkStatus'
+import { SessionManager } from '../components/SessionManager'
+import { WebSocketProvider } from '../providers/websocket-provider'
 
 import appCss from '../styles.css?url'
 
-const queryClient = new QueryClient()
+import { queryClient } from '../lib/queryClient'
 
-function NotFound() {
-  return (
-    <div className="p-4 text-center text-text">
-      <h3 className="text-xl font-semibold">404 Not Found</h3>
-      <p className="text-text-muted">The page you are looking for does not exist.</p>
-    </div>
-  )
-}
+import { NotFoundPage } from '../components/NotFoundPage'
+import { ErrorBoundary } from '../components/ErrorBoundary'
+import type { QueryClient } from '@tanstack/react-query'
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient
+}>()({
   head: () => ({
     meta: [
       {
@@ -39,9 +47,17 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  notFoundComponent: NotFound,
-  shellComponent: RootDocument,
+  notFoundComponent: NotFoundPage,
+  component: RootComponent,
 })
+
+function RootComponent() {
+  return (
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -51,8 +67,30 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          <Header />
-          {children}
+          <WebSocketProvider>
+            <div className="flex flex-col min-h-screen">
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-primary focus:font-bold focus:top-4 focus:left-4 focus:outline-none focus:ring-2 focus:ring-primary rounded-md shadow-lg"
+              >
+                Skip to main content
+              </a>
+              <NetworkStatus />
+              <Header />
+              <SessionManager />
+              <main
+                id="main-content"
+                className="flex-1 focus:outline-none"
+                tabIndex={-1}
+              >
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </main>
+              <Footer />
+            </div>
+            <Toaster richColors position="top-right" theme="dark" />
+          </WebSocketProvider>
         </QueryClientProvider>
         <TanStackDevtools
           config={{

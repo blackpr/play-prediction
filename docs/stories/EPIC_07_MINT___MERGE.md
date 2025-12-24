@@ -18,13 +18,13 @@
 ```
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] No fee charged
-- [ ] Create equal YES and NO shares
-- [ ] 1 Point = 1 YES + 1 NO
-- [ ] Deduct points from user
-- [ ] Add shares to portfolio
-- [ ] Log to trade_ledger
+- [x] Require authentication
+- [x] No fee charged
+- [x] Create equal YES and NO shares
+- [x] 1 Point = 1 YES + 1 NO
+- [x] Deduct points from user
+- [x] Add shares to portfolio
+- [x] Log to trade_ledger
 
 **Response:**
 ```json
@@ -55,13 +55,13 @@
 ```
 
 **Acceptance Criteria:**
-- [ ] Require authentication
-- [ ] No fee charged
-- [ ] Require equal YES and NO shares
-- [ ] Destroy equal amounts of both
-- [ ] Credit points to user (1 Point per pair)
-- [ ] Update portfolio
-- [ ] Log to trade_ledger
+- [x] Require authentication
+- [x] No fee charged
+- [x] Require equal YES and NO shares
+- [x] Destroy equal amounts of both
+- [x] Credit points to user (1 Point per pair)
+- [x] Update portfolio
+- [x] Log to trade_ledger
 
 **Error:** INSUFFICIENT_SHARES if user doesn't have equal amounts
 
@@ -76,11 +76,11 @@
 **So that** I can use these operations
 
 **Acceptance Criteria:**
-- [ ] Add Mint/Merge tabs to TradeForm
-- [ ] Mint: single amount input, show output preview
-- [ ] Merge: single amount input, show both share types
-- [ ] Validate user has sufficient balance/shares
-- [ ] Create mutations for mint/merge
+- [x] Add Mint/Merge tabs to TradeForm
+- [x] Mint: single amount input, show output preview
+- [x] Merge: single amount input, show both share types
+- [x] Validate user has sufficient balance/shares
+- [x] Create mutations for mint/merge
 
 ---
 
@@ -91,18 +91,35 @@
 **So that** I don't hold conflicting positions
 
 **Acceptance Criteria:**
-- [ ] Detect when user buys opposite side
-- [ ] Auto-exit opposite position first (fee-free)
-- [ ] Combine proceeds with new buy amount
-- [ ] Execute single entry trade (with fees)
-- [ ] Log NET_SELL action to ledger
-- [ ] Maintain Rule 2: No conflicting positions
+- [x] Detect when user buys opposite side
+- [x] Auto-exit opposite position first (fee-free)
+- [x] Combine proceeds with new buy amount
+- [x] Execute single entry trade (with fees)
+- [x] Log NET_SELL action to ledger
+- [x] Maintain Rule 2: No conflicting positions
 
 **Example:**
 User holds 100 NO shares, wants to buy YES with $50:
 1. Sell 100 NO shares (fee-free) → get ~$40
 2. Combine: $50 + $40 = $90
 3. Buy YES with $90 (2% fee)
+
+**Implementation Notes:**
+- Modified `BuySharesUseCase` to detect opposite positions before executing buy
+- Fee-free netting sell uses `calculateSellPoints` directly (no `calculateNetPayout`)
+- Opposite position cleared in portfolio (set to 0n)
+- NET_SELL logged with `feePaid: 0n`, `feeVault: 0n`, `feeLp: 0n`
+- Aggregated buying power = `netAmount` (after buy fees) + `nettingProceeds`
+- Pool state updated after netting sell, before final buy
+- Two ledger entries created: NET_SELL (fee-free) + BUY (with fees)
+
+**Verification:**
+- ✅ All 7 unit tests passed
+- ✅ All 16 existing regression tests passed
+- ✅ Curl test: User with 100k NO shares bought YES
+  - NET_SELL executed (fee-free)
+  - Portfolio cleared: 605k YES, 0 NO
+  - Buy returned 605k shares from 50k input (proving netting proceeds aggregated)
 
 **References:** ENGINE_LOGIC.md Section 7, SYSTEM_DESIGN.md Rule 2
 

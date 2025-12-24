@@ -7,6 +7,20 @@ const isProduction = getEnv('NODE_ENV', 'development') === 'production';
 export const loggerConfig = {
   level: getEnv('LOG_LEVEL', isProduction ? 'info' : 'debug'),
 
+  // Pretty printing in development
+  transport: !isProduction
+    ? {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+        singleLine: false,
+        messageFormat: '{levelLabel} - {msg}',
+      },
+    }
+    : undefined,
+
   // Custom formatters
   formatters: {
     level: (label: string) => {
@@ -76,3 +90,6 @@ export const loggerConfig = {
     };
   }
 };
+
+// Export business logger utilities
+export { BusinessLogger } from './business-logger';

@@ -1,7 +1,5 @@
-
 import { FastifyPluginAsync } from 'fastify';
 import { sql } from 'drizzle-orm';
-import { requireEnv } from '../../../shared/config/env';
 import { withRateLimit, RateLimitType } from '../plugins/rate-limit';
 
 const healthRoutes: FastifyPluginAsync = async (fastify) => {
@@ -37,26 +35,17 @@ const healthRoutes: FastifyPluginAsync = async (fastify) => {
       // Check Supabase Auth
       const authStart = performance.now();
       try {
-        const supabaseUrl = requireEnv('SUPABASE_URL');
-        // Check Supabase Auth health endpoint
-        // For local dev: http://127.0.0.1:55321/auth/v1/health
-        // For production: <project-ref>.supabase.co/auth/v1/health
-        const authHealthUrl = `${supabaseUrl}/auth/v1/health`;
+        const authService = request.diScope.resolve('authService');
+        const isAuthHealthy = await authService.checkHealth();
 
-        const response = await fetch(authHealthUrl);
-        if (response.ok) {
+        if (isAuthHealthy) {
           healthStatus.components.auth.status = 'healthy';
         } else {
-          // Some auth setups might not expose /health or return 200, but we expect it to be reachable.
-          // If 404, it might mean the path is wrong, but server is up. 
-          // However, let's treat non-2xx as issue or warning.
-          // Actually, for local supabase, /auth/v1/health usually returns 200 OK {"version": ..., "name": "GoTrue"}
           healthStatus.components.auth.status = 'unhealthy';
-          request.log.warn(`Health check: Auth returned ${response.status} ${response.statusText}`);
           isHealthy = false;
         }
       } catch (error) {
-        request.log.error(error, 'Health check: Auth connection failed');
+        request.log.error(error, 'Health check: Auth check failed');
         healthStatus.components.auth.status = 'unhealthy';
         isHealthy = false;
       } finally {

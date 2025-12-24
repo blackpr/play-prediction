@@ -4,16 +4,60 @@ Frontend-specific instructions for AI agents. See also: [Root AGENTS.md](../AGEN
 
 ---
 
+## 🚨 Critical: SSR & Hydration Stability
+
+**IMPORTANT:** TanStack Start performs **Prerendering** during the build phase. This means your components actually "run" in a Node.js environment before the browser ever sees them.
+
+### 1. No "Loading" states on Server (Prevents Build Hangs)
+
+If a hook (like `useQuery`) reports `isLoading: true` during the build phase, the TanStack Start builder will **wait indefinitely** for that loading to finish.
+
+- **RULE:** Hooks must explicitly report `isLoading: false` when `typeof window === 'undefined'`.
+- **RULE:** Queries that depend on cookies/browser state must be `enabled: typeof window !== 'undefined'`.
+
+### 2. No Conditional Hooks (Prevents Browser Crashes)
+
+Never call hooks conditionally based on `isClient` (e.g., `const auth = isClient ? useAuth() : null`). This violates the **Rule of Hooks** and will cause the browser to crash with a "length" or "hydration mismatch" error because the client runs more hooks than the server did.
+
+### 3. The "Component Guard" Pattern (The Solution)
+
+If you need to use authenticated hooks or client-only logic in a layout (like the `Header`), move that logic into a **sub-component** that is conditionally rendered.
+
+```tsx
+// ✅ CORRECT PATTERN
+export function Header() {
+  const isClient = useIsClient()
+
+  // 1. Return a skeleton on the server.
+  // 2. The hooks inside AuthenticatedSection are NEVER seen by the server.
+  // 3. The build completes instantly.
+  if (!isClient) return <HeaderSkeleton />
+
+  return <AuthenticatedSection />
+}
+
+function AuthenticatedSection() {
+  // Hooks are called UNCONDITIONALLY here.
+  // This is safe because this component only mounts in the browser.
+  const { user } = useAuth()
+  return <div>{user.name}</div>
+}
+```
+
+**Without this:** The build will hang OR the browser will show a white/black screen with "Something went wrong".
+
+---
+
 ## 🏗️ Stack
 
-| Technology | Purpose |
-|------------|---------|
-| **TanStack Start** | React meta-framework (SPA mode) |
-| **TanStack Router** | File-based routing |
-| **TanStack Query** | Server state management |
-| **TanStack Form** | Form handling |
-| **Tailwind CSS v4** | Styling |
-| **Zod** | Runtime validation |
+| Technology          | Purpose                         |
+| ------------------- | ------------------------------- |
+| **TanStack Start**  | React meta-framework (SPA mode) |
+| **TanStack Router** | File-based routing              |
+| **TanStack Query**  | Server state management         |
+| **TanStack Form**   | Form handling                   |
+| **Tailwind CSS v4** | Styling                         |
+| **Zod**             | Runtime validation              |
 
 ---
 
@@ -75,21 +119,21 @@ frontend/
 --accent-purple: #8b5cf6;
 
 /* Trading Colors */
---yes-color: #22c55e;  /* Green */
---no-color: #ef4444;   /* Red */
+--yes-color: #22c55e; /* Green */
+--no-color: #ef4444; /* Red */
 ```
 
 ### UI Components
 
 Located in `src/components/ui/`:
 
-| Component | Variants |
-|-----------|----------|
-| `Button` | primary, secondary, ghost, danger, yes, no |
-| `Input` | With label, error, hint |
-| `Card` | default, elevated, outlined |
-| `Modal` | Dialog-based |
-| `Spinner` | Loading indicator |
+| Component | Variants                                   |
+| --------- | ------------------------------------------ |
+| `Button`  | primary, secondary, ghost, danger, yes, no |
+| `Input`   | With label, error, hint                    |
+| `Card`    | default, elevated, outlined                |
+| `Modal`   | Dialog-based                               |
+| `Spinner` | Loading indicator                          |
 
 ---
 
@@ -165,24 +209,25 @@ server: {
 ### Using TanStack Query
 
 ```typescript
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query'
 
 // Fetch data
 const { data, isLoading } = useQuery({
   queryKey: ['markets'],
-  queryFn: () => fetch('/api/markets').then(r => r.json()),
-});
+  queryFn: () => fetch('/api/markets').then((r) => r.json()),
+})
 
 // Mutations
 const mutation = useMutation({
-  mutationFn: (data) => fetch('/api/trade', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
+  mutationFn: (data) =>
+    fetch('/api/trade', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+    queryClient.invalidateQueries({ queryKey: ['portfolio'] })
   },
-});
+})
 ```
 
 ---
@@ -223,14 +268,14 @@ Located in `src/utils/index.ts`:
 
 ```typescript
 // Format MicroPoints to display
-formatPoints(1000000n)      // "1.00"
+formatPoints(1000000n) // "1.00"
 formatCompactPoints(1500000n) // "1.5"
 
 // Parse string to MicroPoints
-parsePoints("10.50")        // 10500000n
+parsePoints('10.50') // 10500000n
 
 // Class name utility
-cn("base", condition && "active") // Merges classes
+cn('base', condition && 'active') // Merges classes
 ```
 
 ---
@@ -251,13 +296,13 @@ import { Button } from '../components/ui/Button';
 ### Form with TanStack Form
 
 ```tsx
-import { useForm } from '@tanstack/react-form';
-import { z } from 'zod';
+import { useForm } from '@tanstack/react-form'
+import { z } from 'zod'
 
 const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-});
+})
 
 function LoginForm() {
   const form = useForm({
@@ -266,15 +311,20 @@ function LoginForm() {
       await fetch('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(value),
-      });
+      })
     },
-  });
+  })
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        form.handleSubmit()
+      }}
+    >
       {/* form fields */}
     </form>
-  );
+  )
 }
 ```
 
@@ -311,4 +361,4 @@ npm run test:coverage       # With coverage
 
 ---
 
-*See also: [Root AGENTS.md](../AGENTS.md) | [Frontend Architecture](../docs/FRONTEND_ARCHITECTURE.md) | [Frontend Components](../docs/FRONTEND_COMPONENTS.md)*
+_See also: [Root AGENTS.md](../AGENTS.md) | [Frontend Architecture](../docs/FRONTEND_ARCHITECTURE.md) | [Frontend Components](../docs/FRONTEND_COMPONENTS.md)_

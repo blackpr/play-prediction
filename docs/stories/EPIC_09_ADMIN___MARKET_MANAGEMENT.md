@@ -9,11 +9,18 @@
 **So that** admin endpoints are protected
 
 **Acceptance Criteria:**
-- [ ] Check user.role === 'admin'
-- [ ] Return 403 FORBIDDEN if not admin
-- [ ] Apply to all /admin routes
+- [x] Check user.role === 'admin'
+- [x] Return 403 FORBIDDEN if not admin
+- [x] Apply to all /admin routes
+- [x] Verify protection of sensitive sidecars:
+  - [x] BullMQ Board (`/admin/queues`)
 
 **References:** API_SPECIFICATION.md Section 2.5
+
+**Implementation Notes:**
+- `requireAdmin` middleware already existed in `backend/src/presentation/fastify/middleware/auth.ts`
+- Applied to all admin routes via `onRequest` hook in `backend/src/presentation/fastify/routes/admin/index.ts`
+- Verified with curl: non-admin users receive 403 FORBIDDEN
 
 ---
 
@@ -48,17 +55,17 @@
 | `"auto_with_buffer"` | Events with predictable extensions | Basketball (30 min for OT) |
 
 **Acceptance Criteria:**
-- [ ] Require admin role
-- [ ] Validate minimum seed liquidity
-- [ ] Validate `closeBehavior` is one of: `auto`, `manual`, `auto_with_buffer`
-- [ ] If `closeBehavior = 'auto_with_buffer'`, require `bufferMinutes > 0`
-- [ ] If `closeBehavior != 'auto_with_buffer'`, reject `bufferMinutes`
-- [ ] Inherit default `closeBehavior` from category if not specified
-- [ ] Create market record (status: DRAFT)
-- [ ] Create liquidity_pool with 50/50 split
-- [ ] Grant seed shares to treasury account
-- [ ] Log GENESIS_MINT to trade_ledger
-- [ ] Return created market
+- [x] Require admin role
+- [x] Validate minimum seed liquidity
+- [x] Validate `closeBehavior` is one of: `auto`, `manual`, `auto_with_buffer`
+- [x] If `closeBehavior = 'auto_with_buffer'`, require `bufferMinutes > 0`
+- [x] If `closeBehavior != 'auto_with_buffer'`, reject `bufferMinutes`
+- [x] Inherit default `closeBehavior` from category if not specified
+- [x] Create market record (status: DRAFT)
+- [x] Create liquidity_pool with 50/50 split
+- [x] Grant seed shares to treasury account
+- [x] Log GENESIS_MINT to trade_ledger
+- [x] Return created market
 
 **Category Close Behavior Defaults:**
 
@@ -89,12 +96,19 @@
 - `POST /v1/admin/markets/:id/resume`
 
 **Acceptance Criteria:**
-- [ ] Activate: DRAFT → ACTIVE
-- [ ] Pause: ACTIVE → PAUSED (with optional reason)
-- [ ] Resume: PAUSED → ACTIVE
-- [ ] Validate state transitions
-- [ ] Update market record
-- [ ] Log actions
+- [x] Activate: DRAFT → ACTIVE
+- [x] Pause: ACTIVE → PAUSED (with optional reason)
+- [x] Resume: PAUSED → ACTIVE
+- [x] Validate state transitions
+- [x] Update market record
+- [x] Log actions (via updated_at timestamp and reason)
+
+**Implementation Notes:**
+- Added `updateStatus` method to MarketRepository and Postgres implementation
+- Created `ActivateMarketUseCase`, `PauseMarketUseCase`, and `ResumeMarketUseCase`
+- Implemented state validation logic (e.g., prevent activating already active markets)
+- Registered endpoints: `POST /admin/markets/:id/{activate,pause,resume}`
+- Verified with unit tests and curl commands (invalid transitions return 400 Bad Request)
 
 **State Machine:**
 ```
@@ -114,11 +128,11 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **Route:** `/admin`
 
 **Acceptance Criteria:**
-- [ ] Protected route (require admin)
-- [ ] Sidebar navigation
-- [ ] Dashboard overview
-- [ ] Markets management link
-- [ ] Users management link
+- [x] Protected route (require admin)
+- [x] Sidebar navigation
+- [x] Dashboard overview
+- [x] Markets management link
+- [x] Users management link
 
 ---
 
@@ -131,13 +145,13 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **Route:** `/admin` (dashboard section)
 
 **Acceptance Criteria:**
-- [ ] Total users count
-- [ ] Active markets count
-- [ ] 24h trading volume
-- [ ] Recent trades list (last 10)
-- [ ] Markets pending resolution
+- [x] Total users count
+- [x] Active markets count
+- [x] 24h trading volume
+- [x] Recent trades list (last 10)
+- [x] Markets pending resolution
 - [ ] Quick action buttons (Create Market, Grant Points)
-- [ ] Auto-refresh data every 60 seconds
+- [x] Auto-refresh data every 60 seconds
 
 **Metrics Cards:**
 ```
@@ -154,23 +168,23 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **So that** I can add new events
 
 **Acceptance Criteria:**
-- [ ] Title input (required)
-- [ ] Description textarea (required)
-- [ ] Category select (affects default close behavior)
-- [ ] Image URL input
-- [ ] Closes at date picker
-- [ ] Seed liquidity input
-- [ ] **Close Behavior Section:**
-  - [ ] Close behavior radio buttons: Auto / Manual / Auto with Buffer
-  - [ ] Show helper text explaining each option:
+- [x] Title input (required)
+- [x] Description textarea (required)
+- [x] Category select (affects default close behavior)
+- [x] Image URL input
+- [x] Closes at date picker
+- [x] Seed Liquidity input
+- [x] **Close Behavior Section:**
+  - [x] Close behavior radio buttons: Auto / Manual / Auto with Buffer
+  - [x] Show helper text explaining each option:
     - Auto: "Market will automatically pause for trading when close time passes"
     - Manual: "Trading continues until admin manually closes (use for sports with added time)"
     - Auto with Buffer: "Market pauses after close time + buffer period"
-  - [ ] Buffer minutes input (only visible when "Auto with Buffer" selected)
-  - [ ] Auto-populate defaults based on selected category
-  - [ ] Show warning for sports categories if "Auto" is selected
-- [ ] Preview before submit
-- [ ] Success/error feedback
+  - [x] Buffer minutes input (only visible when "Auto with Buffer" selected)
+  - [x] Auto-populate defaults based on selected category
+  - [x] Show warning for sports categories if "Auto" is selected
+- [x] Preview before submit
+- [x] Success/error feedback
 
 **Close Behavior UI:**
 ```
@@ -204,12 +218,18 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **So that** I can manage all markets
 
 **Acceptance Criteria:**
-- [ ] Table with all markets
-- [ ] Columns: Title, Status, Volume, Created, Actions
-- [ ] Action buttons: Activate, Pause, Resume, Resolve
-- [ ] Filter by status
-- [ ] Search by title
-- [ ] Pagination
+- [x] Table with all markets
+- [x] Columns: Title, Status, Volume, Created, Actions
+- [x] Action buttons: Activate, Pause, Resume, Resolve
+  - Note: Resolve button added but functionality is pending separate story.
+- [x] Filter by status
+- [x] Search by title
+- [x] Pagination
+
+**Implementation Notes:**
+- Created `GET /admin/markets` endpoint handling pagination and filtering.
+- Created `MarketsTable` component using HTML table logic.
+- Integrated into `/admin/markets` route.
 
 ---
 
@@ -229,11 +249,19 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 ```
 
 **Acceptance Criteria:**
-- [ ] Accept optional `initialYesPrice` parameter (0.01-0.99)
-- [ ] Calculate appropriate YES/NO quantities for target price
-- [ ] Validate price is within allowed range
-- [ ] Display initial probability in creation form
-- [ ] Preview shows expected starting prices
+- [x] Accept optional `initialYesPrice` parameter (0.01-0.99)
+- [x] Calculate appropriate YES/NO quantities for target price
+- [x] Validate price is within allowed range
+- [x] Display initial probability in creation form
+- [x] Preview shows expected starting prices
+
+**Implementation Notes:**
+- Updated `POST /admin/markets` schema to accept `initialYesPrice`.
+- Updated `CreateMarketUseCase` to calculate skewed pool quantities:
+  - `noQty = P_yes * (2 * seed)`.
+  - `yesQty = (2 * seed) - noQty`.
+- Added UI control in `CreateMarketForm` with slider and live preview.
+- Verified with unit tests and curl.
 
 **References:** ENGINE_LOGIC.md Section 8 (genesisMarketSkewed)
 
@@ -246,12 +274,25 @@ DRAFT → ACTIVE ⇄ PAUSED → RESOLVED/CANCELLED
 **So that** markets have visual appeal
 
 **Acceptance Criteria:**
-- [ ] Image upload component in market creation form
-- [ ] Accept JPEG, PNG, WebP formats
-- [ ] Max file size: 5MB
-- [ ] Image preview before upload
-- [ ] Store in Supabase Storage
-- [ ] Generate and store public URL
+- [x] Image upload component in market creation form
+- [x] Accept JPEG, PNG, WebP formats
+- [x] Max file size: 5MB
+- [x] Image preview before upload
+- [x] Store in Supabase Storage
+- [x] Generate and store public URL
 - [ ] Image optimization/resize (optional)
+
+**Implementation Notes:**
+- Installed `@fastify/multipart` for file handling.
+- Created `UploadMarketImageUseCase` uploading to `markets` bucket in Supabase.
+- Added `POST /admin/upload/image` endpoint.
+- Updated `CreateMarketForm` with file input and preview.
+- Updated `api/client.ts` to support `FormData`.
+
+**UI Implementations:**
+- Refactored `CreateMarketForm` to invalidate correct query key (`admin-markets`) on success.
+- Updated `MarketsTable` to display thumbnail images.
+- Refactored `MarketCard` to match Polymarket style (Flex Row: Icon + Title).
+- Refactored `MarketDetailPage` header to match Polymarket style (Icon + Title, removal of large banner).
 
 ---

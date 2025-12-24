@@ -2,20 +2,44 @@
 
 **Goal:** User can buy/sell shares from the market detail page.
 
-### TRADEUI-1: Create TradeForm Component
+### TRADEUI-1: Create TradeForm Component ✅
 
 **As a** user  
 **I want** a trade form  
 **So that** I can buy and sell shares
 
 **Acceptance Criteria:**
-- [ ] Create `src/components/market/TradeForm.tsx`
-- [ ] Buy/Sell tab toggle
-- [ ] Render inside Card component
-- [ ] Use TanStack Form for state
-- [ ] Disabled when market not ACTIVE
+- [x] Create `src/components/market/TradeForm.tsx`
+- [x] Buy/Sell tab toggle
+- [x] Render inside Card component
+- [x] Use TanStack Form for state
+- [x] Disabled when market not ACTIVE
 
 **References:** FRONTEND_COMPONENTS.md Section 5.1
+
+**Implementation Notes:**
+- Created comprehensive TradeForm component with TanStack Form
+- Implemented Buy/Sell tabs with proper state management
+- Added YES/NO side selection buttons showing current prices
+- Integrated real-time quote fetching with 300ms debounce
+- Added amount input with MAX button for balance/shares
+- Displays estimated output, fees, and price impact
+- Proper validation for minimum amounts and sufficient balance/shares
+- Error handling with user-friendly messages
+- Market status checking - form disabled when not ACTIVE
+- Created supporting hooks: `useTrading.ts` and `usePortfolio.ts`
+- Added all necessary types to `api/types.ts`
+- Implemented API methods in `api/markets.ts`
+- Integrated into MarketDetailPage replacing placeholder
+
+**Files Changed:**
+- `frontend/src/components/market/TradeForm.tsx` (new)
+- `frontend/src/hooks/useTrading.ts` (new)
+- `frontend/src/hooks/usePortfolio.ts` (new)
+- `frontend/src/api/types.ts` (updated)
+- `frontend/src/api/markets.ts` (updated)
+- `frontend/src/routes/markets/$marketId.tsx` (updated)
+- `backend/src/infrastructure/database/seed.ts` (updated - extended market close times)
 
 ---
 
@@ -26,10 +50,10 @@
 **So that** I can bet on either outcome
 
 **Acceptance Criteria:**
-- [ ] Two large buttons: YES (green), NO (red)
-- [ ] Show current price on each button
-- [ ] Highlight selected side
-- [ ] Update estimated output when changed
+- [x] Two large buttons: YES (green), NO (red)
+- [x] Show current price on each button
+- [x] Highlight selected side
+- [x] Update estimated output when changed
 
 ---
 
@@ -40,12 +64,12 @@
 **So that** I can control my bet size
 
 **Acceptance Criteria:**
-- [ ] Input field for amount
-- [ ] Switch between Points (buy) and Shares (sell)
-- [ ] MAX button to fill available balance/shares
-- [ ] Validate positive numbers
-- [ ] Validate sufficient balance/shares
-- [ ] Format with thousand separators
+- [x] Input field for amount
+- [x] Switch between Points (buy) and Shares (sell)
+- [x] MAX button to fill available balance/shares
+- [x] Validate positive numbers
+- [x] Validate sufficient balance/shares
+- [x] Format with thousand separators
 
 ---
 
@@ -56,12 +80,12 @@
 **So that** I know what I'll receive
 
 **Acceptance Criteria:**
-- [ ] Call quote endpoint on amount change (debounced)
-- [ ] Show estimated shares out (buy) or points out (sell)
-- [ ] Show average price
-- [ ] Show fee amount
-- [ ] Show price impact percentage
-- [ ] Update on amount/side change
+- [x] Call quote endpoint on amount change (debounced)
+- [x] Show estimated shares out (buy) or points out (sell)
+- [x] Show average price
+- [x] Show fee amount
+- [x] Show price impact percentage
+- [x] Update on amount/side change
 
 ---
 
@@ -72,12 +96,12 @@
 **So that** I can execute trades
 
 **Acceptance Criteria:**
-- [ ] Create `src/hooks/useTrading.ts`
-- [ ] `useBuyShares()` mutation
-- [ ] `useSellShares()` mutation
-- [ ] Invalidate queries on success: auth/me, portfolio, market detail
-- [ ] Generate idempotency key per request
-- [ ] Handle retry logic for network errors
+- [x] Create `src/hooks/useTrading.ts`
+- [x] `useBuyShares()` mutation
+- [x] `useSellShares()` mutation
+- [x] Invalidate queries on success: auth/me, portfolio, market detail
+- [x] Generate idempotency key per request
+- [x] Handle retry logic for network errors
 
 **References:** FRONTEND_STATE.md Section 4.1
 
@@ -90,12 +114,12 @@
 **So that** I understand why trades fail
 
 **Acceptance Criteria:**
-- [ ] Map error codes to user-friendly messages
-- [ ] INSUFFICIENT_BALANCE: "You don't have enough points"
-- [ ] SLIPPAGE_EXCEEDED: "Price moved too much. Try again with higher slippage"
-- [ ] MARKET_NOT_ACTIVE: "This market is not open for trading"
-- [ ] Display error in form
-- [ ] Clear error on new submission
+- [x] Map error codes to user-friendly messages
+- [x] INSUFFICIENT_BALANCE: "You don't have enough points"
+- [x] SLIPPAGE_EXCEEDED: "Price moved too much. Try again with higher slippage"
+- [x] MARKET_NOT_ACTIVE: "This market is not open for trading"
+- [x] Display error in form
+- [x] Clear error on new submission
 
 ---
 
@@ -106,11 +130,11 @@
 **So that** I know my trade succeeded
 
 **Acceptance Criteria:**
-- [ ] Show success message/toast
-- [ ] Display shares received
-- [ ] Display new balance
-- [ ] Reset form after success
-- [ ] Update UI with new prices
+- [x] Show success message/toast
+- [x] Display shares received
+- [x] Display new balance
+- [x] Reset form after success
+- [x] Update UI with new prices
 
 ---
 
@@ -121,12 +145,12 @@
 **So that** I don't accidentally make unfavorable trades
 
 **Acceptance Criteria:**
-- [ ] Calculate price impact from quote
-- [ ] Show warning when impact > 1%
-- [ ] Show strong warning when impact > 5%
-- [ ] Block or require confirmation when impact > 10%
-- [ ] Explain price impact in tooltip
-- [ ] Suggest smaller trade size
+- [x] Calculate price impact from quote
+- [x] Show warning when impact > 1%
+- [x] Show strong warning when impact > 5%
+- [x] Block or require confirmation when impact > 10%
+- [x] Explain price impact in tooltip
+- [x] Suggest smaller trade size
 
 **References:** ENGINE_LOGIC.md Section 5, EDGE_CASES.md Section 3.2
 
@@ -139,11 +163,11 @@
 **So that** I can control trade execution parameters
 
 **Acceptance Criteria:**
-- [ ] Slippage tolerance setting (0.5%, 1%, 2%, custom)
-- [ ] Store preference in localStorage
-- [ ] Use setting to calculate minSharesOut/minAmountOut
-- [ ] Show estimated slippage in trade preview
-- [ ] Warning if slippage setting is very high
+- [x] Slippage tolerance setting (0.5%, 1%, 2%, custom)
+- [x] Store preference in localStorage
+- [x] Use setting to calculate minSharesOut/minAmountOut
+- [x] Show estimated slippage in trade preview
+- [x] Warning if slippage setting is very high
 
 **References:** API_SPECIFICATION.md Section 4.4.1
 
@@ -156,10 +180,10 @@
 **So that** I don't accidentally make significant trades
 
 **Acceptance Criteria:**
-- [ ] Show confirmation modal for trades > threshold (e.g., 100 Points)
-- [ ] Display full trade details
-- [ ] Show price impact and fees
-- [ ] Require explicit confirmation
-- [ ] Optional "Don't show again" checkbox for session
+- [x] Show confirmation modal for trades > threshold (e.g., 100 Points)
+- [x] Display full trade details
+- [x] Show price impact and fees
+- [x] Require explicit confirmation
+- [x] Optional "Don't show again" checkbox for session
 
 ---

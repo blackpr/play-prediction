@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as schema from '@/infrastructure/database/drizzle/schema';
 import { users, markets, liquidityPools, UserRole, MarketStatus, Resolution } from '@/infrastructure/database/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -8,7 +9,7 @@ import { randomUUID } from 'crypto';
 // Setup DB connection
 const connectionString = process.env.DATABASE_URL!;
 const client = postgres(connectionString);
-export const db = drizzle(client);
+export const db = drizzle(client, { schema });
 
 // Setup Supabase client
 const supabaseUrl = process.env.SUPABASE_URL!;
