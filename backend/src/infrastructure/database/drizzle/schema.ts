@@ -82,6 +82,8 @@ export const users = pgTable('users', {
   return {
     emailIdx: uniqueIndex('idx_users_email').on(table.email),
     roleIdx: index('idx_users_role').on(table.role).where(sql`is_active = true`),
+    // GIN trigram index for email search (supports LIKE/ILIKE queries)
+    emailSearchIdx: index('idx_users_email_search').using('gin', sql`${table.email} gin_trgm_ops`),
     balanceCheck: check('users_balance_non_negative', sql`${table.balance} >= 0`),
     roleCheck: check('users_role_valid', sql`${table.role} IN ('user', 'admin', 'treasury')`),
   }
@@ -141,6 +143,9 @@ export const markets = pgTable('markets', {
     createdByIdx: index('idx_markets_created_by').on(table.createdBy),
     // Index for scheduler jobs to find markets needing auto-close by behavior type
     closeBehaviorIdx: index('idx_markets_close_behavior').on(table.closeBehavior, table.status, table.closesAt).where(sql`status = 'ACTIVE'`),
+    // GIN trigram indexes for text search (supports ILIKE queries)
+    titleSearchIdx: index('idx_markets_title_trgm').using('gin', sql`${table.title} gin_trgm_ops`),
+    descriptionSearchIdx: index('idx_markets_description_trgm').using('gin', sql`${table.description} gin_trgm_ops`),
     statusCheck: check('markets_status_valid', sql`${table.status} IN ('DRAFT', 'ACTIVE', 'PAUSED', 'RESOLVED', 'CANCELLED')`),
     resolutionCheck: check('markets_resolution_valid', sql`${table.resolution} IS NULL OR ${table.resolution} IN ('YES', 'NO', 'CANCELLED')`),
     resolutionStatusCheck: check('markets_resolution_requires_status', sql`
