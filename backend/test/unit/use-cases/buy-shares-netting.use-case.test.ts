@@ -26,6 +26,7 @@ describe('BuySharesUseCase - Netting Protocol (MINT-4)', () => {
       findByIdWithPool: vi.fn(),
       updatePoolWithLock: vi.fn(),
       updateUserBalance: vi.fn(),
+      getVolume24h: vi.fn().mockResolvedValue(0n),
     };
 
     mockPortfolioRepository = {
