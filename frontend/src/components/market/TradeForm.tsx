@@ -882,8 +882,16 @@ export function TradeForm({ market }: TradeFormProps) {
                         sessionStorage.setItem('skip-trade-confirmation', 'true')
                       }
                     }
+
+                    // Close modal and reset form state after successful trade
+                    setShowConfirmation(false)
+                    setPendingTrade(null)
+                    setDontAskAgain(false)
+                    setAmount('')
+                    form.reset()
                   } catch (e) {
                     // Error handled by executeTrade/toast
+                    // Don't close modal on error so user can retry
                   }
                 }
               }}

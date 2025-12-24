@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from '@tanstack/react-router'
-import { Menu, X, LogOut, Wallet } from 'lucide-react'
+import { Link, useLocation } from '@tanstack/react-router'
+import { Menu, X, LogOut, Wallet, LayoutDashboard, Users, Store, ClipboardList, Tags } from 'lucide-react'
 import { useAuth, useLogout } from '../../hooks/useAuth'
 import { useIsClient } from '../../hooks/useIsClient'
 import { Button } from '../ui/Button'
@@ -31,6 +31,9 @@ function MobileNavClient() {
 
   const { user, isAuthenticated } = useAuth()
   const logoutMutation = useLogout()
+  const { pathname } = useLocation()
+  const isTreasury = user?.role === 'treasury'
+  const isAdmin = user?.role === 'admin' || user?.role === 'treasury'
 
   useEffect(() => {
     if (isOpen) {
@@ -100,6 +103,87 @@ function MobileNavClient() {
                     >
                       Portfolio
                     </Link>
+
+                    {/* Admin Section */}
+                    {isAdmin && (
+                      <>
+                        <div className="h-px bg-surface-highlight my-2" />
+                        <div className="space-y-2">
+                          <span className="text-xs font-semibold text-text-muted uppercase tracking-wider px-3">
+                            Admin Console
+                          </span>
+                          <Link
+                            to="/admin"
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                              pathname === '/admin'
+                                ? "bg-surface-highlight text-primary"
+                                : "text-text-muted hover:bg-surface-highlight hover:text-text"
+                            )}
+                            onClick={close}
+                          >
+                            <LayoutDashboard className="w-5 h-5" />
+                            Dashboard
+                          </Link>
+                          <Link
+                            to="/admin/markets"
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                              pathname.startsWith('/admin/markets') || pathname.startsWith('/admin/market-create')
+                                ? "bg-surface-highlight text-primary"
+                                : "text-text-muted hover:bg-surface-highlight hover:text-text"
+                            )}
+                            onClick={close}
+                          >
+                            <Store className="w-5 h-5" />
+                            Markets
+                          </Link>
+                          {!isTreasury && (
+                            <Link
+                              to="/admin/users"
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                                pathname.startsWith('/admin/users')
+                                  ? "bg-surface-highlight text-primary"
+                                  : "text-text-muted hover:bg-surface-highlight hover:text-text"
+                              )}
+                              onClick={close}
+                            >
+                              <Users className="w-5 h-5" />
+                              Users
+                            </Link>
+                          )}
+                          <Link
+                            to="/admin/categories"
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                              pathname.startsWith('/admin/categories')
+                                ? "bg-surface-highlight text-primary"
+                                : "text-text-muted hover:bg-surface-highlight hover:text-text"
+                            )}
+                            onClick={close}
+                          >
+                            <Tags className="w-5 h-5" />
+                            Categories
+                          </Link>
+                          {!isTreasury && (
+                            <Link
+                              to="/admin/audit-log"
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                                pathname.startsWith('/admin/audit-log')
+                                  ? "bg-surface-highlight text-primary"
+                                  : "text-text-muted hover:bg-surface-highlight hover:text-text"
+                              )}
+                              onClick={close}
+                            >
+                              <ClipboardList className="w-5 h-5" />
+                              Audit Log
+                            </Link>
+                          )}
+                        </div>
+                      </>
+                    )}
 
                     <div className="h-px bg-surface-highlight my-2" />
 

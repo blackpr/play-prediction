@@ -46,6 +46,15 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         }
         break;
 
+      case 'trade':
+        // Invalidate market trades when a new trade occurs
+        if (lastMessage.data?.marketId) {
+          void queryClient.invalidateQueries({ 
+            queryKey: ['market-trades', lastMessage.data.marketId] 
+          });
+        }
+        break;
+
       case 'balance_update':
         void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
         toast.info('Balance updated');
