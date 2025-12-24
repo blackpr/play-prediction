@@ -616,8 +616,8 @@ export function TradeForm({ market }: TradeFormProps) {
           {tab === 'buy' && position && amount && parseFloat(amount) > 0 && (() => {
             const oppositeSide = side === 'YES' ? 'NO' : 'YES'
             const oppositeQty = oppositeSide === 'YES'
-              ? BigInt(position.yesQty)
-              : BigInt(position.noQty)
+              ? BigInt(position.yesQty ?? '0')
+              : BigInt(position.noQty ?? '0')
 
             if (oppositeQty > 0n) {
               // User holds opposite shares - netting will occur
