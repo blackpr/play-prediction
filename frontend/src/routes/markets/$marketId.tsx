@@ -9,15 +9,11 @@ import {
   TrendingUp,
   User,
   Users,
+  Zap,
+  Eye,
 } from 'lucide-react'
 import { useEffect, useState, useMemo } from 'react'
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
@@ -35,12 +31,11 @@ import {
 } from '../../hooks/useMarkets'
 import { formatCompactPoints } from '../../lib/format'
 import { useWebSocketContext } from '../../providers/websocket-provider'
+import { GridPattern } from '../../components/ui/GridPattern'
 
 export const Route = createFileRoute('/markets/$marketId')({
   loader: async ({ context: { queryClient }, params: { marketId } }) => {
-    // Prefetch market data
     await queryClient.ensureQueryData(marketQueryOptions(marketId))
-    // Prefetch initial price history (last 24 hours with 15m interval)
     const now = new Date()
     const from = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     await queryClient.ensureQueryData(
@@ -50,18 +45,6 @@ export const Route = createFileRoute('/markets/$marketId')({
   component: MarketDetailPage,
 })
 
-/**
- * Get optimal interval parameters for price history chart
- *
- * Strategy:
- * - Target 50-200 data points per chart for optimal performance/clarity
- * - Balance detail vs. readability
- * - Scale "All" interval based on market age
- *
- * @param interval - Selected chart interval (1H, 24H, 7D, 30D, All)
- * @param marketCreatedAt - ISO timestamp of market creation
- * @returns Object with backendInterval, from, and to dates
- */
 function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
   const now = new Date()
   const createdAt = new Date(marketCreatedAt)
@@ -70,57 +53,38 @@ function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
 
   switch (interval) {
     case '1H':
-      // 1-hour view: Use 1m candles (60 points)
-      // Shows detailed recent price movement
       return {
         backendInterval: '1m' as const,
         from: new Date(now.getTime() - 60 * 60 * 1000),
         to: now,
       }
-
     case '24H':
-      // 24-hour view: Use 15m candles (96 points)
-      // Good balance of detail and clarity
       return {
         backendInterval: '15m' as const,
         from: new Date(now.getTime() - 24 * 60 * 60 * 1000),
         to: now,
       }
-
     case '7D':
-      // 7-day view: Use 1h candles (168 points)
-      // Shows daily patterns clearly
       return {
         backendInterval: '1h' as const,
         from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
         to: now,
       }
-
     case '30D':
-      // 30-day view: Use 4h candles (180 points)
-      // Weekly patterns visible, not too dense
       return {
         backendInterval: '4h' as const,
         from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
         to: now,
       }
-
     case 'All':
-      // All-time view: Dynamic interval based on market age
-      // Ensures reasonable data point count regardless of market age
       let allInterval: '1h' | '4h' | '1d'
-
       if (ageInDays <= 7) {
-        // Young market (≤7 days): Use 1h candles (~168 points max)
         allInterval = '1h'
       } else if (ageInDays <= 30) {
-        // Month-old market (≤30 days): Use 4h candles (~180 points max)
         allInterval = '4h'
       } else {
-        // Older market (>30 days): Use 1d candles (avoids thousands of points)
         allInterval = '1d'
       }
-
       return {
         backendInterval: allInterval,
         from: createdAt,
@@ -129,7 +93,6 @@ function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
   }
 }
 
-// Helper function to determine which intervals should be disabled
 function getDisabledIntervals(marketCreatedAt: string): Array<ChartInterval> {
   const now = new Date()
   const createdAt = new Date(marketCreatedAt)
@@ -138,11 +101,9 @@ function getDisabledIntervals(marketCreatedAt: string): Array<ChartInterval> {
   const ageInDays = ageInMs / (24 * 60 * 60 * 1000)
 
   const disabled: Array<ChartInterval> = []
-
   if (ageInHours < 1) disabled.push('1H')
   if (ageInDays < 7) disabled.push('7D')
   if (ageInDays < 30) disabled.push('30D')
-
   return disabled
 }
 
@@ -150,24 +111,20 @@ function MarketDetailPage() {
   const { marketId } = Route.useParams()
   const { subscribe, unsubscribe } = useWebSocketContext()
 
-  // WebSocket Subscription
   useEffect(() => {
     const channel = `market:${marketId}`
     subscribe(channel)
     return () => unsubscribe(channel)
   }, [marketId, subscribe, unsubscribe])
 
-  // Fetch Market Data
   const {
     data: market,
     isLoading: isMarketLoading,
     error: marketError,
   } = useQuery(marketQueryOptions(marketId))
 
-  // State for selected interval with localStorage persistence protection against hydration
   const [selectedInterval, setSelectedInterval] = useState<ChartInterval>('24H')
 
-  // Restore from local storage after mount
   useEffect(() => {
     const stored = localStorage.getItem(`market-chart-interval-${marketId}`)
     if (stored) {
@@ -175,17 +132,14 @@ function MarketDetailPage() {
     }
   }, [marketId])
 
-  // Save interval preference to localStorage
   useEffect(() => {
     localStorage.setItem(`market-chart-interval-${marketId}`, selectedInterval)
   }, [selectedInterval, marketId])
 
-  // Get interval parameters for API call (memoized to prevent infinite refetches)
   const intervalParams = useMemo(() => {
     return market ? getIntervalParams(selectedInterval, market.createdAt) : null
   }, [selectedInterval, market?.createdAt])
 
-  // Fetch Price History with dynamic interval
   const { data: history, isLoading: isHistoryLoading } = useQuery({
     ...priceHistoryQueryOptions(
       marketId,
@@ -196,7 +150,6 @@ function MarketDetailPage() {
     enabled: !!intervalParams,
   })
 
-  // Determine disabled intervals based on market age
   const disabledIntervals = market ? getDisabledIntervals(market.createdAt) : []
 
   if (isMarketLoading) {
@@ -210,12 +163,12 @@ function MarketDetailPage() {
   if (marketError || !market) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Market Not Found</h2>
-        <p className="text-gray-400 mb-8">
+        <h2 className="text-2xl font-bold text-text mb-4">Market Not Found</h2>
+        <p className="text-text-muted mb-8">
           The market you are looking for does not exist or has been removed.
         </p>
         <Link
-          to="/markets"
+          to="/"
           search={{
             status: 'all',
             page: 1,
@@ -235,187 +188,211 @@ function MarketDetailPage() {
   const yesPercent = Number(market.yesPrice) * 100
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Navigation */}
-      <Link
-        to="/markets"
-        className="inline-block"
-        search={{
-          status: 'all',
-          page: 1,
-          pageSize: 20,
-          sort: 'createdAt',
-          order: 'desc',
-        }}
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<ArrowLeft className="w-4 h-4" />}
-        >
-          Back to Markets
-        </Button>
-      </Link>
+    <div className="min-h-screen bg-background relative">
+      {/* Background Grid Pattern */}
+      <GridPattern className="opacity-10 fixed inset-0" />
 
-      {/* Header Section */}
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row items-start gap-6">
-          {/* Main Image Icon */}
-          <div className="flex-shrink-0">
-            {market.imageUrl ? (
-              <img
-                src={market.imageUrl}
-                alt={market.title}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover bg-white/5 shadow-lg shadow-black/20"
-              />
-            ) : (
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-white/5 flex items-center justify-center text-white/20 shadow-lg shadow-black/20">
-                <span className="text-xs font-medium">No Img</span>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Navigation */}
+        <Link
+          to="/"
+          search={{
+            page: 1,
+            pageSize: 20,
+            sort: 'createdAt',
+            order: 'desc',
+          }}
+          className="inline-flex items-center gap-2 text-text-muted hover:text-accent-cyan transition-colors font-mono text-sm uppercase tracking-wider"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Markets</span>
+        </Link>
+
+        {/* Header Section - Terminal Style */}
+        <div className="data-card rounded-xl p-6 border-accent-cyan/30 relative overflow-hidden">
+          <div className="scan-line" />
+
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Image */}
+            {market.imageUrl && (
+              <div className="flex-shrink-0">
+                <img
+                  src={market.imageUrl}
+                  alt={market.title}
+                  className="w-20 h-20 rounded-lg object-cover border-2 border-surface-highlight"
+                />
               </div>
             )}
-          </div>
 
-          <div className="space-y-2 max-w-3xl flex-grow">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-              {market.title}
-            </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-400">
-              <Badge
-                variant={market.status === 'ACTIVE' ? 'success' : 'default'}
-              >
-                {market.status}
-              </Badge>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {market.closesAt
-                  ? `Ends ${formatDistanceToNow(new Date(market.closesAt), { addSuffix: true })}`
-                  : 'No closing date'}
-              </span>
-              <Link
-                to="/markets"
-                search={{
-                  categoryId: market.categoryId || undefined,
-                  status: 'all',
-                  page: 1,
-                  pageSize: 20,
-                  sort: 'createdAt',
-                  order: 'desc',
-                }}
-                className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
-              >
-                <Users className="w-3 h-3" />
-                {market.category}
-              </Link>
+            {/* Title & Meta */}
+            <div className="flex-1 space-y-3">
+              <h1 className="font-display text-3xl md:text-4xl font-bold text-text leading-tight">
+                {market.title}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <Badge
+                  variant={market.status === 'ACTIVE' ? 'success' : 'default'}
+                  className="font-mono uppercase tracking-wider"
+                >
+                  {market.status}
+                </Badge>
+
+                <div className="flex items-center gap-1.5 text-text-muted font-mono">
+                  <Clock className="w-3.5 h-3.5 text-accent-cyan" />
+                  {market.closesAt
+                    ? `Ends ${formatDistanceToNow(new Date(market.closesAt), { addSuffix: true })}`
+                    : 'No closing date'}
+                </div>
+
+                {market.category && (
+                  <Link
+                    to="/"
+                    search={{
+                      categoryId: market.categoryId || undefined,
+                      page: 1,
+                      pageSize: 20,
+                      sort: 'createdAt',
+                      order: 'desc',
+                    }}
+                    className="flex items-center gap-1.5 text-text-muted hover:text-accent-cyan transition-colors font-mono"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    {market.category}
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column (Chart & Graph) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Interval Selector */}
-          <div className="flex items-center justify-between">
-            <IntervalSelector
-              selected={selectedInterval}
-              onSelect={setSelectedInterval}
-              disabledIntervals={disabledIntervals}
-            />
-          </div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Chart & Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Price Chart Card */}
+            <div className="data-card rounded-xl p-6 relative overflow-hidden">
+              <div className="scan-line" />
 
-          {/* Price Chart */}
-          <PriceChart
-            data={history?.candles || []}
-            height={400}
-            interval={selectedInterval}
-            isLoading={isHistoryLoading}
-          />
-
-          {/* Probability Bar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Odds</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ProbabilityBar yesPercent={yesPercent} showLabels size="lg" />
-              <div className="mt-6 text-sm text-gray-400">
-                <p>{market.description}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Trades */}
-          <RecentTrades marketId={marketId} />
-        </div>
-
-        {/* Right Column (Stats & Trade Form Placeholder) */}
-        <div className="space-y-8">
-          {/* Stats Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Market Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>24h Volume</span>
-                </div>
-                <span className="font-mono font-medium text-white">
-                  {formatCompactPoints(market.volume24h)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Activity className="w-4 h-4" />
-                  <span>Total Liquidity</span>
-                </div>
-                {/* Calculate approx liquidity or show pool amounts */}
-                <span className="font-mono font-medium text-white">
-                  {formatCompactPoints(
-                    (
-                      BigInt(market.pool.yesQty) + BigInt(market.pool.noQty)
-                    ).toString(),
-                  )}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-400">
+              {/* Chart Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-mono text-accent-cyan uppercase tracking-wider text-sm font-bold flex items-center gap-2">
                   <BarChart2 className="w-4 h-4" />
-                  <span>Created</span>
-                </div>
-                <span className="text-white">
-                  {new Date(market.createdAt).toLocaleDateString()}
-                </span>
+                  Price History ({selectedInterval})
+                </h2>
+                <IntervalSelector
+                  selected={selectedInterval}
+                  onSelect={setSelectedInterval}
+                  disabledIntervals={disabledIntervals}
+                />
               </div>
 
-              {market.creator && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <User className="w-4 h-4" />
-                    <span>Creator</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white">
-                      {market.creator.displayName || market.creator.email}
-                    </span>
-                    {(market.creator.role === 'admin' ||
-                      market.creator.role === 'treasury') && (
-                      <Badge variant="default" className="text-xs">
-                        Admin
-                      </Badge>
-                    )}
-                  </div>
+              {/* Chart */}
+              <PriceChart
+                data={history?.candles || []}
+                height={400}
+                interval={selectedInterval}
+                isLoading={isHistoryLoading}
+              />
+            </div>
+
+            {/* Current Odds Card */}
+            <div className="data-card rounded-xl p-6">
+              <h2 className="font-mono text-accent-cyan uppercase tracking-wider text-sm font-bold mb-6 flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                Current Odds
+              </h2>
+
+              <ProbabilityBar yesPercent={yesPercent} showLabels size="lg" />
+
+              {market.description && (
+                <div className="mt-6 p-4 rounded-lg bg-surface/50 border border-surface-highlight">
+                  <p className="text-text-muted leading-relaxed">{market.description}</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Trade Form */}
-          <TradeForm market={market} />
+            {/* Recent Trades */}
+            <RecentTrades marketId={marketId} />
+          </div>
+
+          {/* Right Column - Stats & Trade */}
+          <div className="space-y-6">
+            {/* Market Stats Card - FIXED LAYOUT */}
+            <div className="data-card rounded-xl p-6">
+              <h2 className="font-mono text-accent-cyan uppercase tracking-wider text-sm font-bold mb-6">
+                Market Stats
+              </h2>
+
+              <div className="space-y-4">
+                {/* 24h Volume */}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-accent-cyan/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-4 h-4 text-accent-cyan" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-text-dim font-mono uppercase tracking-wider">24h Volume</div>
+                    <div className="text-data text-lg font-bold text-text">
+                      {formatCompactPoints(market.volume24h)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Liquidity */}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-accent-lime/10 flex items-center justify-center flex-shrink-0">
+                    <Activity className="w-4 h-4 text-accent-lime" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-text-dim font-mono uppercase tracking-wider">Total Liquidity</div>
+                    <div className="text-data text-lg font-bold text-text">
+                      {formatCompactPoints(
+                        (BigInt(market.pool.yesQty) + BigInt(market.pool.noQty)).toString(),
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Created */}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-accent-amber/10 flex items-center justify-center flex-shrink-0">
+                    <BarChart2 className="w-4 h-4 text-accent-amber" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-text-dim font-mono uppercase tracking-wider">Created</div>
+                    <div className="text-sm font-medium text-text">
+                      {new Date(market.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Creator */}
+                {market.creator && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-accent-pink/10 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-accent-pink" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-text-dim font-mono uppercase tracking-wider">Creator</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-text truncate">
+                          {market.creator.displayName || market.creator.email}
+                        </span>
+                        {(market.creator.role === 'admin' || market.creator.role === 'treasury') && (
+                          <Badge variant="default" className="text-xs font-mono">
+                            Admin
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Trade Form */}
+            <TradeForm market={market} />
+          </div>
         </div>
       </div>
     </div>

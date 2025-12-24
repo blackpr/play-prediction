@@ -85,12 +85,12 @@ function MobileNavClient() {
 
               <nav className="flex flex-col gap-6">
                 <Link
-                  to="/markets"
-                  className="text-lg font-medium text-text-muted hover:text-text transition-colors"
-                  activeProps={{ className: 'text-text' }}
+                  to="/about"
+                  className="text-lg font-medium text-text-muted hover:text-accent-cyan transition-colors"
+                  activeProps={{ className: 'text-accent-cyan font-bold' }}
                   onClick={close}
                 >
-                  Markets
+                  About
                 </Link>
 
                 {isAuthenticated ? (
