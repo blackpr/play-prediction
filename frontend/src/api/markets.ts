@@ -60,13 +60,13 @@ export const getMarket = async (id: string): Promise<Market> => {
 export const getMarketPriceHistory = async (
   id: string,
   interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h',
-  from?: string,
-  to?: string
+  from?: Date,
+  to?: Date
 ): Promise<PriceHistoryResponse> => {
   const query = new URLSearchParams()
   query.append('interval', interval)
-  if (from) query.append('from', from)
-  if (to) query.append('to', to)
+  if (from) query.append('from', from.toISOString())
+  if (to) query.append('to', to.toISOString())
 
   const response = await api.get<PriceHistoryResponse>(
     `/markets/${id}/price-history?${query.toString()}`

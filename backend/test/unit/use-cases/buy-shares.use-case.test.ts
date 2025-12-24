@@ -18,6 +18,7 @@ describe('BuySharesUseCase', () => {
       findByIdWithPool: vi.fn(),
       updatePoolWithLock: vi.fn(),
       updateUserBalance: vi.fn(),
+      getVolume24h: vi.fn().mockResolvedValue('0'),
     };
 
     mockPortfolioRepository = {

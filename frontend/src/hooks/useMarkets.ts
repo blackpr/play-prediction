@@ -14,11 +14,19 @@ export const marketQueryOptions = (id: string) => queryOptions({
 
 export const priceHistoryQueryOptions = (
   id: string,
-  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h'
-) => queryOptions({
-  queryKey: ['markets', id, 'history', interval],
-  queryFn: () => getMarketPriceHistory(id, interval),
-})
+  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h',
+  from?: Date,
+  to?: Date
+) => {
+  // Convert dates to ISO strings for stable query keys
+  const fromKey = from?.toISOString()
+  const toKey = to?.toISOString()
+  
+  return queryOptions({
+    queryKey: ['markets', id, 'history', interval, fromKey, toKey],
+    queryFn: () => getMarketPriceHistory(id, interval, from, to),
+  })
+}
 
 export function useMarkets(params: GetMarketsParams) {
   return useQuery(marketsQueryOptions(params))
@@ -30,7 +38,9 @@ export function useMarket(id: string) {
 
 export function useMarketPriceHistory(
   id: string,
-  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h'
+  interval: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' = '1h',
+  from?: Date,
+  to?: Date
 ) {
-  return useQuery(priceHistoryQueryOptions(id, interval))
+  return useQuery(priceHistoryQueryOptions(id, interval, from, to))
 }

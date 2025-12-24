@@ -1,14 +1,30 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
-import { Activity, ArrowLeft, BarChart2, Clock, TrendingUp, User, Users } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  Activity,
+  ArrowLeft,
+  BarChart2,
+  Clock,
+  TrendingUp,
+  User,
+  Users,
+} from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
-import { IntervalSelector, type ChartInterval } from '../../components/market/IntervalSelector'
+import {
+  IntervalSelector,
+  type ChartInterval,
+} from '../../components/market/IntervalSelector'
 import { PriceChart } from '../../components/market/PriceChart'
 import { ProbabilityBar } from '../../components/market/ProbabilityBar'
 import { RecentTrades } from '../../components/market/RecentTrades'
@@ -24,47 +40,91 @@ export const Route = createFileRoute('/markets/$marketId')({
   loader: async ({ context: { queryClient }, params: { marketId } }) => {
     // Prefetch market data
     await queryClient.ensureQueryData(marketQueryOptions(marketId))
-    // Prefetch initial price history (1h interval default)
-    await queryClient.ensureQueryData(priceHistoryQueryOptions(marketId, '1h'))
+    // Prefetch initial price history (last 24 hours with 1h interval)
+    const now = new Date()
+    const from = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    await queryClient.ensureQueryData(
+      priceHistoryQueryOptions(marketId, '1h', from, now),
+    )
   },
   component: MarketDetailPage,
 })
 
-// Helper function to get interval parameters based on selected chart interval
+/**
+ * Get optimal interval parameters for price history chart
+ *
+ * Strategy:
+ * - Target 50-200 data points per chart for optimal performance/clarity
+ * - Balance detail vs. readability
+ * - Scale "All" interval based on market age
+ *
+ * @param interval - Selected chart interval (1H, 24H, 7D, 30D, All)
+ * @param marketCreatedAt - ISO timestamp of market creation
+ * @returns Object with backendInterval, from, and to dates
+ */
 function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
   const now = new Date()
   const createdAt = new Date(marketCreatedAt)
+  const ageInHours = (now.getTime() - createdAt.getTime()) / (60 * 60 * 1000)
+  const ageInDays = ageInHours / 24
 
   switch (interval) {
     case '1H':
+      // 1-hour view: Use 1h candles (1 point)
+      // Note: Could use 1m or 5m for more detail, but backend doesn't support it yet
       return {
         backendInterval: '1h' as const,
         from: new Date(now.getTime() - 60 * 60 * 1000),
-        to: now
+        to: now,
       }
+
     case '24H':
+      // 24-hour view: Use 1h candles (24 points)
+      // Good balance of detail and clarity
       return {
         backendInterval: '1h' as const,
         from: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-        to: now
+        to: now,
       }
+
     case '7D':
+      // 7-day view: Use 1h candles (168 points)
+      // Shows daily patterns clearly
+      return {
+        backendInterval: '1h' as const,
+        from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+        to: now,
+      }
+
+    case '30D':
+      // 30-day view: Use 4h candles (180 points)
+      // Weekly patterns visible, not too dense
       return {
         backendInterval: '4h' as const,
-        from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-        to: now
-      }
-    case '30D':
-      return {
-        backendInterval: '1d' as const,
         from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-        to: now
+        to: now,
       }
+
     case 'All':
+      // All-time view: Dynamic interval based on market age
+      // Ensures reasonable data point count regardless of market age
+      let allInterval: '1h' | '4h' | '1d'
+
+      if (ageInDays <= 7) {
+        // Young market (≤7 days): Use 1h candles (~168 points max)
+        allInterval = '1h'
+      } else if (ageInDays <= 30) {
+        // Month-old market (≤30 days): Use 4h candles (~180 points max)
+        allInterval = '4h'
+      } else {
+        // Older market (>30 days): Use 1d candles (avoids thousands of points)
+        allInterval = '1d'
+      }
+
       return {
-        backendInterval: '1d' as const,
+        backendInterval: allInterval,
         from: createdAt,
-        to: now
+        to: now,
       }
   }
 }
@@ -98,9 +158,11 @@ function MarketDetailPage() {
   }, [marketId, subscribe, unsubscribe])
 
   // Fetch Market Data
-  const { data: market, isLoading: isMarketLoading, error: marketError } = useQuery(
-    marketQueryOptions(marketId)
-  )
+  const {
+    data: market,
+    isLoading: isMarketLoading,
+    error: marketError,
+  } = useQuery(marketQueryOptions(marketId))
 
   // State for selected interval with localStorage persistence protection against hydration
   const [selectedInterval, setSelectedInterval] = useState<ChartInterval>('24H')
@@ -118,14 +180,19 @@ function MarketDetailPage() {
     localStorage.setItem(`market-chart-interval-${marketId}`, selectedInterval)
   }, [selectedInterval, marketId])
 
-  // Get interval parameters for API call
-  const intervalParams = market
-    ? getIntervalParams(selectedInterval, market.createdAt)
-    : null
+  // Get interval parameters for API call (memoized to prevent infinite refetches)
+  const intervalParams = useMemo(() => {
+    return market ? getIntervalParams(selectedInterval, market.createdAt) : null
+  }, [selectedInterval, market?.createdAt])
 
   // Fetch Price History with dynamic interval
   const { data: history, isLoading: isHistoryLoading } = useQuery({
-    ...priceHistoryQueryOptions(marketId, intervalParams?.backendInterval || '1h'),
+    ...priceHistoryQueryOptions(
+      marketId,
+      intervalParams?.backendInterval || '1h',
+      intervalParams?.from,
+      intervalParams?.to,
+    ),
     enabled: !!intervalParams,
   })
 
@@ -147,7 +214,16 @@ function MarketDetailPage() {
         <p className="text-gray-400 mb-8">
           The market you are looking for does not exist or has been removed.
         </p>
-        <Link to="/markets" search={{ status: 'all', page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}>
+        <Link
+          to="/markets"
+          search={{
+            status: 'all',
+            page: 1,
+            pageSize: 20,
+            sort: 'createdAt',
+            order: 'desc',
+          }}
+        >
           <Button leftIcon={<ArrowLeft className="w-4 h-4" />}>
             Back to Markets
           </Button>
@@ -161,8 +237,22 @@ function MarketDetailPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Navigation */}
-      <Link to="/markets" className="inline-block" search={{ status: 'all', page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}>
-        <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+      <Link
+        to="/markets"
+        className="inline-block"
+        search={{
+          status: 'all',
+          page: 1,
+          pageSize: 20,
+          sort: 'createdAt',
+          order: 'desc',
+        }}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={<ArrowLeft className="w-4 h-4" />}
+        >
           Back to Markets
         </Button>
       </Link>
@@ -190,7 +280,9 @@ function MarketDetailPage() {
               {market.title}
             </h1>
             <div className="flex items-center gap-4 text-sm text-gray-400">
-              <Badge variant={market.status === 'ACTIVE' ? 'success' : 'default'}>
+              <Badge
+                variant={market.status === 'ACTIVE' ? 'success' : 'default'}
+              >
                 {market.status}
               </Badge>
               <span className="flex items-center gap-1">
@@ -201,7 +293,14 @@ function MarketDetailPage() {
               </span>
               <Link
                 to="/markets"
-                search={{ categoryId: market.categoryId || undefined, status: 'all', page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}
+                search={{
+                  categoryId: market.categoryId || undefined,
+                  status: 'all',
+                  page: 1,
+                  pageSize: 20,
+                  sort: 'createdAt',
+                  order: 'desc',
+                }}
                 className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
               >
                 <Users className="w-3 h-3" />
@@ -239,11 +338,7 @@ function MarketDetailPage() {
               <CardTitle>Current Odds</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProbabilityBar
-                yesPercent={yesPercent}
-                showLabels
-                size="lg"
-              />
+              <ProbabilityBar yesPercent={yesPercent} showLabels size="lg" />
               <div className="mt-6 text-sm text-gray-400">
                 <p>{market.description}</p>
               </div>
@@ -279,7 +374,11 @@ function MarketDetailPage() {
                 </div>
                 {/* Calculate approx liquidity or show pool amounts */}
                 <span className="font-mono font-medium text-white">
-                  {formatCompactPoints((BigInt(market.pool.yesQty) + BigInt(market.pool.noQty)).toString())}
+                  {formatCompactPoints(
+                    (
+                      BigInt(market.pool.yesQty) + BigInt(market.pool.noQty)
+                    ).toString(),
+                  )}
                 </span>
               </div>
 
@@ -303,7 +402,8 @@ function MarketDetailPage() {
                     <span className="text-white">
                       {market.creator.displayName || market.creator.email}
                     </span>
-                    {(market.creator.role === 'admin' || market.creator.role === 'treasury') && (
+                    {(market.creator.role === 'admin' ||
+                      market.creator.role === 'treasury') && (
                       <Badge variant="default" className="text-xs">
                         Admin
                       </Badge>

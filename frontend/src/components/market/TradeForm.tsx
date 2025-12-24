@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useBuyShares, useSellShares, useMintShares, useMergeShares, useQuote } from '../../hooks/useTrading'
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
+import { usePriceFlash, usePriceDirection } from '../../hooks/usePriceAnimation'
 import { Button } from '../ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { formatPoints, parsePoints } from '../../lib/format'
@@ -55,6 +56,12 @@ export function TradeForm({ market }: TradeFormProps) {
   const [side, setSide] = useState<TradeSide>('YES')
   const [amount, setAmount] = useState('')
   const [debouncedAmount, setDebouncedAmount] = useState('')
+
+  // Price animation hooks
+  const yesPriceFlash = usePriceFlash(market.yesPrice)
+  const noPriceFlash = usePriceFlash(market.noPrice)
+  const yesPriceDirection = usePriceDirection(market.yesPrice)
+  const noPriceDirection = usePriceDirection(market.noPrice)
 
   // Slippage State
   const [slippage, setSlippage] = useState<number>(() => {
@@ -470,40 +477,52 @@ export function TradeForm({ market }: TradeFormProps) {
               onClick={() => setSide('YES')}
               disabled={!isMarketActive}
               className={clsx(
-                'flex-1 py-3 px-4 rounded-lg font-medium transition-all',
+                'flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                'flex flex-col items-center gap-1',
+                'flex flex-col items-center gap-1 relative',
                 side === 'YES'
                   ? 'bg-green-600 text-white ring-2 ring-green-400'
-                  : 'bg-gray-800 text-gray-400 hover:bg-green-600/20'
+                  : 'bg-gray-800 text-gray-400 hover:bg-green-600/20',
+                yesPriceFlash && 'animate-pulse ring-2 ring-green-300'
               )}
             >
               <span className="text-lg">YES</span>
-              <span className="text-xs opacity-80">
+              <span className={clsx(
+                "text-xs opacity-80 flex items-center gap-1 transition-all",
+                yesPriceFlash && "font-bold scale-110"
+              )}>
                 {(() => {
                   const price = parseFloat(market.yesPrice ?? '0')
                   return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
                 })()}
+                {yesPriceDirection === 'up' && <TrendingUp className="w-3 h-3 text-green-300" />}
+                {yesPriceDirection === 'down' && <TrendingDown className="w-3 h-3 text-red-300" />}
               </span>
             </button>
             <button
               onClick={() => setSide('NO')}
               disabled={!isMarketActive}
               className={clsx(
-                'flex-1 py-3 px-4 rounded-lg font-medium transition-all',
+                'flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                'flex flex-col items-center gap-1',
+                'flex flex-col items-center gap-1 relative',
                 side === 'NO'
                   ? 'bg-red-600 text-white ring-2 ring-red-400'
-                  : 'bg-gray-800 text-gray-400 hover:bg-red-600/20'
+                  : 'bg-gray-800 text-gray-400 hover:bg-red-600/20',
+                noPriceFlash && 'animate-pulse ring-2 ring-red-300'
               )}
             >
               <span className="text-lg">NO</span>
-              <span className="text-xs opacity-80">
+              <span className={clsx(
+                "text-xs opacity-80 flex items-center gap-1 transition-all",
+                noPriceFlash && "font-bold scale-110"
+              )}>
                 {(() => {
                   const price = parseFloat(market.noPrice ?? '0')
                   return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
                 })()}
+                {noPriceDirection === 'up' && <TrendingUp className="w-3 h-3 text-green-300" />}
+                {noPriceDirection === 'down' && <TrendingDown className="w-3 h-3 text-red-300" />}
               </span>
             </button>
           </div>

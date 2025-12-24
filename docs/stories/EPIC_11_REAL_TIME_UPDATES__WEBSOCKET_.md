@@ -20,6 +20,21 @@
 
 **References:** WEBSOCKET_PROTOCOL.md Sections 1-2, 9.1
 
+**Implementation Notes:**
+- WebSocket server registered in `main.ts` using `@fastify/websocket`
+- Authentication via Supabase SSR session cookies
+- Connection handler in `presentation/websocket/websocket.route.ts`
+- WebSocket manager in `infrastructure/websocket/websocket-manager.ts`
+- Redis pub/sub integration for multi-server support
+- Heartbeat monitoring with 60-second timeout
+
+**Verification:**
+```bash
+# Run the WebSocket verification script
+cd backend && npx tsx verify-ws.ts
+# ✅ VERIFICATION SUCCESSFUL
+```
+
 ---
 
 ### WS-2: Implement Channel Subscriptions
@@ -44,6 +59,12 @@
 
 **References:** WEBSOCKET_PROTOCOL.md Sections 4, 6
 
+**Implementation Notes:**
+- Channel validation in `handleSubscribe` function
+- Authorization check for `user:` channels
+- Subscription limits enforced in `WebSocketManager.add()`
+- Auto-subscription to user channel on connection
+
 ---
 
 ### WS-3: Broadcast Price Updates After Trades
@@ -60,6 +81,12 @@
 - [x] Include: lastTradePrice, lastTradeSide, lastTradeSize
 - [x] Include: volume24h
 - [x] Timestamp in ISO 8601
+
+**Implementation Notes:**
+- Price updates broadcast from `BuySharesUseCase` and `SellSharesUseCase`
+- Added `getVolume24h()` method to `MarketRepository`
+- Broadcasts include both `price_update` and `trade` messages
+- Redis pub/sub ensures broadcasts reach all server instances
 
 **Message:**
 ```json
@@ -103,6 +130,11 @@
 - `resolution_payout` - when user receives payout
 - `points_granted` - when admin grants points
 
+**Implementation Notes:**
+- Trade confirmations handled via frontend query invalidation
+- `balance_update`, `resolution_payout`, and `points_granted` messages implemented
+- WebSocketProvider handles all user channel messages
+
 **References:** WEBSOCKET_PROTOCOL.md Section 5.3
 
 ---
@@ -121,6 +153,13 @@
 - [x] Handle disconnection states
 - [x] Subscribe/unsubscribe methods
 - [x] Custom message handler callback (via provider context/state)
+
+**Implementation Notes:**
+- Hook in `frontend/src/hooks/use-websocket.ts`
+- Session cookie sent automatically by browser
+- Reconnection with 3-second delay
+- Ping interval: 30 seconds
+- Status states: connecting, connected, disconnected, error
 
 **References:** FRONTEND_STATE.md Section 5, WEBSOCKET_PROTOCOL.md Section 9.3
 
@@ -141,6 +180,12 @@
 - [x] Use `queryClient.setQueryData` for instant updates
 - [x] Use `queryClient.invalidateQueries` for refetch
 
+**Implementation Notes:**
+- WebSocketProvider in `frontend/src/providers/websocket-provider.tsx`
+- Uses `queryClient.setQueryData` for instant price updates
+- Uses `queryClient.invalidateQueries` for balance/portfolio updates
+- Toast notifications for user-facing events
+
 **References:** FRONTEND_STATE.md Section 5.1, WEBSOCKET_PROTOCOL.md Section 5.2
 
 ---
@@ -154,9 +199,18 @@
 **Acceptance Criteria:**
 - [x] Subscribe to market channel on detail page
 - [x] Update ProbabilityBar when prices change (via cache refresh)
-- [ ] Update TradeForm prices
-- [ ] Animate price changes
+- [x] Update TradeForm prices (via market prop from cache)
+- [x] Animate price changes (pulse + direction indicators)
 - [x] Unsubscribe on unmount
+
+**Implementation Notes:**
+- Market detail page subscribes to `market:{marketId}` channel
+- ProbabilityBar updates automatically via TanStack Query cache
+- TradeForm YES/NO buttons show live prices from market prop (lines 482-507)
+- Market prop updates automatically when WebSocket updates cache
+- Price animations implemented with `usePriceFlash` and `usePriceDirection` hooks
+- Flash effect: pulse animation + ring glow when price changes
+- Direction indicators: up/down arrows showing price movement
 
 ---
 
@@ -172,6 +226,11 @@
 - [x] Tooltip with status details
 - [x] Reconnection attempt indicator
 - [x] Manual reconnect button when disconnected
+
+**Implementation Notes:**
+- Status indicator in `frontend/src/components/layout/Header.tsx`
+- Green dot shows when WebSocket is connected
+- Status accessible via `useWebSocketContext()`
 
 ---
 
