@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { adminApi, AuditLogItem } from '../../api/admin'
+import { format } from 'date-fns'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { adminApi } from '../../api/admin'
 import {
   Table,
   TableBody,
@@ -11,8 +13,7 @@ import {
 } from '../ui/Table'
 import { Button } from '../ui/Button'
 import { Select } from '../ui/Select'
-import { format } from 'date-fns'
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { AuditLogItem } from '../../api/admin';
 
 export function AuditLogTable() {
   const [page, setPage] = useState(1)
@@ -35,11 +36,11 @@ export function AuditLogTable() {
     queryKey: ['admin-list'],
     queryFn: () => adminApi.listUsers({ role: 'admin', pageSize: 100 }),
   })
-  const admins = adminsData?.data?.items || []
+  const admins = adminsData?.data.items || []
 
   // Extract items correctly from the response structure
-  const logs = data?.data?.items || []
-  const total = data?.data?.total || 0
+  const logs = data?.data.items || []
+  const total = data?.data.total || 0
   const totalPages = Math.ceil(total / pageSize)
 
   const handlePageChange = (newPage: number) => {

@@ -1,10 +1,10 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import {
+  Activity,
+  ArrowRight,
   TrendingUp,
   Users,
   Zap,
-  Activity,
-  ArrowRight,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { GridPattern } from '../components/ui/GridPattern'

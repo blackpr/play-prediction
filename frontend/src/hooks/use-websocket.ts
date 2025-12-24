@@ -127,6 +127,7 @@ export function useWebSocket(): UseWebSocketReturn {
     subscribe,
     unsubscribe,
     send,
-    lastMessage
+    lastMessage,
+    reconnect: connect
   };
 }

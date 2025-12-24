@@ -1,5 +1,6 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
-import { getPosition } from '../api/markets'
+import { getPortfolio, getPosition  } from '../api/markets'
+
 
 export const positionQueryOptions = (marketId: string) =>
   queryOptions({
@@ -11,8 +12,6 @@ export const positionQueryOptions = (marketId: string) =>
 export const usePosition = (marketId: string) => {
   return useQuery(positionQueryOptions(marketId))
 }
-
-import { getPortfolio } from '../api/markets'
 
 export const portfolioQueryOptions = queryOptions({
   queryKey: ['portfolio', 'all'],

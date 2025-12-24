@@ -2,16 +2,16 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import {
-  Search,
   ChevronLeft,
   ChevronRight,
+  Search,
   X,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useMarkets } from '../hooks/useMarkets'
 import { MarketCard } from '../components/market/MarketCard'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { useEffect, useState } from 'react'
 import { cn } from '../utils'
 import { MarketCardSkeleton } from '../components/market/MarketCardSkeleton'
 import { getCategories } from '../api/markets'

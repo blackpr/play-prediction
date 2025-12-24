@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Gift, Search } from 'lucide-react';
 import { api } from '../../api/client';
 import { Button } from '../ui/Button';
-import { Badge, BadgeVariant } from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { format } from 'date-fns';
-import { Search, Gift } from 'lucide-react';
-import { GrantPointsModal } from './GrantPointsModal';
 import { formatPoints } from '../../utils';
+import { GrantPointsModal } from './GrantPointsModal';
+import type { BadgeVariant } from '../ui/Badge';
 
 interface User {
   id: string;
@@ -20,7 +21,7 @@ interface User {
 }
 
 interface UsersResponse {
-  items: User[];
+  items: Array<User>;
   pagination: {
     page: number;
     pageSize: number;
@@ -38,7 +39,6 @@ const ROLE_VARIANTS: Record<string, BadgeVariant> = {
 };
 
 export function UsersTable() {
-  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [role, setRole] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -153,7 +153,7 @@ export function UsersTable() {
                     {user.email}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Badge variant={ROLE_VARIANTS[user.role] || 'default'}>
+                    <Badge variant={ROLE_VARIANTS[user.role] ?? 'default'}>
                       {user.role.toUpperCase()}
                     </Badge>
                   </td>

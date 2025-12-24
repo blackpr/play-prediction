@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Pause, Play, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '../../api/client';
 import { Button } from '../ui/Button';
-import { Badge, BadgeVariant } from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { format } from 'date-fns';
-import { Search, Play, Pause } from 'lucide-react';
-import { toast } from 'sonner';
 import { ResolveMarketModal } from './ResolveMarketModal';
 import { EditMarketModal } from './EditMarketModal';
 import { ExtendMarketCloseTimeModal } from './ExtendMarketCloseTimeModal';
+import type { BadgeVariant } from '../ui/Badge';
 
 interface Market {
   id: string;
@@ -42,7 +43,7 @@ interface Market {
 }
 
 interface MarketsResponse {
-  items: Market[];
+  items: Array<Market>;
   pagination: {
     page: number;
     pageSize: number;
@@ -221,7 +222,7 @@ export function MarketsTable() {
                       {market.title}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <Badge variant={STATUS_VARIANTS[market.status] || 'default'}>
+                      <Badge variant={STATUS_VARIANTS[market.status] ?? 'default'}>
                         {market.status}
                       </Badge>
                     </td>

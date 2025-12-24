@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { getTradeHistory, GetTradeHistoryParams } from '../api/markets'
+import { getTradeHistory } from '../api/markets'
+import type { GetTradeHistoryParams } from '../api/markets';
 
 export const useTradeHistory = (params: GetTradeHistoryParams = {}) => {
   return useInfiniteQuery({

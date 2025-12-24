@@ -6,20 +6,19 @@ import {
   ArrowLeft,
   BarChart2,
   Clock,
+  Eye,
   TrendingUp,
   User,
   Users,
-  Zap,
-  Eye,
 } from 'lucide-react'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
 import {
-  IntervalSelector,
-  type ChartInterval,
+
+  IntervalSelector
 } from '../../components/market/IntervalSelector'
 import { PriceChart } from '../../components/market/PriceChart'
 import { ProbabilityBar } from '../../components/market/ProbabilityBar'
@@ -32,6 +31,7 @@ import {
 import { formatCompactPoints } from '../../lib/format'
 import { useWebSocketContext } from '../../providers/websocket-provider'
 import { GridPattern } from '../../components/ui/GridPattern'
+import type { ChartInterval } from '../../components/market/IntervalSelector';
 
 export const Route = createFileRoute('/markets/$marketId')({
   loader: async ({ context: { queryClient }, params: { marketId } }) => {
@@ -76,7 +76,7 @@ function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
         from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
         to: now,
       }
-    case 'All':
+    case 'All': {
       let allInterval: '1h' | '4h' | '1d'
       if (ageInDays <= 7) {
         allInterval = '1h'
@@ -90,6 +90,7 @@ function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
         from: createdAt,
         to: now,
       }
+    }
   }
 }
 

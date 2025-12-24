@@ -1,6 +1,10 @@
 import { useRef, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { z } from 'zod';
+import { Calendar, Loader2, Upload } from 'lucide-react';
 import { adminApi } from '../../api/admin';
 import { api } from '../../api/client';
 import { Modal } from '../ui/Modal';
@@ -9,10 +13,6 @@ import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { Textarea } from '../ui/Textarea';
 import { Select } from '../ui/Select';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { z } from 'zod';
-import { Calendar, Upload, Loader2 } from 'lucide-react';
 
 interface EditMarketModalProps {
   isOpen: boolean;
@@ -129,7 +129,7 @@ export function EditMarketModal({ isOpen, onClose, market }: EditMarketModalProp
       activatesAt: (market as any).activatesAt ? toDateTimeLocalString(new Date((market as any).activatesAt)) : '',
       seedLiquidity: seedLiquidity,
       initialYesPrice: initialYesPrice,
-      closeBehavior: (market.closeBehavior as CloseBehavior) || CloseBehavior.AUTO,
+      closeBehavior: market.closeBehavior || CloseBehavior.AUTO,
       bufferMinutes: market.bufferMinutes || null,
     },
     onSubmit: async ({ value }) => {

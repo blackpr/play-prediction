@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation } from '@tanstack/react-router'
-import { Menu, X, LogOut, Wallet, LayoutDashboard, Users, Store, ClipboardList, Tags } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, LogOut, Menu, Store, Tags, Users, Wallet, X } from 'lucide-react'
 import { useAuth, useLogout } from '../../hooks/useAuth'
 import { useIsClient } from '../../hooks/useIsClient'
 import { Button } from '../ui/Button'
@@ -189,7 +189,7 @@ function MobileNavClient() {
 
                     {/* Balance */}
                     <Link
-                      to="/portfolio/history"
+                      to="/portfolio/history" search={{ page: 1, pageSize: 20 }}
                       onClick={close}
                       className="flex flex-col gap-2 p-4 bg-surface-highlight rounded-xl border border-transparent hover:border-primary/50 transition-colors"
                     >

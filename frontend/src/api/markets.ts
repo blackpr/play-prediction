@@ -1,19 +1,21 @@
 import { api } from './client'
 import type {
-  Market,
-  PriceHistoryResponse,
-  RecentTrade,
-  QuoteRequest,
-  QuoteResponse,
   BuySharesRequest,
   BuySharesResponse,
-  SellSharesRequest,
-  SellSharesResponse,
-  MintSharesRequest,
-  MintSharesResponse,
+  Category,
+  Market,
   MergeSharesRequest,
   MergeSharesResponse,
+  MintSharesRequest,
+  MintSharesResponse,
   Position,
+  PriceHistoryResponse,
+  QuoteRequest,
+  QuoteResponse,
+  RecentTrade,
+  SellSharesRequest,
+  SellSharesResponse,
+  TradeHistoryResponse,
 } from './types'
 
 export interface GetMarketsParams {
@@ -28,7 +30,7 @@ export interface GetMarketsParams {
 }
 
 export interface GetMarketsResponse {
-  items: Market[]
+  items: Array<Market>
   pagination: {
     page: number
     pageSize: number
@@ -77,11 +79,11 @@ export const getMarketPriceHistory = async (
 export const getMarketTrades = async (
   id: string,
   limit: number = 20
-): Promise<RecentTrade[]> => {
+): Promise<Array<RecentTrade>> => {
   const query = new URLSearchParams()
   query.append('limit', limit.toString())
 
-  const response = await api.get<RecentTrade[]>(
+  const response = await api.get<Array<RecentTrade>>(
     `/markets/${id}/trades?${query.toString()}`
   )
   return response.data
@@ -194,18 +196,18 @@ export interface GetTradeHistoryParams {
 
 export const getTradeHistory = async (
   params: GetTradeHistoryParams
-): Promise<import('./types').TradeHistoryResponse> => {
+): Promise<TradeHistoryResponse> => {
   const query = new URLSearchParams()
   if (params.marketId) query.append('marketId', params.marketId)
   if (params.action) query.append('action', params.action)
   if (params.page) query.append('page', params.page.toString())
-  const response = await api.get<import('./types').TradeHistoryResponse>(
+  const response = await api.get<TradeHistoryResponse>(
     `/portfolio/history?${query.toString()}`
   )
   return response.data
 }
 
-export const getCategories = async (): Promise<import('./types').Category[]> => {
-  const response = await api.get<import('./types').Category[]>('/categories')
+export const getCategories = async (): Promise<Array<Category>> => {
+  const response = await api.get<Array<Category>>('/categories')
   return response.data
 }

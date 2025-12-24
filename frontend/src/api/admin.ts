@@ -23,7 +23,7 @@ export interface GetAuditLogParams {
 }
 
 export interface AuditLogResponse {
-  items: AuditLogItem[]
+  items: Array<AuditLogItem>
   total: number
 }
 
@@ -35,12 +35,12 @@ export const adminApi = {
 
   listUsers: (
     params: { role?: 'user' | 'admin' | 'treasury'; page?: number; pageSize?: number; search?: string },
-  ): Promise<ApiResponse<{ items: any[]; pagination: any }>> =>
-    api.get<{ items: any[]; pagination: any }>('/admin/users', { params }),
+  ): Promise<ApiResponse<{ items: Array<any>; pagination: any }>> =>
+    api.get<{ items: Array<any>; pagination: any }>('/admin/users', { params }),
 
   // Categories
-  listCategories: (params?: { includeInactive?: boolean }): Promise<ApiResponse<Category[]>> =>
-    api.get<Category[]>('/admin/categories', { params }),
+  listCategories: (params?: { includeInactive?: boolean }): Promise<ApiResponse<Array<Category>>> =>
+    api.get<Array<Category>>('/admin/categories', { params }),
 
   createCategory: (data: NewCategory): Promise<ApiResponse<Category>> =>
     api.post<Category>('/admin/categories', data),

@@ -78,7 +78,7 @@ export interface PricePoint {
 export interface PriceHistoryResponse {
   marketId: string
   interval: string
-  candles: PricePoint[]
+  candles: Array<PricePoint>
 }
 
 export interface RecentTrade {
@@ -228,7 +228,7 @@ export interface TradeHistoryItem {
 }
 
 export interface TradeHistoryResponse {
-  items: TradeHistoryItem[]
+  items: Array<TradeHistoryItem>
   pagination: {
     page: number
     pageSize: number

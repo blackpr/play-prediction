@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Loader2, TrendingUp, Wallet } from 'lucide-react'
 import { requireAuth } from '../../utils/auth'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { PositionCard } from '../../components/portfolio/PositionCard'
 import { TradeHistory } from '../../components/portfolio/TradeHistory'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { formatPoints } from '../../lib/format'
-import { Loader2, TrendingUp, Wallet } from 'lucide-react'
 
 export const Route = createFileRoute('/portfolio/')({
   beforeLoad: ({ location }) => requireAuth({ location }),

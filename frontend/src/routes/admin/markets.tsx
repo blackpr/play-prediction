@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Button } from '../../components/ui/Button'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
+import { Button } from '../../components/ui/Button'
 import { MarketsTable } from '../../components/admin/MarketsTable'
 
 export const Route = createFileRoute('/admin/markets')({

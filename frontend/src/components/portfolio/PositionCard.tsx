@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Card, CardHeader, CardContent } from '../ui/Card'
+import { Card, CardContent, CardHeader } from '../ui/Card'
 import { formatPoints } from '../../lib/format'
 
 interface PositionCardProps {

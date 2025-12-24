@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { LayoutDashboard, Users, Store, ClipboardList, Tags } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, Store, Tags, Users } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { cn } from '../../utils'
 

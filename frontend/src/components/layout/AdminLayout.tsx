@@ -1,8 +1,8 @@
-import { useNavigate, Outlet } from '@tanstack/react-router'
+import { Outlet, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
-import { AdminSidebar } from './AdminSidebar'
 import { useIsClient } from '../../hooks/useIsClient'
+import { AdminSidebar } from './AdminSidebar'
 
 export function AdminLayout() {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -20,7 +20,7 @@ export function AdminLayout() {
 
     const hasAccess = user?.role === 'admin' || user?.role === 'treasury'
     if (!hasAccess) {
-      navigate({ to: '/', replace: true })
+      navigate({ to: '/', search: { page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }, replace: true })
     }
   }, [user, isAuthenticated, isLoading, navigate, isClient])
 

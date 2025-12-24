@@ -1,13 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useMarkets } from '../../hooks/useMarkets'
 import { MarketCard } from '../../components/market/MarketCard'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Search, ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { cn } from '../../utils'
 import { MarketCardSkeleton } from '../../components/market/MarketCardSkeleton'
+
+import { getCategories } from '../../api/markets'
 
 const marketsSearchSchema = z.object({
   status: z.enum(['ACTIVE', 'RESOLVED', 'CANCELLED', 'all']).optional(),
@@ -24,9 +27,6 @@ export const Route = createFileRoute('/markets/')({
   validateSearch: marketsSearchSchema,
   component: MarketsPage,
 })
-
-import { getCategories } from '../../api/markets'
-import { useQuery } from '@tanstack/react-query'
 
 function MarketsPage() {
   const search = Route.useSearch()

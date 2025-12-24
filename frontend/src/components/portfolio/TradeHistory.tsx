@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Loader2, History, ArrowUpRight, ArrowDownRight, Coins, Merge } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Coins, History, Loader2, Merge } from 'lucide-react'
 import { useTradeHistory } from '../../hooks/useTradeHistory'
 import { formatPoints } from '../../lib/format'
 import { EmptyState } from '../ui/EmptyState'

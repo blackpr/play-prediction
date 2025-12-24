@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from 'date-fns'
-import type { RecentTrade } from '../../api/types'
 import { useMarketTrades } from '../../hooks/useMarketTrades'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
+import type { RecentTrade } from '../../api/types'
 
 interface RecentTradesProps {
   marketId: string

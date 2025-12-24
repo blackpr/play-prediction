@@ -1,17 +1,17 @@
-import { useMutation, useQuery, useQueryClient, queryOptions } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { buyShares, getQuote, mergeShares, mintShares, sellShares } from '../api/markets'
 import type {
-  QuoteRequest,
   BuySharesRequest,
-  SellSharesRequest,
   BuySharesResponse,
-  SellSharesResponse,
-  MintSharesRequest,
-  MintSharesResponse,
   MergeSharesRequest,
   MergeSharesResponse,
+  MintSharesRequest,
+  MintSharesResponse,
+  QuoteRequest,
+  SellSharesRequest,
+  SellSharesResponse,
 } from '../api/types'
-import { getQuote, buyShares, sellShares, mintShares, mergeShares } from '../api/markets'
 
 // Quote query hook with debouncing handled at component level
 export const quoteQueryOptions = (marketId: string, params: QuoteRequest | null) =>

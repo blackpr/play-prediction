@@ -5,11 +5,11 @@ export type ChartInterval = '1H' | '24H' | '7D' | '30D' | 'All'
 interface IntervalSelectorProps {
   selected: ChartInterval
   onSelect: (interval: ChartInterval) => void
-  disabledIntervals?: ChartInterval[]
+  disabledIntervals?: Array<ChartInterval>
   className?: string
 }
 
-const intervals: ChartInterval[] = ['1H', '24H', '7D', '30D', 'All']
+const intervals: Array<ChartInterval> = ['1H', '24H', '7D', '30D', 'All']
 
 export function IntervalSelector({
   selected,

@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Select } from '../ui/Select';
 import { Label } from '../ui/Label';
-import { Category, NewCategory } from '../../api/types';
 import { adminApi } from '../../api/admin';
-import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import type { Category, NewCategory } from '../../api/types';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -78,7 +78,7 @@ export function CategoryModal({ isOpen, onClose, category }: CategoryModalProps)
     setError(null);
 
     try {
-      if (isEditing && category) {
+      if (isEditing) {
         await adminApi.updateCategory(category.id, formData);
       } else {
         await adminApi.createCategory(formData);
@@ -208,7 +208,7 @@ export function CategoryModal({ isOpen, onClose, category }: CategoryModalProps)
                 placeholder="30"
                 value={formData.defaultBufferMinutes || ''}
                 onChange={e => setFormData({ ...formData, defaultBufferMinutes: parseInt(e.target.value) || null })}
-                required={formData.defaultCloseBehavior === 'auto_with_buffer'}
+                required
                 disabled={isLoading || success}
               />
             </div>

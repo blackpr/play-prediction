@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { formatDistanceToNow } from 'date-fns'
-import { TrendingUp, Clock, Zap } from 'lucide-react'
-import type { Market } from '../../api/types'
+import { Clock, TrendingUp, Zap } from 'lucide-react'
 import { formatCompactPoints } from '../../lib/format'
-import { Badge, type BadgeVariant } from '../ui/Badge'
+import { Badge } from '../ui/Badge'
 import { ProbabilityBar } from './ProbabilityBar'
+import type { BadgeVariant } from '../ui/Badge';
+import type { Market } from '../../api/types'
 
 interface MarketCardProps {
   market: Market
@@ -20,8 +21,8 @@ export function MarketCard({ market }: MarketCardProps) {
   if (isResolved) badgeVariant = 'info'
   if (isCancelled) badgeVariant = 'error'
 
-  const yesPercent = Math.round(Number(market.yesPrice ?? 0) * 100)
-  const noPercent = Math.round(Number(market.noPrice ?? 0) * 100)
+  const yesPercent = Math.round(Number(market.yesPrice) * 100)
+  const noPercent = Math.round(Number(market.noPrice) * 100)
 
   const displayYes = isNaN(yesPercent) ? 50 : yesPercent
   const displayNo = isNaN(noPercent) ? 50 : noPercent

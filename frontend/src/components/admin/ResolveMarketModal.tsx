@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { format, parse } from 'date-fns';
 import { api } from '../../api/client';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
-import { toast } from 'sonner';
-import { format, parse } from 'date-fns';
 import { formatPoints } from '../../utils';
 
 interface ResolveMarketModalProps {
@@ -77,7 +77,7 @@ export function ResolveMarketModal({
   const { data: tradesData } = useQuery({
     queryKey: ['market-trades', marketId],
     queryFn: async () => {
-      const response = await api.get<Trade[]>(`/markets/${marketId}/trades`, {
+      const response = await api.get<Array<Trade>>(`/markets/${marketId}/trades`, {
         params: { limit: 50 }, // Backend max is 50
       });
       return response.data; // Backend returns array directly in data field

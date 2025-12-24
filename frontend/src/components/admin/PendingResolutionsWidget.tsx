@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { AlertCircle, Clock } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { api } from '../../api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { ResolveMarketModal } from './ResolveMarketModal';
-import { AlertCircle, Clock } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 
 interface Market {
   id: string;
@@ -22,7 +22,7 @@ interface Market {
 }
 
 interface MarketsResponse {
-  items: Market[];
+  items: Array<Market>;
   pagination: {
     page: number;
     pageSize: number;

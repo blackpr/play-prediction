@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { api } from '../../api/client'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Label } from '../ui/Label'
-import { toast } from 'sonner'
 import { formatPoints } from '../../utils'
 import { useDebounce } from '../../hooks/useDebounce'
 
@@ -87,7 +87,7 @@ export function GrantPointsModal({ isOpen, onClose }: GrantPointsModalProps) {
     queryKey: ['admin-users-search', debouncedSearch],
     queryFn: async () => {
       const response = await api.get<{
-        items: User[]
+        items: Array<User>
         pagination: { page: number; pageSize: number; totalItems: number }
       }>('/admin/users', {
         params: {

@@ -1,5 +1,6 @@
-import { useQuery, queryOptions } from '@tanstack/react-query'
-import { getMarkets, getMarket, getMarketPriceHistory, type GetMarketsParams } from '../api/markets'
+import { queryOptions, useQuery } from '@tanstack/react-query'
+import {  getMarket, getMarketPriceHistory, getMarkets } from '../api/markets'
+import type {GetMarketsParams} from '../api/markets';
 
 export const marketsQueryOptions = (params: GetMarketsParams) => queryOptions({
   queryKey: ['markets', params],

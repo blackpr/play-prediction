@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Edit2, Plus, Search, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { adminApi } from '../../api/admin';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { Category } from '../../api/types';
 import { CategoryModal } from './CategoryModals';
-import { toast } from 'sonner';
+import type { Category } from '../../api/types';
 
 export function CategoriesTable() {
   const queryClient = useQueryClient();

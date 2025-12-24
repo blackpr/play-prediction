@@ -1,16 +1,16 @@
 import {
-  LineChart,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
 } from 'recharts'
 import { Card, CardHeader, CardTitle } from '../ui/Card'
 import type { PricePoint } from '../../api/types'
 
 interface PriceChartProps {
-  data: PricePoint[]
+  data: Array<PricePoint>
   height?: number
   className?: string
   interval?: string
@@ -25,7 +25,7 @@ export function PriceChart({
   isLoading = false,
 }: PriceChartProps) {
   // Check if we have data to avoid rendering empty chart glitches
-  const hasData = data && data.length > 0
+  const hasData = data.length > 0
 
   // Transform OHLC candle data to simple price points for the chart
   // We'll use the close prices for both YES and NO (NO = 1 - YES)

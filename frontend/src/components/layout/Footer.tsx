@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { memo } from 'react'
-import { Github, Twitter, MessageCircle } from 'lucide-react'
+import { Github, MessageCircle, Twitter } from 'lucide-react'
 import { GridPattern } from '../ui/GridPattern'
 import { Logo } from '../ui/Logo'
 

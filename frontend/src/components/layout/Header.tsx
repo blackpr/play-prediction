@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router'
+import { Logo } from '../ui/Logo'
+import { useWebSocketContext } from '../../providers/websocket-provider'
 import { UserSection } from './UserSection'
 import { PortfolioLink } from './PortfolioLink'
 import { MobileNav } from './MobileNav'
 import { AdminLink } from './AdminLink'
-import { Logo } from '../ui/Logo'
 
-import { useWebSocketContext } from '../../providers/websocket-provider'
 
 export function Header() {
   const { status } = useWebSocketContext()

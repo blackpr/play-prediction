@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useBuyShares, useSellShares, useMintShares, useMergeShares, useQuote } from '../../hooks/useTrading'
+import { clsx } from 'clsx'
+import { AlertCircle, Settings, TrendingDown, TrendingUp } from 'lucide-react'
+import { useBuyShares, useMergeShares, useMintShares, useQuote, useSellShares } from '../../hooks/useTrading'
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
-import { usePriceFlash, usePriceDirection } from '../../hooks/usePriceAnimation'
+import { usePriceDirection, usePriceFlash } from '../../hooks/usePriceAnimation'
 import { Button } from '../ui/Button'
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { formatPoints, parsePoints } from '../../lib/format'
 import { Modal } from '../ui/Modal'
-import { clsx } from 'clsx'
-import type { Market, TradeSide, QuoteRequest } from '../../api/types'
-import { AlertCircle, TrendingUp, TrendingDown, Settings } from 'lucide-react'
+import type { Market, QuoteRequest, TradeSide } from '../../api/types'
 
 interface TradeFormProps {
   market: Market
@@ -276,7 +276,7 @@ export function TradeForm({ market }: TradeFormProps) {
 
           setAmount('')
           form.reset()
-        } else if (tab === 'sell') {
+        } else {
           // Calculate minAmountOut with configured slippage tolerance
           const slippageBps = BigInt(Math.round(slippage * 100))
           const factor = 10000n - slippageBps
@@ -362,7 +362,7 @@ export function TradeForm({ market }: TradeFormProps) {
       if (amountMicro < 1000n) { // 0.001
         return 'Minimum trade size is 0.001'
       }
-    } else if (tab === 'sell' || tab === 'merge') {
+    } else {
       if (amountMicro > availableShares) {
         return "You don't have enough shares"
       }
@@ -492,7 +492,7 @@ export function TradeForm({ market }: TradeFormProps) {
                 yesPriceFlash && "font-bold scale-110"
               )}>
                 {(() => {
-                  const price = parseFloat(market.yesPrice ?? '0')
+                  const price = parseFloat(market.yesPrice)
                   return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
                 })()}
                 {yesPriceDirection === 'up' && <TrendingUp className="w-3 h-3 text-green-300" />}
@@ -518,7 +518,7 @@ export function TradeForm({ market }: TradeFormProps) {
                 noPriceFlash && "font-bold scale-110"
               )}>
                 {(() => {
-                  const price = parseFloat(market.noPrice ?? '0')
+                  const price = parseFloat(market.noPrice)
                   return isNaN(price) ? '50.0¢' : `${(price * 100).toFixed(1)}¢`
                 })()}
                 {noPriceDirection === 'up' && <TrendingUp className="w-3 h-3 text-green-300" />}
@@ -596,8 +596,8 @@ export function TradeForm({ market }: TradeFormProps) {
           {tab === 'buy' && position && amount && parseFloat(amount) > 0 && (() => {
             const oppositeSide = side === 'YES' ? 'NO' : 'YES'
             const oppositeQty = oppositeSide === 'YES'
-              ? BigInt(position.yesQty ?? '0')
-              : BigInt(position.noQty ?? '0')
+              ? BigInt(position.yesQty)
+              : BigInt(position.noQty)
 
             if (oppositeQty > 0n) {
               // User holds opposite shares - netting will occur

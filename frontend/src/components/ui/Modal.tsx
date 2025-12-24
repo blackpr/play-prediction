@@ -54,7 +54,7 @@ export function Modal({
         const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
 
         // Focus the first element or the modal itself
-        if (firstElement) {
+        if (focusableElements.length > 0) {
           firstElement.focus()
         } else {
           modalElement.focus()
@@ -65,12 +65,12 @@ export function Modal({
             if (e.shiftKey) {
               if (document.activeElement === firstElement) {
                 e.preventDefault()
-                lastElement?.focus()
+                lastElement.focus()
               }
             } else {
               if (document.activeElement === lastElement) {
                 e.preventDefault()
-                firstElement?.focus()
+                firstElement.focus()
               }
             }
           }

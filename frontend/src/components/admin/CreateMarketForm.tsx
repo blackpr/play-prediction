@@ -1,7 +1,11 @@
 import { useForm } from '@tanstack/react-form';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
+import { useRef, useState } from 'react';
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { Calendar, Loader2, Upload } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
@@ -11,10 +15,6 @@ import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
 import { api } from '../../api/client';
 import { adminApi } from '../../api/admin';
-import { useState, useRef } from 'react';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { Calendar, Upload, Loader2 } from 'lucide-react';
 
 const MIN_SEED_LIQUIDITY = 1_000_000;
 
@@ -108,7 +108,7 @@ export function CreateMarketForm() {
       bufferMinutes: null as number | null,
       initialYesPrice: 0.50,
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: ({ value }) => {
       setPendingValues(value);
       setModalOpen(true);
     },

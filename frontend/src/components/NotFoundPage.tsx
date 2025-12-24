@@ -23,13 +23,13 @@ export function NotFoundPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-          <Link to="/">
+          <Link to="/" search={{ page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}>
             <Button size="lg" className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-500">
               <Home className="w-4 h-4" />
               Go Home
             </Button>
           </Link>
-          <Link to="/markets">
+          <Link to="/markets" search={{ page: 1, pageSize: 20, sort: 'createdAt', order: 'desc' }}>
             <Button variant="ghost" size="lg" className="w-full sm:w-auto gap-2 border border-white/10 hover:bg-white/5">
               <TrendingUp className="w-4 h-4" />
               Browse Markets

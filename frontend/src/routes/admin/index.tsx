@@ -1,19 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  Clock,
+  Gift,
+  TrendingUp,
+  Users
+} from 'lucide-react'
 import { useAdminStats } from '../../hooks/useAdminStats'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { GrantPointsModal } from '../../components/admin/GrantPointsModal'
 import { PendingResolutionsWidget } from '../../components/admin/PendingResolutionsWidget'
-import {
-  Users,
-  TrendingUp,
-  BarChart3,
-  Clock,
-  ArrowUpRight,
-  ArrowDownRight,
-  Gift
-} from 'lucide-react'
 
 export const Route = createFileRoute('/admin/')({
   component: AdminIndex,

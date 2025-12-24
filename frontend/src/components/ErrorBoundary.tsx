@@ -1,7 +1,7 @@
 import { QueryErrorResetBoundary } from '@tanstack/react-query'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
-import { Button } from './ui/Button'
 import { AlertCircle } from 'lucide-react'
+import { Button } from './ui/Button'
 
 interface Props {
   children: React.ReactNode

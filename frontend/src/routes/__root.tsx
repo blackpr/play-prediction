@@ -19,10 +19,10 @@ import { WebSocketProvider } from '../providers/websocket-provider'
 import appCss from '../styles.css?url'
 
 import { queryClient } from '../lib/queryClient'
-import type { QueryClient } from '@tanstack/react-query'
 
 import { NotFoundPage } from '../components/NotFoundPage'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import type { QueryClient } from '@tanstack/react-query'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient

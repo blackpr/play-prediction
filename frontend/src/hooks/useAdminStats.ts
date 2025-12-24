@@ -17,14 +17,14 @@ export interface AdminStats {
     total: string;
     last24h: string;
   };
-  recentTrades: {
+  recentTrades: Array<{
     id: string;
     marketTitle: string;
     action: string;
     amountIn: string;
     createdAt: string;
     user: string | null;
-  }[];
+  }>;
 }
 
 export function useAdminStats() {
