@@ -26,12 +26,19 @@ This is a monorepo containing:
    ```
 
 3. **Environment Setup**
-   Copy `.env.example` to `.env` and fill in the values.
+   
+   **Backend**: Copy `backend/.env.example` to `backend/.env.local` and fill in the values.
+   
+   **Frontend**: Copy `frontend/.env.example` to `frontend/.env` (if needed).
    
    For local development, `supabase start` will generate the keys.
 
    ```bash
-   cp .env.example .env
+   # Backend
+   cp backend/.env.example backend/.env.local
+   
+   # Frontend (if .env.example exists)
+   cp frontend/.env.example frontend/.env
    ```
 
 4. **Start Local Infrastructure**
