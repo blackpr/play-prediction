@@ -427,9 +427,10 @@ Admin creates market with 100 Points seed
 ```
 Users trade → Pool quantities change
 Fees collected:
-  - Vault fee (1%): Logged to trade_ledger only
+  - Vault fee (1%): Transferred to treasury account balance
   - LP fee (1%): Injected back into pool
 Pool depth increases over time due to LP fee injection
+Treasury balance increases over time from vault fees
 ```
 
 **3. Market Resolution (YES wins)**:
@@ -680,35 +681,72 @@ Current Value = shares × current_price
 
 ### 5.1 Backend Code Organization
 
+> **Note**: The codebase follows a **pragmatic layered architecture** rather than strict DDD. While the folder structure suggests hexagonal architecture, the actual implementation is more practical.
+
 ```
 backend/src/
-├── domain/                      # Pure business logic (NO external deps)
-│   ├── entities/                # Market, User, Trade, Portfolio
-│   ├── value-objects/           # MicroPoints, ShareQuantity
-│   ├── services/                # CPMMEngine, FeeCalculator, NettingService
-│   └── errors/                  # Domain-specific errors
+├── domain/                      # Pure business logic (minimal external deps)
+│   ├── entities/                # Mostly empty (only audit-log.entity.ts)
+│   ├── value-objects/           # Empty (only .gitkeep)
+│   ├── services/                # Core CPMM logic, fee calculation
+│   │   ├── cpmm-engine.ts       # Constant product market maker math
+│   │   ├── fee-calculator.ts    # Fee calculation and splitting
+│   │   └── constants.ts         # Domain constants (FEE_RATE_BP, etc.)
+│   ├── errors/                  # Domain-specific errors
+│   └── repositories/            # Repository interfaces (empty - moved to application/ports)
 │
 ├── application/                 # Use cases & orchestration
 │   ├── ports/                   # Interfaces (contracts)
 │   │   ├── repositories/        # IMarketRepo, IUserRepo, etc.
 │   │   └── services/            # IAuthService, IEventPublisher
-│   ├── use-cases/               # ExecuteTrade, CreateMarket, etc.
-│   └── dto/                     # Data Transfer Objects
+│   ├── use-cases/               # Business logic orchestration
+│   │   ├── admin/               # Admin operations (create market, resolve, etc.)
+│   │   ├── trading/             # Trading operations (buy, sell, mint, merge)
+│   │   ├── user/                # User operations (profile, balance)
+│   │   └── market/              # Market queries
+│   └── dto/                     # Data Transfer Objects (minimal usage)
 │
 ├── infrastructure/              # External implementations
 │   ├── database/
 │   │   ├── drizzle/             # Drizzle client, schema, migrations
 │   │   └── repositories/        # Concrete repository implementations
 │   ├── auth/                    # Supabase auth service
-│   ├── events/                  # Event publisher
-│   └── jobs/                    # BullMQ job handlers
+│   ├── events/                  # Event publisher (minimal)
+│   ├── jobs/                    # BullMQ job handlers
+│   ├── websocket/               # WebSocket manager
+│   └── di/                      # Dependency injection container
 │
-└── presentation/                # HTTP/WS layer (Fastify-specific)
-    ├── routes/                  # REST endpoints
-    ├── middleware/              # Auth, rate limiting, error handling
-    ├── schemas/                 # Zod validation schemas
-    └── websocket/               # WebSocket server
+├── presentation/                # HTTP/WS layer (Fastify-specific)
+│   └── fastify/
+│       ├── routes/              # REST endpoints
+│       │   ├── admin/           # Admin routes
+│       │   ├── auth/            # Auth routes
+│       │   ├── markets/         # Market routes
+│       │   ├── portfolio/       # Portfolio routes
+│       │   └── trading/         # Trading routes
+│       ├── middleware/          # Auth, rate limiting, error handling
+│       ├── schemas/             # Zod validation schemas
+│       └── plugins/             # Fastify plugins
+│
+└── shared/                      # Shared utilities
+    ├── config/                  # App configuration
+    ├── logger/                  # Logging setup
+    └── utils/                   # Helper functions
 ```
+
+**Key Differences from Ideal DDD**:
+- **No rich domain entities**: Most logic is in use cases, not entity methods
+- **No value objects**: Using primitive types (BigInt, string) directly
+- **Pragmatic separation**: Focus on maintainability over architectural purity
+- **Repository interfaces in application layer**: Not in domain layer
+- **Use cases are the core**: Business logic lives here, not in domain entities
+
+**Why This Works**:
+- ✅ Clear separation of concerns
+- ✅ Testable business logic
+- ✅ Easy to understand and maintain
+- ✅ Framework-agnostic core (use cases + domain services)
+- ✅ Can evolve toward richer domain model if needed
 
 ### 5.2 Key Backend Patterns
 
