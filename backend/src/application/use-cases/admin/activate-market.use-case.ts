@@ -2,6 +2,7 @@ import { MarketRepository } from '../../ports/repositories/market.repository';
 import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { MarketStatus } from '../../../infrastructure/database/drizzle/schema';
+import { WebSocketManager } from '../../../infrastructure/websocket/websocket-manager';
 
 export interface ActivateMarketResult {
   id: string;
@@ -14,6 +15,7 @@ export class ActivateMarketUseCase {
     private readonly deps: {
       marketRepository: MarketRepository;
       auditLogRepository: AuditLogRepository;
+      webSocketManager: WebSocketManager;
     }
   ) { }
 
@@ -42,6 +44,33 @@ export class ActivateMarketUseCase {
       entityType: 'MARKET',
       entityId: marketId,
       details: JSON.stringify({ title: market.title }),
+    });
+
+    // 5. Broadcast WebSocket messages
+    // 5a. Broadcast market_state (DRAFT → ACTIVE)
+    this.deps.webSocketManager.broadcast(`market:${marketId}`, {
+      type: 'market_state',
+      channel: `market:${marketId}`,
+      data: {
+        marketId,
+        previousStatus: MarketStatus.DRAFT,
+        newStatus: MarketStatus.ACTIVE,
+        reason: 'Market activated',
+      },
+    });
+
+    // 5b. Broadcast new_market to global channel
+    this.deps.webSocketManager.broadcast('global', {
+      type: 'new_market',
+      channel: 'global',
+      data: {
+        marketId,
+        title: market.title,
+        category: market.category,
+        yesPrice: '0.50',
+        noPrice: '0.50',
+        closesAt: market.closesAt?.toISOString(),
+      },
     });
 
     return {

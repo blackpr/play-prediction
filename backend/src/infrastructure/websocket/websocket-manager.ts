@@ -1,4 +1,5 @@
 import { WebSocket } from 'ws';
+import type { RedisPubSubService } from './redis-pubsub.service';
 
 export interface WebSocketMessage {
   type: string;
@@ -69,6 +70,7 @@ export class WebSocketManager {
   private static instance: WebSocketManager;
   private clients: Map<string, WebSocketClient[]> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private redisPubSub: RedisPubSubService | null = null;
 
   private constructor() {
     this.startHeartbeat();
@@ -79,6 +81,38 @@ export class WebSocketManager {
       WebSocketManager.instance = new WebSocketManager();
     }
     return WebSocketManager.instance;
+  }
+
+  /**
+   * Initialize Redis pub/sub for multi-server broadcasting.
+   * Should be called during app startup after DI container is ready.
+   */
+  async initializeRedisPubSub(redisPubSub: RedisPubSubService): Promise<void> {
+    this.redisPubSub = redisPubSub;
+
+    // Set up message handler to forward Redis messages to local WebSocket clients
+    redisPubSub.setMessageHandler((redisChannel: string, payload: string) => {
+      try {
+        const parsed = JSON.parse(payload);
+
+        // Handle broadcast messages
+        if (redisChannel.startsWith('ws:broadcast:')) {
+          const { channel, message } = parsed;
+          this.broadcastLocal(channel, message);
+        }
+        // Handle user-specific messages
+        else if (redisChannel.startsWith('ws:user:')) {
+          const { userId, message } = parsed;
+          this.sendToUserLocal(userId, message);
+        }
+      } catch (err) {
+        console.error('[WebSocketManager] Failed to parse Redis message:', err);
+      }
+    });
+
+    // Subscribe to Redis channels
+    await redisPubSub.subscribe();
+    console.log('[WebSocketManager] Redis pub/sub initialized');
   }
 
   add(client: WebSocketClient): void {
@@ -108,7 +142,42 @@ export class WebSocketManager {
     }
   }
 
-  broadcast(channel: string, message: Partial<WebSocketMessage>): void {
+  /**
+   * Broadcast message to all subscribers of a channel.
+   * If Redis pub/sub is enabled, publishes to Redis for multi-server support.
+   * Otherwise, only broadcasts to local connections.
+   */
+  async broadcast(channel: string, message: Partial<WebSocketMessage>): Promise<void> {
+    if (this.redisPubSub) {
+      // Publish to Redis - will be received by all server instances (including this one)
+      await this.redisPubSub.broadcastToChannel(channel, message);
+    } else {
+      // Fallback: Only broadcast to local connections (single-server mode)
+      this.broadcastLocal(channel, message);
+    }
+  }
+
+  /**
+   * Send message to a specific user.
+   * If Redis pub/sub is enabled, publishes to Redis for multi-server support.
+   * Otherwise, only sends to local connections.
+   */
+  async sendToUser(userId: string, message: Partial<WebSocketMessage>): Promise<void> {
+    if (this.redisPubSub) {
+      // Publish to Redis - will be received by all server instances
+      await this.redisPubSub.sendToUser(userId, message);
+    } else {
+      // Fallback: Only send to local connections (single-server mode)
+      this.sendToUserLocal(userId, message);
+    }
+  }
+
+  /**
+   * Broadcast to local WebSocket clients only (not through Redis).
+   * Called by Redis message handler to avoid infinite loops.
+   * @private
+   */
+  private broadcastLocal(channel: string, message: Partial<WebSocketMessage>): void {
     for (const userClients of this.clients.values()) {
       for (const client of userClients) {
         if (client.subscriptions.has(channel)) {
@@ -121,7 +190,12 @@ export class WebSocketManager {
     }
   }
 
-  sendToUser(userId: string, message: Partial<WebSocketMessage>): void {
+  /**
+   * Send to local user connections only (not through Redis).
+   * Called by Redis message handler to avoid infinite loops.
+   * @private
+   */
+  private sendToUserLocal(userId: string, message: Partial<WebSocketMessage>): void {
     const userClients = this.clients.get(userId);
     if (userClients) {
       for (const client of userClients) {
@@ -143,15 +217,22 @@ export class WebSocketManager {
     }, 30000); // Check every 30 seconds
   }
 
-  shutdown(): void {
+  async shutdown(): Promise<void> {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
     }
+    
+    // Close all WebSocket connections
     for (const userClients of this.clients.values()) {
       for (const client of userClients) {
         client.socket.close(1001, 'Server shutting down');
       }
     }
     this.clients.clear();
+
+    // Shutdown Redis pub/sub
+    if (this.redisPubSub) {
+      await this.redisPubSub.shutdown();
+    }
   }
 }

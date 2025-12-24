@@ -57,6 +57,7 @@ import { CreateCategoryUseCase } from '../../application/use-cases/admin/create-
 import { UpdateCategoryUseCase } from '../../application/use-cases/admin/update-category.use-case';
 import { DeleteCategoryUseCase } from '../../application/use-cases/admin/delete-category.use-case';
 import { WebSocketManager } from '../../infrastructure/websocket/websocket-manager';
+import { RedisPubSubService } from '../../infrastructure/websocket/redis-pubsub.service';
 
 
 /**
@@ -80,6 +81,9 @@ export interface AppCradle {
   // Domain Services
   circuitBreakerService: CircuitBreakerService;
   authService: AuthService;
+  
+  // WebSocket & Real-time
+  redisPubSubService: RedisPubSubService;
 
   // Application Services / Use Cases
   loginUseCase: LoginUseCase;

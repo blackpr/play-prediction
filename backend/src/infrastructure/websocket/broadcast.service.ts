@@ -7,7 +7,7 @@ export class BroadcastService {
   /**
    * Broadcast price update to all subscribers of a market
    */
-  broadcastPriceUpdate(marketId: string, data: {
+  async broadcastPriceUpdate(marketId: string, data: {
     yesPrice: string;
     noPrice: string;
     yesQty: string;
@@ -16,7 +16,7 @@ export class BroadcastService {
     lastTradeSide: 'YES' | 'NO';
     lastTradeSize: string;
     volume24h: string;
-  }): void {
+  }): Promise<void> {
     const channel = `market:${marketId}`;
     const message: Partial<WebSocketMessage> = {
       type: 'price_update',
@@ -28,13 +28,13 @@ export class BroadcastService {
       timestamp: new Date().toISOString()
     };
 
-    this.wsManager.broadcast(channel, message);
+    await this.wsManager.broadcast(channel, message);
   }
 
   /**
    * Send trade confirmation to a specific user
    */
-  sendTradeConfirmation(userId: string, data: {
+  async sendTradeConfirmation(userId: string, data: {
     transactionId: string;
     marketId: string;
     action: 'BUY' | 'SELL';
@@ -49,7 +49,7 @@ export class BroadcastService {
       yesQty: string;
       noQty: string;
     };
-  }): void {
+  }): Promise<void> {
     const channel = `user:${userId}`;
     const message: Partial<WebSocketMessage> = {
       type: 'trade_confirmed',
@@ -58,6 +58,6 @@ export class BroadcastService {
       timestamp: new Date().toISOString()
     };
 
-    this.wsManager.sendToUser(userId, message);
+    await this.wsManager.sendToUser(userId, message);
   }
 }

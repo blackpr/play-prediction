@@ -287,6 +287,19 @@ export class SellSharesUseCase {
       timestamp: new Date().toISOString(),
     });
 
+    // Broadcast anonymized trade event for live feed
+    this.webSocketManager.broadcast(`market:${marketId}`, {
+      type: 'trade',
+      channel: `market:${marketId}`,
+      data: {
+        marketId,
+        side,
+        shares: shares.toString(),
+        price: result.avgExecutionPrice,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
     return result;
   }
 }

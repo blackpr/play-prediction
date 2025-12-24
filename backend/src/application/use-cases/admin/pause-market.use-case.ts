@@ -2,6 +2,7 @@ import { MarketRepository } from '../../ports/repositories/market.repository';
 import { AuditLogRepository } from '../../ports/repositories/audit-log.repository';
 import { NotFoundError, ValidationError } from '../../../domain/errors/domain-error';
 import { MarketStatus } from '../../../infrastructure/database/drizzle/schema';
+import { WebSocketManager } from '../../../infrastructure/websocket/websocket-manager';
 
 export interface PauseMarketParams {
   marketId: string;
@@ -21,6 +22,7 @@ export class PauseMarketUseCase {
     private readonly deps: {
       marketRepository: MarketRepository;
       auditLogRepository: AuditLogRepository;
+      webSocketManager: WebSocketManager;
     }
   ) { }
 
@@ -51,6 +53,18 @@ export class PauseMarketUseCase {
       entityType: 'MARKET',
       entityId: marketId,
       details: JSON.stringify({ title: market.title, reason }),
+    });
+
+    // 5. Broadcast WebSocket message
+    this.deps.webSocketManager.broadcast(`market:${marketId}`, {
+      type: 'market_state',
+      channel: `market:${marketId}`,
+      data: {
+        marketId,
+        previousStatus: MarketStatus.ACTIVE,
+        newStatus: MarketStatus.PAUSED,
+        reason: reason || 'Market paused by admin',
+      },
     });
 
     return {

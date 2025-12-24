@@ -64,6 +64,7 @@ import { CreateCategoryUseCase } from '../../application/use-cases/admin/create-
 import { UpdateCategoryUseCase } from '../../application/use-cases/admin/update-category.use-case';
 import { DeleteCategoryUseCase } from '../../application/use-cases/admin/delete-category.use-case';
 import { WebSocketManager } from '../../infrastructure/websocket/websocket-manager';
+import { RedisPubSubService } from '../../infrastructure/websocket/redis-pubsub.service';
 
 
 
@@ -115,6 +116,7 @@ export function registerDependencies(): void {
 
   diContainer.register({
     circuitBreakerService: asClass(RedisCircuitBreakerService).singleton(),
+    redisPubSubService: asClass(RedisPubSubService).singleton(),
     webSocketManager: asFunction(() => WebSocketManager.getInstance()).singleton(),
   });
 

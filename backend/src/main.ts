@@ -99,6 +99,14 @@ async function buildServer() {
 const start = async () => {
   try {
     await buildServer();
+    
+    // Initialize Redis pub/sub for WebSocket broadcasting
+    const { diContainer } = await import('./shared/container/index');
+    const webSocketManager = diContainer.resolve('webSocketManager');
+    const redisPubSubService = diContainer.resolve('redisPubSubService');
+    await webSocketManager.initializeRedisPubSub(redisPubSubService);
+    server.log.info('WebSocket Redis pub/sub initialized');
+    
     const port = parseInt(process.env.PORT || '4000', 10);
     await server.listen({ port, host: '0.0.0.0' });
     console.log(`Server listening on http://localhost:${port}`);
@@ -107,5 +115,24 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  server.log.info('SIGTERM received, shutting down gracefully...');
+  const { diContainer } = await import('./shared/container/index');
+  const webSocketManager = diContainer.resolve('webSocketManager');
+  await webSocketManager.shutdown();
+  await server.close();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  server.log.info('SIGINT received, shutting down gracefully...');
+  const { diContainer } = await import('./shared/container/index');
+  const webSocketManager = diContainer.resolve('webSocketManager');
+  await webSocketManager.shutdown();
+  await server.close();
+  process.exit(0);
+});
 
 start();
