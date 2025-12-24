@@ -40,11 +40,11 @@ export const Route = createFileRoute('/markets/$marketId')({
   loader: async ({ context: { queryClient }, params: { marketId } }) => {
     // Prefetch market data
     await queryClient.ensureQueryData(marketQueryOptions(marketId))
-    // Prefetch initial price history (last 24 hours with 1h interval)
+    // Prefetch initial price history (last 24 hours with 15m interval)
     const now = new Date()
     const from = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     await queryClient.ensureQueryData(
-      priceHistoryQueryOptions(marketId, '1h', from, now),
+      priceHistoryQueryOptions(marketId, '15m', from, now),
     )
   },
   component: MarketDetailPage,
@@ -70,19 +70,19 @@ function getIntervalParams(interval: ChartInterval, marketCreatedAt: string) {
 
   switch (interval) {
     case '1H':
-      // 1-hour view: Use 1h candles (1 point)
-      // Note: Could use 1m or 5m for more detail, but backend doesn't support it yet
+      // 1-hour view: Use 1m candles (60 points)
+      // Shows detailed recent price movement
       return {
-        backendInterval: '1h' as const,
+        backendInterval: '1m' as const,
         from: new Date(now.getTime() - 60 * 60 * 1000),
         to: now,
       }
 
     case '24H':
-      // 24-hour view: Use 1h candles (24 points)
+      // 24-hour view: Use 15m candles (96 points)
       // Good balance of detail and clarity
       return {
-        backendInterval: '1h' as const,
+        backendInterval: '15m' as const,
         from: new Date(now.getTime() - 24 * 60 * 60 * 1000),
         to: now,
       }

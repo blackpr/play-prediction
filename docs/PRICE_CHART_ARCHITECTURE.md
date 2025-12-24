@@ -12,11 +12,11 @@
 
 | Time Range | Candle Interval | Expected Points | Rationale |
 |------------|----------------|-----------------|-----------|
-| **1H** | 1m | 60 | High detail for short-term traders |
+| **1H** | 1m | 60 | High detail for intraday trading |
 | **24H** | 15m | 96 | Balance of detail and clarity |
-| **7D** | 1h | 168 | Smooth trends, capture daily patterns |
+| **7D** | 1h | 168 | Capture daily patterns clearly |
 | **30D** | 4h | 180 | Weekly patterns visible |
-| **All** | Dynamic | ~150-200 | Scales with market age |
+| **All** | Dynamic | ~150-200 | Scales intelligently with market age |
 
 ### 3. All-Time Interval Logic
 
@@ -30,12 +30,13 @@ else → '1d'  // Long-running market
 
 ### 4. X-Axis Formatting Strategy
 
-| Interval | Format | Example |
-|----------|--------|---------|
-| 1m, 5m, 15m | `HH:MM` | "14:30" |
-| 1h | `MMM DD, HH:MM` (if >1 day range) | "Dec 20, 14:00" |
-| 4h | `MMM DD` | "Dec 20" |
-| 1d | `MMM DD` | "Dec 20" |
+| Time Span | Format | Example |
+|-----------|--------|---------|
+| ≤24 hours | `HH:MM` (24-hour) | "14:30" |
+| ≤7 days | `MMM DD` | "Dec 20" |
+| >7 days | `MMM DD` | "Dec 20" |
+
+**Note**: Formatting is dynamic based on actual data span, not just the interval selected.
 
 ### 5. Tooltip Strategy
 Always show full context: `MMM DD, YYYY HH:MM` + percentage

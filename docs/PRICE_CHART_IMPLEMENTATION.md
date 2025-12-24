@@ -13,8 +13,8 @@ Implemented a **production-ready, performance-optimized price history chart** wi
 
 | Time Range | Interval | Data Points | Performance |
 |------------|----------|-------------|-------------|
-| 1H | 1h | 1 | ⚡ Instant |
-| 24H | 1h | 24 | ⚡ Instant |
+| 1H | 1m | 60 | ⚡ Instant |
+| 24H | 15m | 96 | ⚡ Instant |
 | 7D | 1h | 168 | ⚡ Fast |
 | 30D | 4h | 180 | ⚡ Fast |
 | All (≤7d) | 1h | ~168 | ⚡ Fast |
