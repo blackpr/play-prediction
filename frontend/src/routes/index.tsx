@@ -115,20 +115,21 @@ function HomePage() {
       {/* Main Content */}
       <div className="flex-1 px-6 py-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Filters and Search */}
-          <div className="space-y-4 rounded-xl border border-surface-highlight bg-surface-card/50 p-6 backdrop-blur-sm">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              {/* Status Tabs */}
-              <div className="flex rounded-lg bg-background/50 p-1 border border-surface-highlight">
+          {/* Compact Filters Bar - Polymarket Style */}
+          <div className="flex flex-col gap-3">
+            {/* Top Row: Status + Search */}
+            <div className="flex items-center gap-3">
+              {/* Status Tabs - Inline */}
+              <div className="flex items-center gap-1.5">
                 {['ACTIVE', 'RESOLVED', 'all'].map((status) => (
                   <button
                     key={status}
                     onClick={() => setStatus(status)}
                     className={cn(
-                      'px-4 py-2 text-sm font-medium rounded-md transition-all font-mono uppercase tracking-wider',
-                      (search.status || 'ACTIVE') === status
-                        ? 'bg-accent-cyan text-background shadow-lg'
-                        : 'text-text-muted hover:text-text hover:bg-surface-highlight'
+                      'px-3 py-1 rounded-md text-xs font-mono font-bold uppercase tracking-wider transition-all',
+                      search.status === status || (status === 'all' && !search.status)
+                        ? 'bg-accent-cyan text-background'
+                        : 'text-text-muted hover:text-text hover:bg-surface-highlight/50'
                     )}
                   >
                     {status === 'all' ? 'All' : status}
@@ -136,35 +137,46 @@ function HomePage() {
                 ))}
               </div>
 
-              {/* Search */}
-              <div className="relative w-full md:w-80">
-                <Search className="absolute left-3 top-3 h-5 w-5 text-text-dim" />
+              {/* Search - Compact */}
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2.5 top-2 h-4 w-4 text-text-dim" />
                 <Input
                   placeholder="Search markets..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-10 bg-background/50 border-surface-highlight text-text placeholder:text-text-dim focus:border-accent-cyan"
+                  className="pl-8 pr-8 py-1.5 h-8 text-sm bg-surface/50 border-surface-highlight text-text placeholder:text-text-dim focus:border-accent-cyan"
                 />
                 {searchInput && (
                   <button
                     onClick={() => setSearchInput('')}
-                    className="absolute right-3 top-3 text-text-dim hover:text-text transition-colors"
+                    className="absolute right-2 top-2 text-text-dim hover:text-text transition-colors"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
+
+              {/* Sort - Compact Dropdown */}
+              <select
+                value={search.sort}
+                onChange={(e) => setSort(e.target.value as any)}
+                className="bg-surface/50 border border-surface-highlight text-text text-xs font-mono px-2.5 py-1.5 h-8 rounded-md focus:outline-none focus:border-accent-cyan cursor-pointer"
+              >
+                <option value="createdAt">NEWEST</option>
+                <option value="volume">VOLUME</option>
+                <option value="closesAt">ENDING SOON</option>
+              </select>
             </div>
 
-            {/* Categories */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Bottom Row: Categories - Horizontal Scroll */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
               <button
                 onClick={() => setCategory(undefined)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition-all',
+                  'px-2.5 py-1 rounded-md text-xs font-mono font-medium whitespace-nowrap transition-all flex-shrink-0',
                   !search.categoryId
-                    ? 'bg-accent-cyan text-background border-accent-cyan shadow-glow-cyan'
-                    : 'bg-transparent text-text-muted border-surface-highlight hover:border-accent-cyan/50'
+                    ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/50'
+                    : 'bg-transparent text-text-muted border border-surface-highlight hover:border-accent-cyan/30'
                 )}
               >
                 ALL
@@ -174,29 +186,15 @@ function HomePage() {
                   key={cat.id}
                   onClick={() => setCategory(cat.id)}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition-all',
+                    'px-2.5 py-1 rounded-md text-xs font-mono font-medium whitespace-nowrap transition-all flex-shrink-0',
                     search.categoryId === cat.id
-                      ? 'bg-accent-cyan text-background border-accent-cyan shadow-glow-cyan'
-                      : 'bg-transparent text-text-muted border-surface-highlight hover:border-accent-cyan/50'
+                      ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/50'
+                      : 'bg-transparent text-text-muted border border-surface-highlight hover:border-accent-cyan/30'
                   )}
                 >
                   {cat.name.toUpperCase()}
                 </button>
               ))}
-            </div>
-
-            {/* Sort */}
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-text-muted font-mono uppercase tracking-wider">Sort:</span>
-              <select
-                value={search.sort}
-                onChange={(e) => setSort(e.target.value as any)}
-                className="bg-background/50 border border-surface-highlight text-text font-mono px-3 py-1.5 rounded-md focus:outline-none focus:border-accent-cyan cursor-pointer"
-              >
-                <option value="createdAt">NEWEST</option>
-                <option value="volume">VOLUME</option>
-                <option value="closesAt">ENDING SOON</option>
-              </select>
             </div>
           </div>
 
