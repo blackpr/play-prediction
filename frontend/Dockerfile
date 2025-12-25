@@ -36,6 +36,8 @@ RUN if [ -f "/app/final_build/_shell.html" ] && [ ! -f "/app/final_build/index.h
   fi
 
 # Stage 2: Production with Nginx
+FROM nginx:alpine
+
 # Create nginx config inline to avoid cache issues
 RUN printf 'user nginx;\n\
   worker_processes auto;\n\
