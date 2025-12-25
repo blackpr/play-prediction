@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY tsconfig.json ./
 
 # Install dependencies (including dev dependencies for build)
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY src ./src
@@ -30,7 +30,7 @@ RUN apk add --no-cache dumb-init
 COPY package*.json ./
 
 # Install production dependencies AND drizzle-kit (needed for migrations)
-RUN npm ci --only=production && npm install drizzle-kit
+RUN npm install --only=production && npm install drizzle-kit
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
