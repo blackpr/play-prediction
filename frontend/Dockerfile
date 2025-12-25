@@ -80,8 +80,7 @@ RUN chmod +x /docker-entrypoint.sh
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+
 
 # Run nginx with environment variable injection
 ENTRYPOINT ["/docker-entrypoint.sh"]
