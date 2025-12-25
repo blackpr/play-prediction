@@ -20,7 +20,7 @@ COPY vitest.integration.config.ts ./vitest.integration.config.ts
 RUN npm run build
 
 # Verify build output
-RUN ls -la dist/ && test -f dist/main.js || (echo "Build failed: main.js not found" && exit 1)
+RUN ls -la dist/src/ && test -f dist/src/main.js || (echo "Build failed: main.js not found" && exit 1)
 
 # Stage 2: Production
 FROM node:24-alpine
@@ -60,4 +60,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
