@@ -7,7 +7,8 @@ import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { requireEnv, getEnv } from '../../shared/config/env';
 
-const isProduction = getEnv('NODE_ENV', 'development') === 'production';
+const nodeEnv = getEnv('NODE_ENV', 'development').toLowerCase();
+const isProduction = nodeEnv === 'production' || nodeEnv === 'staging';
 
 /**
  * Creates a Supabase client for server-side operations.
@@ -44,7 +45,7 @@ export function createClient(request: FastifyRequest, reply: FastifyReply) {
               path: options?.path ?? '/',
               httpOnly: options?.httpOnly ?? true,
               secure: isProduction,
-              sameSite: 'lax',
+              sameSite: isProduction ? 'none' : 'lax', // Must be 'none' for cross-site usage in production/staging
             });
             reply.header('Set-Cookie', header);
           });
