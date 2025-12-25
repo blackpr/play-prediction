@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Link } from '@tanstack/react-router';
 
 import { useWebSocket } from '../hooks/use-websocket';
+import { useRefreshContext } from './refresh-context';
 import type { ReactNode } from 'react';
 import type { WebSocketStatus } from '../hooks/use-websocket';
 
@@ -18,7 +19,15 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { status, subscribe, unsubscribe, lastMessage, reconnect } = useWebSocket();
+  const refreshContext = useRefreshContext();
   const queryClient = useQueryClient();
+
+  // Subscribe to global updates
+  useEffect(() => {
+    if (status === 'connected') {
+      subscribe('global');
+    }
+  }, [status, subscribe]);
 
   // Global event handling
   useEffect(() => {
@@ -106,6 +115,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           );
         }
         void queryClient.invalidateQueries({ queryKey: ['markets'] });
+        break;
+
+      case 'deployment':
+        if (lastMessage.data?.version) {
+          refreshContext.setPendingVersion(lastMessage.data.version);
+        }
         break;
 
       case 'resolution_payout':

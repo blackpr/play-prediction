@@ -15,6 +15,7 @@ import { Footer } from '../components/layout/Footer'
 import { NetworkStatus } from '../components/ui/NetworkStatus'
 import { SessionManager } from '../components/SessionManager'
 import { WebSocketProvider } from '../providers/websocket-provider'
+import { RefreshProvider } from '../providers/refresh-context'
 
 import appCss from '../styles.css?url'
 
@@ -72,30 +73,32 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          <WebSocketProvider>
-            <div className="flex flex-col min-h-screen">
-              <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-primary focus:font-bold focus:top-4 focus:left-4 focus:outline-none focus:ring-2 focus:ring-primary rounded-md shadow-lg"
-              >
-                Skip to main content
-              </a>
-              <NetworkStatus />
-              <Header />
-              <SessionManager />
-              <main
-                id="main-content"
-                className="flex-1 focus:outline-none"
-                tabIndex={-1}
-              >
-                <ErrorBoundary>
-                  {children}
-                </ErrorBoundary>
-              </main>
-              <Footer />
-            </div>
-            <Toaster richColors position="top-right" theme="dark" />
-          </WebSocketProvider>
+          <RefreshProvider>
+            <WebSocketProvider>
+              <div className="flex flex-col min-h-screen">
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-primary focus:font-bold focus:top-4 focus:left-4 focus:outline-none focus:ring-2 focus:ring-primary rounded-md shadow-lg"
+                >
+                  Skip to main content
+                </a>
+                <NetworkStatus />
+                <Header />
+                <SessionManager />
+                <main
+                  id="main-content"
+                  className="flex-1 focus:outline-none"
+                  tabIndex={-1}
+                >
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                </main>
+                <Footer />
+              </div>
+              <Toaster richColors position="top-right" theme="dark" />
+            </WebSocketProvider>
+          </RefreshProvider>
         </QueryClientProvider>
         <TanStackDevtools
           config={{

@@ -9,6 +9,7 @@ import { useBuyShares, useMergeShares, useMintShares, useQuote, useSellShares } 
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
 import { usePriceDirection, usePriceFlash } from '../../hooks/usePriceAnimation'
+import { useRefreshBlocker } from '../../hooks/use-refresh-blocker'
 import { Button } from '../ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { formatPoints, parsePoints } from '../../lib/format'
@@ -132,6 +133,10 @@ export function TradeForm({ market }: TradeFormProps) {
 
   // Confirmation State
   const [showConfirmation, setShowConfirmation] = useState(false)
+
+  // Block refresh if user has typed an amount or confirmation is open
+  const isBlocking = (!!amount && amount !== '') || showConfirmation
+  useRefreshBlocker(isBlocking)
 
   const executeTrade = async (trade: {
     action: 'buy' | 'sell' | 'mint' | 'merge'
