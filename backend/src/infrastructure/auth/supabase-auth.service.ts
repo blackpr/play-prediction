@@ -43,7 +43,8 @@ export class SupabaseAuthService implements AuthService {
       const authHealthUrl = `${supabaseUrl}/auth/v1/health`;
       const response = await fetch(authHealthUrl);
       return response.ok;
-    } catch {
+    } catch (err) {
+      console.error('[SupabaseAuth] Health check failed:', err);
       return false;
     }
   }
