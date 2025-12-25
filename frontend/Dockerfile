@@ -24,7 +24,7 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built files from builder (TanStack Start outputs to .output/public)
-COPY --from=builder /app/.output/public /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy environment variable injection script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
