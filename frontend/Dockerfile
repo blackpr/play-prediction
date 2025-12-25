@@ -14,9 +14,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Accept VITE_API_URL as build argument
+# Accept VITE_API_URL and VITE_WS_URL as build arguments
 ARG VITE_API_URL
+ARG VITE_WS_URL
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_WS_URL=${VITE_WS_URL}
 
 # Build the application with the environment variable baked in
 RUN npm run build
