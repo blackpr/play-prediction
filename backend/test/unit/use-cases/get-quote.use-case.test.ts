@@ -45,7 +45,7 @@ describe('GetQuoteUseCase', () => {
       // Should have estimated shares out (after 2% fee)
       expect(result.estimatedSharesOut).toBeDefined();
       expect(BigInt(result.estimatedSharesOut!)).toBeGreaterThan(0n);
-      expect(BigInt(result.estimatedSharesOut!)).toBeLessThan(100_000n); // Less than input due to fees
+      expect(BigInt(result.estimatedSharesOut!)).toBeGreaterThan(100_000n); // Greater than input points (Price < 1.0)
 
       // Should have fee (2% of 100,000 = 2,000)
       expect(result.estimatedFee).toBe('2000');
@@ -235,7 +235,7 @@ describe('GetQuoteUseCase', () => {
 
       // Small orders should have minimal price impact
       expect(parseFloat(result.priceImpact)).toBeGreaterThanOrEqual(0);
-      expect(parseFloat(result.priceImpact)).toBeLessThan(0.01); // Less than 1%
+      expect(parseFloat(result.priceImpact)).toBeLessThan(0.03); // Less than 3% (2% fee + minimal slippage)
     });
   });
 

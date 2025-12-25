@@ -7,9 +7,12 @@ import {
   Clock,
   Gift,
   TrendingUp,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react'
 import { useAdminStats } from '../../hooks/useAdminStats'
+import { adminApi } from '../../api/admin'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { GrantPointsModal } from '../../components/admin/GrantPointsModal'
@@ -40,14 +43,33 @@ function AdminIndex() {
           </h1>
           <p className="text-gray-400 mt-1">Platform overview and activity</p>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => setGrantPointsModalOpen(true)}
-          leftIcon={<Gift className="w-4 h-4" />}
-        >
-          Grant Points
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={async () => {
+              if (confirm('Are you sure you want to force a refresh for all connected clients?')) {
+                try {
+                  await adminApi.notifyDeployment(new Date().toISOString())
+                  toast.success('Refresh signal sent to all clients')
+                } catch (err) {
+                  toast.error('Failed to send refresh signal')
+                }
+              }
+            }}
+            leftIcon={<RefreshCw className="w-4 h-4" />}
+          >
+            Refresh Clients
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setGrantPointsModalOpen(true)}
+            leftIcon={<Gift className="w-4 h-4" />}
+          >
+            Grant Points
+          </Button>
+        </div>
       </div>
 
       {/* Metrics Cards */}

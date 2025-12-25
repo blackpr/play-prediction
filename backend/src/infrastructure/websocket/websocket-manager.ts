@@ -173,6 +173,17 @@ export class WebSocketManager {
   }
 
   /**
+   * Broadcast a deployment notification to all connected clients.
+   */
+  async broadcastDeployment(version: string): Promise<void> {
+    const message = {
+      type: 'deployment',
+      data: { version },
+    };
+    await this.broadcast('global', message);
+  }
+
+  /**
    * Broadcast to local WebSocket clients only (not through Redis).
    * Called by Redis message handler to avoid infinite loops.
    * @private
@@ -221,7 +232,7 @@ export class WebSocketManager {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
     }
-    
+
     // Close all WebSocket connections
     for (const userClients of this.clients.values()) {
       for (const client of userClients) {

@@ -31,8 +31,27 @@ async function buildServer() {
     }
   });
 
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:4000',
+    'https://prediction-frontend.egoeimai.bitar.gr',
+    'https://prediction-frontend-staging.egoeimai.bitar.gr'
+  ];
+
   await server.register(cors, {
-    origin: true, // Allow all for dev
+    origin: (origin, cb) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
+      if (!origin) return cb(null, true);
+
+      // Allow if in allow-list OR if not in production (fallback for dev)
+      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+        return cb(null, true);
+      }
+
+      // Block otherwise
+      // console.warn(`Blocked CORS for origin: ${origin}`);
+      return cb(new Error("Not allowed by CORS"), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
@@ -99,14 +118,14 @@ async function buildServer() {
 const start = async () => {
   try {
     await buildServer();
-    
+
     // Initialize Redis pub/sub for WebSocket broadcasting
     const { diContainer } = await import('./shared/container/index');
     const webSocketManager = diContainer.resolve('webSocketManager');
     const redisPubSubService = diContainer.resolve('redisPubSubService');
     await webSocketManager.initializeRedisPubSub(redisPubSubService);
     server.log.info('WebSocket Redis pub/sub initialized');
-    
+
     const port = parseInt(process.env.PORT || '4000', 10);
     await server.listen({ port, host: '0.0.0.0' });
     console.log(`Server listening on http://localhost:${port}`);

@@ -40,7 +40,7 @@ describe('CreateMarketUseCase', () => {
     bufferMinutes: null,
     category: 'Weather',
     imageUrl: null,
-    closesAt: new Date('2025-12-25T00:00:00Z'),
+    closesAt: new Date('2030-12-25T00:00:00Z'),
     resolvedAt: null,
     eventEndedAt: null,
     resolution: null,
@@ -100,7 +100,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Test Market',
         description: 'Test Description',
         categoryId: 'cat-123',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
       });
@@ -120,7 +120,7 @@ describe('CreateMarketUseCase', () => {
           title: 'Test Market',
           description: 'Test Description',
           categoryId: 'cat-123',
-          closesAt: new Date('2025-12-25T00:00:00Z'),
+          closesAt: new Date('2030-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           createdBy: 'admin-id',
         })
@@ -135,7 +135,7 @@ describe('CreateMarketUseCase', () => {
           title: 'Test Market',
           description: 'Test Description',
           categoryId: 'cat-123',
-          closesAt: new Date('2025-12-25T00:00:00Z'),
+          closesAt: new Date('2030-12-25T00:00:00Z'),
           seedLiquidity: 500_000n, // Less than 1M minimum
           createdBy: 'admin-id',
         })
@@ -155,7 +155,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Weather Market',
         description: 'Test',
         categoryId: 'cat-123',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
       });
@@ -181,7 +181,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Soccer Match',
         description: 'Test',
         categoryId: 'cat-soccer',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
       });
@@ -208,7 +208,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Basketball Game',
         description: 'Test',
         categoryId: 'cat-basketball',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
       });
@@ -226,7 +226,7 @@ describe('CreateMarketUseCase', () => {
           title: 'Test Market',
           description: 'Test',
           categoryId: 'cat-123',
-          closesAt: new Date('2025-12-25T00:00:00Z'),
+          closesAt: new Date('2030-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           closeBehavior: 'auto_with_buffer',
           bufferMinutes: 0, // Invalid - must be > 0
@@ -244,7 +244,7 @@ describe('CreateMarketUseCase', () => {
           title: 'Test Market',
           description: 'Test',
           categoryId: 'cat-123',
-          closesAt: new Date('2025-12-25T00:00:00Z'),
+          closesAt: new Date('2030-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           closeBehavior: 'auto',
           bufferMinutes: 30, // Should not be provided for 'auto'
@@ -262,7 +262,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Test Market',
         description: 'Test',
         categoryId: 'cat-123',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         createdBy: 'admin-id',
       });
@@ -293,7 +293,7 @@ describe('CreateMarketUseCase', () => {
       title: 'Test Market',
       description: 'Test',
       categoryId: 'cat-123',
-      closesAt: new Date('2025-12-25T00:00:00Z'),
+      closesAt: new Date('2030-12-25T00:00:00Z'),
       seedLiquidity: 10_000_000n,
       createdBy: 'admin-id',
     });
@@ -317,7 +317,7 @@ describe('CreateMarketUseCase', () => {
       title: 'Test Market',
       description: 'Test',
       categoryId: 'cat-123',
-      closesAt: new Date('2025-12-25T00:00:00Z'),
+      closesAt: new Date('2030-12-25T00:00:00Z'),
       seedLiquidity: 10_000_000n,
       createdBy: 'admin-id',
     });
@@ -364,7 +364,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Skewed Market',
         description: 'Test',
         categoryId: 'cat-123',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity,
         initialYesPrice: 0.75,
         createdBy: 'admin-id',
@@ -396,7 +396,7 @@ describe('CreateMarketUseCase', () => {
         title: 'Skewed Market',
         description: 'Test',
         categoryId: 'cat-123',
-        closesAt: new Date('2025-12-25T00:00:00Z'),
+        closesAt: new Date('2030-12-25T00:00:00Z'),
         seedLiquidity: 10_000_000n,
         initialYesPrice: 0.20,
         createdBy: 'admin-id',
@@ -415,7 +415,7 @@ describe('CreateMarketUseCase', () => {
           title: 'Invalid Market',
           description: 'Test',
           categoryId: 'cat-123',
-          closesAt: new Date('2025-12-25T00:00:00Z'),
+          closesAt: new Date('2030-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           initialYesPrice: 1.5, // Invalid > 0.99
           createdBy: 'admin-id',
@@ -427,7 +427,7 @@ describe('CreateMarketUseCase', () => {
           title: 'Invalid Market',
           description: 'Test',
           categoryId: 'cat-123',
-          closesAt: new Date('2025-12-25T00:00:00Z'),
+          closesAt: new Date('2030-12-25T00:00:00Z'),
           seedLiquidity: 10_000_000n,
           initialYesPrice: 0.005, // Invalid < 0.01
           createdBy: 'admin-id',

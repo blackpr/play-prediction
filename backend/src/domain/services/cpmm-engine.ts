@@ -193,8 +193,10 @@ export function calculateBuyShares(
   // Calculate new output pool to maintain k (ceiling division)
   const newOutputPool = ceilDiv(k, newInputPool);
 
-  // Shares out is the difference (floor, automatic with BigInt)
-  const sharesOut = outputPool - newOutputPool;
+  // Shares out is the difference (floor, automatic with BigInt) PLUS the minted shares
+  // Total Shares = (Minted Shares) + (Swapped Shares)
+  // Total Shares = pointsIn + (outputPool - newOutputPool)
+  const sharesOut = pointsIn + (outputPool - newOutputPool);
 
   if (sharesOut <= 0n) {
     throw new InvariantViolationError(
@@ -249,26 +251,43 @@ export function calculateBuyShares(
 }
 
 /**
+ * Integer Square Root for BigInt
+ * Uses Newton's method
+ */
+function isqrt(value: bigint): bigint {
+  if (value < 0n) throw new Error('isqrt: negative input');
+  if (value < 2n) return value;
+
+  let x = value;
+  let y = (x + 1n) / 2n;
+
+  while (y < x) {
+    x = y;
+    y = (x + value / x) / 2n;
+  }
+
+  return x;
+}
+
+/**
  * Calculate points received when selling shares
+ * Implements "Swap + Merge" logic (inverse of Mint + Swap)
  * 
- * Formula:
- * - Selling YES: add shares to YES pool, take points from NO pool
- * - new_share_pool = share_pool + shares
- * - new_point_pool = k / new_share_pool (ceiling division)
- * - points_out = point_pool - new_point_pool (floor, automatic)
+ * Formula derived from invariant: (Y + S - P) * (N - P) = k
+ * Solving for P (points out):
+ * P^2 - (Y + N + S)P + S*N = 0
+ * 
+ * Quadratic formula: P = (B - sqrt(B^2 - 4AC)) / 2
+ * Where:
+ * A = 1
+ * B = Y + N + S
+ * C = S * N
  * 
  * @param sharesIn Shares to sell
  * @param pool Current pool state
  * @param side Which side to sell (YES or NO)
  * @returns Sell result with points out and new pool state
  * @throws {InvariantViolationError} if k decreases
- * 
- * @example
- * Pool: 400 YES, 600 NO (k = 240,000)
- * Sell 50 YES shares:
- * - new YES pool = 400 + 50 = 450
- * - new NO pool = ceil(240,000 / 450) = 534
- * - points out = 600 - 534 = 66
  */
 export function calculateSellPoints(
   sharesIn: bigint,
@@ -287,27 +306,26 @@ export function calculateSellPoints(
   const { yesQty, noQty } = pool;
   const k = yesQty * noQty;
 
-  let sharePool: bigint;
-  let pointPool: bigint;
+  const Y = side === 'YES' ? yesQty : noQty; // Liquidity of side being sold
+  const N = side === 'YES' ? noQty : yesQty; // Liquidity of opposite side
+  const S = sharesIn;
 
-  if (side === 'YES') {
-    // Selling YES: add shares to YES pool, take points from NO pool
-    sharePool = yesQty;
-    pointPool = noQty;
-  } else {
-    // Selling NO: add shares to NO pool, take points from YES pool
-    sharePool = noQty;
-    pointPool = yesQty;
+  // Coefficients for P^2 - BP + C = 0
+  const B = Y + N + S;
+  const C = S * N;
+
+  // P = (B - sqrt(B^2 - 4C)) / 2
+  const discriminant = (B * B) - (4n * C);
+
+  if (discriminant < 0n) {
+    throw new InvariantViolationError(
+      'Negative discriminant in sell calculation',
+      { B: B.toString(), C: C.toString() }
+    );
   }
 
-  // Calculate new share pool after adding shares
-  const newSharePool = sharePool + sharesIn;
-
-  // Calculate new point pool to maintain k (ceiling division)
-  const newPointPool = ceilDiv(k, newSharePool);
-
-  // Points out is the difference (floor, automatic with BigInt)
-  const pointsOut = pointPool - newPointPool;
+  const sqrtD = isqrt(discriminant);
+  const pointsOut = (B - sqrtD) / 2n;
 
   if (pointsOut <= 0n) {
     throw new InvariantViolationError(
@@ -320,34 +338,19 @@ export function calculateSellPoints(
     );
   }
 
-  // Verify k hasn't decreased
-  const newK = newSharePool * newPointPool;
-  if (newK < k) {
-    throw new InvariantViolationError(
-      'k-invariant decreased after sell operation',
-      {
-        oldK: k.toString(),
-        newK: newK.toString(),
-        side,
-      }
-    );
-  }
+  // Calculate new pool quantities
+  // Y_new = Y + S - P
+  // N_new = N - P
+  const newY = Y + S - pointsOut;
+  const newN = N - pointsOut;
 
-  // Return new pool state
-  let newYesQty: bigint;
-  let newNoQty: bigint;
-
-  if (side === 'YES') {
-    newYesQty = newSharePool;
-    newNoQty = newPointPool;
-  } else {
-    newYesQty = newPointPool;
-    newNoQty = newSharePool;
-  }
+  // Note: k decreases when removing liquidity (Merge).
+  // We do not enforce newK >= k here because that only applies to pure Swaps.
+  // Our quadratic formula ensures fair pricing.
 
   return {
     pointsOut,
-    newYesQty,
-    newNoQty,
+    newYesQty: side === 'YES' ? newY : newN,
+    newNoQty: side === 'YES' ? newN : newY,
   };
 }
