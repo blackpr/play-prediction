@@ -1,11 +1,12 @@
-import {  createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Link } from '@tanstack/react-router';
 
-import {  useWebSocket } from '../hooks/use-websocket';
-import type {ReactNode} from 'react';
-import type {WebSocketStatus} from '../hooks/use-websocket';
+import { useWebSocket } from '../hooks/use-websocket';
+import { useRefreshContext } from './refresh-context';
+import type { ReactNode } from 'react';
+import type { WebSocketStatus } from '../hooks/use-websocket';
 
 interface WebSocketContextType {
   status: WebSocketStatus;
@@ -18,7 +19,15 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { status, subscribe, unsubscribe, lastMessage, reconnect } = useWebSocket();
+  const refreshContext = useRefreshContext();
   const queryClient = useQueryClient();
+
+  // Subscribe to global updates
+  useEffect(() => {
+    if (status === 'connected') {
+      subscribe('global');
+    }
+  }, [status, subscribe]);
 
   // Global event handling
   useEffect(() => {
@@ -28,8 +37,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       case 'price_update':
         // Update market cache instantly with setQueryData
         if (lastMessage.data?.marketId) {
+          // Update market details (key: ['markets', id])
           queryClient.setQueryData(
-            ['market', lastMessage.data.marketId],
+            ['markets', lastMessage.data.marketId],
             (old: any) => {
               if (!old) return old;
               return {
@@ -45,14 +55,19 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
               };
             }
           );
+
+          // Invalidate price history for this market so the graph updates
+          void queryClient.invalidateQueries({
+            queryKey: ['markets', lastMessage.data.marketId, 'history']
+          });
         }
         break;
 
       case 'trade':
         // Invalidate market trades when a new trade occurs
         if (lastMessage.data?.marketId) {
-          void queryClient.invalidateQueries({ 
-            queryKey: ['market-trades', lastMessage.data.marketId] 
+          void queryClient.invalidateQueries({
+            queryKey: ['market-trades', lastMessage.data.marketId]
           });
         }
         break;
@@ -70,7 +85,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
       case 'market_resolved':
         if (lastMessage.data?.marketId) {
-          void queryClient.invalidateQueries({ queryKey: ['market', lastMessage.data.marketId] });
+          void queryClient.invalidateQueries({ queryKey: ['markets', lastMessage.data.marketId] });
         }
         void queryClient.invalidateQueries({ queryKey: ['portfolio'] });
         toast.info(`Market resolved: ${lastMessage.data?.resolution}`);
@@ -78,7 +93,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
       case 'market_state':
         if (lastMessage.data?.marketId) {
-          void queryClient.invalidateQueries({ queryKey: ['market', lastMessage.data.marketId] });
+          void queryClient.invalidateQueries({ queryKey: ['markets', lastMessage.data.marketId] });
         }
         toast.info(`Market ${lastMessage.data?.newStatus?.toLowerCase()}`);
         break;
@@ -100,6 +115,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           );
         }
         void queryClient.invalidateQueries({ queryKey: ['markets'] });
+        break;
+
+      case 'deployment':
+        if (lastMessage.data?.version) {
+          refreshContext.setPendingVersion(lastMessage.data.version);
+        }
         break;
 
       case 'resolution_payout':

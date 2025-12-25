@@ -64,11 +64,11 @@ docker run -p 80:80 -p 443:443 -p 3000:3000 -v /var/run/docker.sock:/var/run/doc
 
 ### Backend Applications
 
-#### 1. Create `backend-staging`
+#### 1. Create `prediction-backend-staging`
 
 1. Go to CapRover Dashboard → Apps
 2. Click "Create New App"
-3. App Name: `backend-staging`
+3. App Name: `prediction-backend-staging`
 4. Click "Create"
 5. Go to app settings:
    - **HTTP Settings**:
@@ -79,7 +79,6 @@ docker run -p 80:80 -p 443:443 -p 3000:3000 -v /var/run/docker.sock:/var/run/doc
    
    - **App Configs**:
      - Instance Count: `1`
-     - Method: `Dockerfile`
    
    - **Environment Variables**: (Add from `.env.staging.template`)
      ```
@@ -87,21 +86,24 @@ docker run -p 80:80 -p 443:443 -p 3000:3000 -v /var/run/docker.sock:/var/run/doc
      SUPABASE_ANON_KEY=your-key
      SUPABASE_SERVICE_ROLE_KEY=your-key
      DATABASE_URL=postgresql://...
-     REDIS_URL=redis://srv-captain--redis-staging:6379
+     REDIS_URL=redis://:your-redis-password@srv-captain--redis-staging:6379
      PORT=4000
      NODE_ENV=production
      LOG_LEVEL=info
      WORKER_CONCURRENCY=5
      ENABLE_WORKER=true
      REGISTRATION_BONUS_AMOUNT=100000000
+     
+     > [!IMPORTANT]
+     > If your password contains special characters like `@`, `:`, `&`, or `#`, you **must** URL-encode them (e.g., `@` becomes `%40`).
      ```
 
 6. Save & Update
 
-#### 2. Create `backend-production`
+#### 2. Create `prediction-backend`
 
 Repeat the same steps but:
-- App Name: `backend-production`
+- App Name: `prediction-backend`
 - Use production Supabase credentials
 - `REDIS_URL=redis://srv-captain--redis-production:6379`
 - `LOG_LEVEL=warn`
@@ -111,9 +113,9 @@ Repeat the same steps but:
 
 ### Frontend Applications
 
-#### 1. Create `frontend-staging`
+#### 1. Create `prediction-frontend-staging`
 
-1. Create New App: `frontend-staging`
+1. Create New App: `prediction-frontend-staging`
 2. Settings:
    - **HTTP Settings**:
      - Enable HTTPS: ✅
@@ -127,28 +129,36 @@ Repeat the same steps but:
 
 3. Save & Update
 
-#### 2. Create `frontend-production`
+#### 2. Create `prediction-frontend`
 
 Same steps but:
-- App Name: `frontend-production`
+- App Name: `prediction-frontend`
 - `VITE_API_URL=https://api.yourdomain.com`
 
 ---
 
 ### Redis Applications
 
-#### 1. Create `redis-staging`
+#### 1. Create `prediction-redis-staging`
 
 1. Go to Apps → One-Click Apps/Databases
 2. Select "Redis"
-3. App Name: `redis-staging`
+3. App Name: `prediction-redis-staging`
 4. Click "Deploy"
-5. No additional configuration needed
+5. **Add Password**:
+   - Go to app settings → App Configs
+   - Under "Service Update" → "Command Override", set:
+     ```
+     redis-server --requirepass your-staging-password
+     ```
+   - Click "Save & Update"
 
-#### 2. Create `redis-production`
+#### 2. Create `prediction-redis`
 
-1. Same steps: `redis-production`
-2. After deployment, enable persistence:
+1. Same steps: `prediction-redis`
+2. **Add Password**:
+   - Same as above: `redis-server --requirepass your-production-password`
+3. After deployment, enable persistence:
    - Go to app settings
    - Add environment variable:
      ```
@@ -162,18 +172,18 @@ Same steps but:
 ### Option 1: Use CapRover Subdomains
 
 CapRover automatically creates:
-- `backend-staging.yourdomain.com`
-- `backend-production.yourdomain.com`
-- `frontend-staging.yourdomain.com`
-- `frontend-production.yourdomain.com`
+- `prediction-backend-staging.yourdomain.com`
+- `prediction-backend.yourdomain.com`
+- `prediction-frontend-staging.yourdomain.com`
+- `prediction-frontend.yourdomain.com`
 
 ### Option 2: Custom Domains
 
 For production, you might want:
-- `api.yourdomain.com` → `backend-production`
-- `yourdomain.com` → `frontend-production`
-- `staging.yourdomain.com` → `frontend-staging`
-- `api-staging.yourdomain.com` → `backend-staging`
+- `api.yourdomain.com` → `prediction-backend`
+- `yourdomain.com` → `prediction-frontend`
+- `staging.yourdomain.com` → `prediction-frontend-staging`
+- `api-staging.yourdomain.com` → `prediction-backend-staging`
 
 **Setup**:
 1. Go to app settings
@@ -232,7 +242,7 @@ GitHub Secret: STAGING_BACKEND_APP_TOKEN
 Apps can communicate using CapRover's internal network:
 
 ```
-Backend → Redis:  redis://srv-captain--redis-staging:6379
+Backend → Redis:  redis://:password@srv-captain--redis-staging:6379
 Frontend → Backend: Use public HTTPS URL
 ```
 

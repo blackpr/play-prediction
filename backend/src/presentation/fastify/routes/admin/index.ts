@@ -16,6 +16,7 @@ import { listUsers } from './list-users';
 import { getUserDetail } from './get-user-detail';
 import { getAuditLogRoute } from './get-audit-log';
 import { categoryRoutes } from './categories';
+import { notifyDeployment } from './notify-deployment';
 
 export default async function adminRoutes(server: FastifyInstance) {
   // Apply admin middleware to all routes in this module
@@ -68,5 +69,8 @@ export default async function adminRoutes(server: FastifyInstance) {
 
   // Categories
   server.register(categoryRoutes);
+
+  // POST /admin/deploy/notify - Notify deployment
+  server.post('/deploy/notify', notifyDeployment);
 }
 

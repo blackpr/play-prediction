@@ -12,7 +12,12 @@ CREATE TABLE IF NOT EXISTS "categories" (
 	CONSTRAINT "categories_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
-ALTER TABLE "markets" ADD COLUMN "category_id" uuid;--> statement-breakpoint
+DO $$
+BEGIN
+    ALTER TABLE "markets" ADD COLUMN "category_id" uuid;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_categories_slug" ON "categories" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_categories_sort" ON "categories" USING btree ("sort_order");--> statement-breakpoint
 DO $$ BEGIN

@@ -30,9 +30,9 @@ GitHub Actions workflows require secrets to:
 | Secret Name | Description | Where to Find |
 |------------|-------------|---------------|
 | `STAGING_DATABASE_URL` | Staging Supabase database connection string | Supabase project settings |
-| `STAGING_BACKEND_APP_NAME` | CapRover backend app name | `backend-staging` |
+| `STAGING_BACKEND_APP_NAME` | CapRover backend app name | `prediction-backend-staging` |
 | `STAGING_BACKEND_APP_TOKEN` | CapRover backend app deployment token | CapRover app deployment tab |
-| `STAGING_FRONTEND_APP_NAME` | CapRover frontend app name | `frontend-staging` |
+| `STAGING_FRONTEND_APP_NAME` | CapRover frontend app name | `prediction-frontend-staging` |
 | `STAGING_FRONTEND_APP_TOKEN` | CapRover frontend app deployment token | CapRover app deployment tab |
 
 ---
@@ -42,9 +42,9 @@ GitHub Actions workflows require secrets to:
 | Secret Name | Description | Where to Find |
 |------------|-------------|---------------|
 | `PRODUCTION_DATABASE_URL` | Production Supabase database connection string | Supabase project settings |
-| `PRODUCTION_BACKEND_APP_NAME` | CapRover backend app name | `backend-production` |
+| `PRODUCTION_BACKEND_APP_NAME` | CapRover backend app name | `prediction-backend` |
 | `PRODUCTION_BACKEND_APP_TOKEN` | CapRover backend app deployment token | CapRover app deployment tab |
-| `PRODUCTION_FRONTEND_APP_NAME` | CapRover frontend app name | `frontend-production` |
+| `PRODUCTION_FRONTEND_APP_NAME` | CapRover frontend app name | `prediction-frontend` |
 | `PRODUCTION_FRONTEND_APP_TOKEN` | CapRover frontend app deployment token | CapRover app deployment tab |
 
 ---
@@ -74,13 +74,13 @@ Repeat the same steps for your production Supabase project.
 
 ### Step 2: Get CapRover App Tokens
 
-For each app (backend-staging, backend-production, frontend-staging, frontend-production):
+For each app (prediction-backend-staging, prediction-backend, prediction-frontend-staging, prediction-frontend):
 
 1. **Go to CapRover Dashboard**
    - URL: `https://captain.yourdomain.com`
 
 2. **Select the App**
-   - Click on the app name (e.g., `backend-staging`)
+   - Click on the app name (e.g., `prediction-backend-staging`)
 
 3. **Go to Deployment Tab**
    - Click "Deployment" in the left sidebar
@@ -95,10 +95,10 @@ For each app (backend-staging, backend-production, frontend-staging, frontend-pr
    - Usually the same as what you see in the dashboard
 
 **Repeat for all 4 apps**:
-- `backend-staging` → `STAGING_BACKEND_APP_TOKEN`
-- `backend-production` → `PRODUCTION_BACKEND_APP_TOKEN`
-- `frontend-staging` → `STAGING_FRONTEND_APP_TOKEN`
-- `frontend-production` → `PRODUCTION_FRONTEND_APP_TOKEN`
+- `prediction-backend-staging` → `STAGING_BACKEND_APP_TOKEN`
+- `prediction-backend` → `PRODUCTION_BACKEND_APP_TOKEN`
+- `prediction-frontend-staging` → `STAGING_FRONTEND_APP_TOKEN`
+- `prediction-frontend` → `PRODUCTION_FRONTEND_APP_TOKEN`
 
 ---
 

@@ -9,6 +9,7 @@ import { useBuyShares, useMergeShares, useMintShares, useQuote, useSellShares } 
 import { useAuth } from '../../hooks/useAuth'
 import { usePosition } from '../../hooks/usePortfolio'
 import { usePriceDirection, usePriceFlash } from '../../hooks/usePriceAnimation'
+import { useRefreshBlocker } from '../../hooks/use-refresh-blocker'
 import { Button } from '../ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { formatPoints, parsePoints } from '../../lib/format'
@@ -132,6 +133,10 @@ export function TradeForm({ market }: TradeFormProps) {
 
   // Confirmation State
   const [showConfirmation, setShowConfirmation] = useState(false)
+
+  // Block refresh if user has typed an amount or confirmation is open
+  const isBlocking = (!!amount && amount !== '') || showConfirmation
+  useRefreshBlocker(isBlocking)
 
   const executeTrade = async (trade: {
     action: 'buy' | 'sell' | 'mint' | 'merge'
@@ -616,8 +621,8 @@ export function TradeForm({ market }: TradeFormProps) {
           {tab === 'buy' && position && amount && parseFloat(amount) > 0 && (() => {
             const oppositeSide = side === 'YES' ? 'NO' : 'YES'
             const oppositeQty = oppositeSide === 'YES'
-              ? BigInt(position.yesQty)
-              : BigInt(position.noQty)
+              ? BigInt(position.yesQty ?? '0')
+              : BigInt(position.noQty ?? '0')
 
             if (oppositeQty > 0n) {
               // User holds opposite shares - netting will occur
@@ -898,19 +903,26 @@ export function TradeForm({ market }: TradeFormProps) {
               </Button>
               <Button
                 variant="primary"
-                onClick={() => {
+                onClick={async () => {
                   if (dontAskAgain) {
                     sessionStorage.setItem('skip-trade-confirmation', 'true')
                     setSkipConfirmation(true)
                   }
 
-                  executeTrade({
-                    action: pendingTrade.action,
-                    amountMicro: pendingTrade.amountMicro,
-                    minOut: pendingTrade.minOut,
-                  })
-                  setShowConfirmation(false)
-                  setPendingTrade(null)
+                  try {
+                    await executeTrade({
+                      action: pendingTrade.action,
+                      amountMicro: pendingTrade.amountMicro,
+                      minOut: pendingTrade.minOut,
+                    })
+                    setAmount('')
+                    form.reset()
+                    setShowConfirmation(false)
+                    setPendingTrade(null)
+                  } catch (error) {
+                    console.error('Trade failed:', error)
+                    toast.error('Trade failed. Please try again.')
+                  }
                 }}
               >
                 Confirm Trade

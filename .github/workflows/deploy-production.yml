@@ -60,6 +60,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create Backend Artifact
+        run: |
+          # Create deploy.tar from backend directory
+          tar -czf deploy.tar -C backend .
+          # Verify tar creation
+          ls -lh deploy.tar
+
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2
         with:
@@ -75,6 +82,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Create Frontend Artifact
+        run: |
+          # Create deploy.tar from frontend directory
+          tar -czf deploy.tar -C frontend .
+          # Verify tar creation
+          ls -lh deploy.tar
 
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2

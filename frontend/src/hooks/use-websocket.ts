@@ -63,11 +63,9 @@ export function useWebSocket(): UseWebSocketReturn {
 
         // Handle errors
         if (message.type === 'error') {
-          // Suppress authentication failed errors (common for guests)
-          if (message.error.message.includes('Authentication failed')) {
-            console.warn('WS Auth Failed (expected for guests):', message.error.message);
-          } else {
-            console.error('WS Error:', message.error);
+          console.error('WS Error:', message.error);
+          // Don't toast for minor errors to avoid spam, but log everything
+          if (message.error.code !== 'INVALID_MESSAGE') {
             toast.error(`WebSocket Error: ${message.error.message}`);
           }
         }

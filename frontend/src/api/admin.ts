@@ -50,4 +50,8 @@ export const adminApi = {
 
   deleteCategory: (id: string): Promise<ApiResponse<void>> =>
     api.delete<void>(`/admin/categories/${id}`),
+
+  // Deployment
+  notifyDeployment: (version?: string): Promise<ApiResponse<void>> =>
+    api.post<void>('/admin/deploy/notify', { version }),
 }
