@@ -1,9 +1,6 @@
 #!/bin/sh
 set -e
 
-# This script injects environment variables into the built JavaScript files at runtime
-# This allows the same Docker image to be used across different environments
-
 # #region agent log
 echo "[DEBUG LOG] ===== DOCKER ENTRYPOINT START ====="
 echo "[DEBUG LOG] Current time: $(date)"
@@ -18,6 +15,10 @@ echo "[DEBUG LOG] Environment variable VITE_API_URL: ${VITE_API_URL:-NOT_SET}"
 # #endregion
 
 echo "Injecting environment variables..."
+
+# Debug: Count matches before replacement
+MATCH_COUNT=$(grep -r "VITE_API_URL_PLACEHOLDER" /app/www | wc -l)
+echo "[DEBUG LOG] Found $MATCH_COUNT files/instances containing 'VITE_API_URL_PLACEHOLDER'"
 
 # Find all JS files in the build directory and replace placeholder with actual env var
 find /app/www -type f -name "*.js" -exec sed -i \

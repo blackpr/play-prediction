@@ -14,8 +14,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build the application
-ENV VITE_API_URL=VITE_API_URL_PLACEHOLDER
+# Accept VITE_API_URL as build argument
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
+# Build the application with the environment variable baked in
 RUN npm run build
 
 # Prepare build artifacts
@@ -40,7 +43,7 @@ RUN if [ -f "/app/final_build/_shell.html" ] && [ ! -f "/app/final_build/index.h
 FROM nginx:alpine
 
 # Copy custom nginx config
-RUN echo "Cache bust 2025-12-25-v5"
+RUN echo "Cache bust 2025-12-25-v6-build-time-env"
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
