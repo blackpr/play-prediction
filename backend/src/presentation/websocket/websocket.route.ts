@@ -1,6 +1,6 @@
 import { FastifyRequest } from 'fastify';
 import { WebSocket } from '@fastify/websocket';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, parseCookieHeader } from '@supabase/ssr';
 import { requireEnv } from '../../shared/config/env';
 import { WebSocketManager, WebSocketClient, ClientMessage } from '../../infrastructure/websocket/websocket-manager';
 
@@ -86,7 +86,7 @@ function handleUnsubscribe(client: WebSocketClient, message: ClientMessage): voi
 export async function websocketHandler(socket: WebSocket, request: FastifyRequest) {
   try {
     const cookieHeader = request.headers.cookie || '';
-    request.log.info({ cookieHeaderLength: cookieHeader.length }, 'WebSocket connection attempt');
+    request.log.info({ cookieLength: cookieHeader.length }, 'WebSocket connection attempt');
 
     const supabase = createServerClient(
       requireEnv('SUPABASE_URL'),
@@ -94,11 +94,9 @@ export async function websocketHandler(socket: WebSocket, request: FastifyReques
       {
         cookies: {
           getAll() {
-            // Parse cookie header into array of {name, value} objects
-            return cookieHeader.split(';').map(cookie => {
-              const [name, ...rest] = cookie.trim().split('=');
-              return { name, value: rest.join('=') };
-            }).filter(c => c.name && c.value);
+            // Use Supabase's robust cookie parser (handles decoding, etc.)
+            const parsed = parseCookieHeader(cookieHeader);
+            return parsed.filter((c): c is { name: string; value: string } => c.value !== undefined);
           },
           setAll() {
             // WebSocket can't set cookies
@@ -112,7 +110,12 @@ export async function websocketHandler(socket: WebSocket, request: FastifyReques
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
-      request.log.error({ error }, 'WebSocket authentication failed');
+      request.log.error({
+        error: error?.message,
+        errorCode: error?.code,
+        hasCookie: !!cookieHeader
+      }, 'WebSocket authentication failed');
+
       socket.send(JSON.stringify({
         type: 'error',
         error: { code: 'SESSION_INVALID', message: 'Authentication failed' },
