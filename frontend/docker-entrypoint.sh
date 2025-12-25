@@ -7,12 +7,12 @@ set -e
 # #region agent log
 echo "[DEBUG LOG] ===== DOCKER ENTRYPOINT START ====="
 echo "[DEBUG LOG] Current time: $(date)"
-echo "[DEBUG LOG] Contents of /usr/share/nginx/html:"
-ls -la /usr/share/nginx/html
-echo "[DEBUG LOG] Checking for index.html: $([ -f '/usr/share/nginx/html/index.html' ] && echo 'EXISTS' || echo 'NOT FOUND')"
-if [ -f "/usr/share/nginx/html/index.html" ]; then
+echo "[DEBUG LOG] Contents of /app/www:"
+ls -la /app/www
+echo "[DEBUG LOG] Checking for index.html: $([ -f '/app/www/index.html' ] && echo 'EXISTS' || echo 'NOT FOUND')"
+if [ -f "/app/www/index.html" ]; then
   echo "[DEBUG LOG] First 300 chars of index.html:"
-  head -c 300 /usr/share/nginx/html/index.html
+  head -c 300 /app/www/index.html
 fi
 echo "[DEBUG LOG] Environment variable VITE_API_URL: ${VITE_API_URL:-NOT_SET}"
 # #endregion

@@ -40,6 +40,7 @@ FROM nginx:alpine
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN rm -rf /etc/nginx/conf.d/default.conf
 
 # Copy built files from builder
 RUN mkdir -p /app/www
