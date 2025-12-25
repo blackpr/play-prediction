@@ -384,7 +384,9 @@ export function CreateMarketForm() {
                     onBlur={field.handleBlur}
                     error={field.state.meta.errors.join(', ')}
                   />
-                  <p className="text-xs text-gray-500">Default: 10,000,000 (10 Points)</p>
+                  <p className="text-xs text-gray-500">
+                    {((Number(field.state.value) || 0) / 1_000_000).toLocaleString()} Points
+                  </p>
                 </div>
               )}
             </form.Field>
