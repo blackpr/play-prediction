@@ -42,6 +42,10 @@ export class SupabaseAuthService implements AuthService {
       const supabaseUrl = requireEnv('SUPABASE_URL');
       const authHealthUrl = `${supabaseUrl}/auth/v1/health`;
       const response = await fetch(authHealthUrl);
+      console.log(`[SupabaseAuth] Health check ${authHealthUrl} returned: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        console.error(`[SupabaseAuth] Health check failed with status: ${response.status} ${response.statusText}`);
+      }
       return response.ok;
     } catch (err) {
       console.error('[SupabaseAuth] Health check failed:', err);
