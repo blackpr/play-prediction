@@ -39,6 +39,7 @@ RUN if [ -f "/app/final_build/_shell.html" ] && [ ! -f "/app/final_build/index.h
 FROM nginx:alpine
 
 # Copy custom nginx config
+RUN echo "Cache bust 2025-12-25-v3"
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
