@@ -45,7 +45,8 @@ export function createClient(request: FastifyRequest, reply: FastifyReply) {
               path: options?.path ?? '/',
               httpOnly: options?.httpOnly ?? true,
               secure: isProduction,
-              sameSite: isProduction ? 'none' : 'lax', // Must be 'none' for cross-site usage in production/staging
+              sameSite: isProduction ? 'none' : 'lax',
+              domain: isProduction ? '.egoeimai.bitar.gr' : undefined, // Share cookie across subdomains
             });
             reply.header('Set-Cookie', header);
           });

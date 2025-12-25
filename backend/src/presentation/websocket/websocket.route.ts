@@ -86,6 +86,17 @@ function handleUnsubscribe(client: WebSocketClient, message: ClientMessage): voi
 export async function websocketHandler(socket: WebSocket, request: FastifyRequest) {
   try {
     const cookieHeader = request.headers.cookie || '';
+
+    // FORCE LOGGING TO STDOUT
+    console.log('--- WS CONNECTION ATTEMPT ---');
+    console.log('Headers:', JSON.stringify(request.headers, null, 2));
+    console.log('Cookie Length:', cookieHeader.length);
+    if (cookieHeader.length > 0) {
+      console.log('Cookie Preview:', cookieHeader.substring(0, 50));
+    } else {
+      console.log('NO COOKIES PRESENT');
+    }
+
     request.log.info({ cookieLength: cookieHeader.length }, 'WebSocket connection attempt');
 
     const supabase = createServerClient(
