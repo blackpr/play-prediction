@@ -898,19 +898,26 @@ export function TradeForm({ market }: TradeFormProps) {
               </Button>
               <Button
                 variant="primary"
-                onClick={() => {
+                onClick={async () => {
                   if (dontAskAgain) {
                     sessionStorage.setItem('skip-trade-confirmation', 'true')
                     setSkipConfirmation(true)
                   }
 
-                  executeTrade({
-                    action: pendingTrade.action,
-                    amountMicro: pendingTrade.amountMicro,
-                    minOut: pendingTrade.minOut,
-                  })
-                  setShowConfirmation(false)
-                  setPendingTrade(null)
+                  try {
+                    await executeTrade({
+                      action: pendingTrade.action,
+                      amountMicro: pendingTrade.amountMicro,
+                      minOut: pendingTrade.minOut,
+                    })
+                    setAmount('')
+                    form.reset()
+                    setShowConfirmation(false)
+                    setPendingTrade(null)
+                  } catch (error) {
+                    console.error('Trade failed:', error)
+                    toast.error('Trade failed. Please try again.')
+                  }
                 }}
               >
                 Confirm Trade
