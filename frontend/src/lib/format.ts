@@ -18,10 +18,14 @@ export function formatPoints(
     // If we need strict precision for display of huge numbers, we'd need a custom formatter.
     // For now, dividing by scale as number is simplest.
     const points = Number(value) / Number(MICRO_POINTS_SCALE)
+    const absPoints = Math.abs(points)
+
+    // For very small numbers that would round to 0.00, show more precision
+    const isSmall = absPoints > 0 && absPoints < 0.01
 
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: isSmall ? 6 : 2,
     }).format(points)
   } catch (e) {
     console.error('Error formatting points:', e)
