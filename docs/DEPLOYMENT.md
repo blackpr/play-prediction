@@ -113,7 +113,8 @@ REGISTRATION_BONUS_AMOUNT=100000000
 
 **Frontend Apps**:
 ```bash
-VITE_API_URL=https://api-staging.yourdomain.com  # or production URL
+VITE_API_URL=https://prediction-backend-staging.egoeimai.bitar.gr/api/v1
+VITE_WS_URL=wss://prediction-backend-staging.egoeimai.bitar.gr/ws
 ```
 
 ### Step 4: Configure GitHub Secrets
