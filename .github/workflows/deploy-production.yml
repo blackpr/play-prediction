@@ -60,6 +60,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Backend Context
+        run: |
+          # Enable dotglob to match hidden files
+          shopt -s dotglob
+          # Move all backend files to root
+          mv backend/* .
+          # Remove other directories to keep context clean
+          rm -rf frontend docs
+
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2
         with:
@@ -75,6 +84,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Frontend Context
+        run: |
+          # Enable dotglob to match hidden files
+          shopt -s dotglob
+          # Move all frontend files to root
+          mv frontend/* .
+          # Remove other directories to keep context clean
+          rm -rf backend docs
 
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2
