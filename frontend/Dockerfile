@@ -15,6 +15,7 @@ RUN npm install
 COPY . .
 
 # Build the application
+ENV VITE_API_URL=VITE_API_URL_PLACEHOLDER
 RUN npm run build
 
 # Prepare build artifacts
