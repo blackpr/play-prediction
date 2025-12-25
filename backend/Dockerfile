@@ -42,14 +42,14 @@ COPY --from=builder /app/dist ./dist
 # Copy migrations folder (drizzle-kit will use DATABASE_URL from env)
 COPY drizzle ./drizzle
 
-# Copy entrypoint script and ensure it is executable and owned by the correct user
-COPY --chown=nodejs:nodejs docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
-
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
   adduser -S nodejs -u 1001 && \
   chown -R nodejs:nodejs /app
+
+# Copy entrypoint script and ensure it is executable and owned by the correct user
+COPY --chown=nodejs:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 USER nodejs
 
