@@ -42,10 +42,11 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built files from builder
-COPY --from=builder /app/final_build /usr/share/nginx/html
+RUN mkdir -p /app/www
+COPY --from=builder /app/final_build /app/www
 
 # Ensure permissions are correct
-RUN chown -R nginx:nginx /usr/share/nginx/html
+RUN chown -R nginx:nginx /app/www
 
 # Copy environment variable injection script
 COPY docker-entrypoint.sh /docker-entrypoint.sh

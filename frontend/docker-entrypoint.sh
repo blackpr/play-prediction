@@ -20,7 +20,7 @@ echo "[DEBUG LOG] Environment variable VITE_API_URL: ${VITE_API_URL:-NOT_SET}"
 echo "Injecting environment variables..."
 
 # Find all JS files in the build directory and replace placeholder with actual env var
-find /usr/share/nginx/html -type f -name "*.js" -exec sed -i \
+find /app/www -type f -name "*.js" -exec sed -i \
   "s|VITE_API_URL_PLACEHOLDER|${VITE_API_URL}|g" {} \;
 
 echo "Environment variables injected successfully"
