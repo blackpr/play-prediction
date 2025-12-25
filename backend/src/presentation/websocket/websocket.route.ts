@@ -1,4 +1,5 @@
 import { FastifyRequest } from 'fastify';
+import crypto from 'crypto';
 import { WebSocket } from '@fastify/websocket';
 import { createServerClient, parseCookieHeader } from '@supabase/ssr';
 import { requireEnv } from '../../shared/config/env';
@@ -120,25 +121,16 @@ export async function websocketHandler(socket: WebSocket, request: FastifyReques
     // Validate session with Supabase Auth
     const { data: { user }, error } = await supabase.auth.getUser();
 
+    let userId: string;
+
     if (error || !user) {
-      request.log.error({
-        error: error?.message,
-        errorCode: error?.code,
-        hasCookie: !!cookieHeader
-      }, 'WebSocket authentication failed');
-
-      socket.send(JSON.stringify({
-        type: 'error',
-        error: { code: 'SESSION_INVALID', message: 'Authentication failed' },
-        timestamp: new Date().toISOString(),
-      }));
-      socket.close(4001, 'Invalid session');
-      return;
+      // Allow anonymous connection
+      userId = `anonymous:${crypto.randomUUID()}`;
+      request.log.info({ userId }, 'WebSocket anonymous connection');
+    } else {
+      userId = user.id;
+      request.log.info({ userId }, 'WebSocket authenticated');
     }
-
-    request.log.info({ userId: user.id }, 'WebSocket authenticated');
-
-    const userId = user.id;
 
     // Create client instance
     const client = new WebSocketClient(socket, userId);
