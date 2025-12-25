@@ -5,18 +5,22 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies first (for layer caching)
 COPY package*.json ./
-COPY tsconfig.json ./
-
-# Install dependencies (including dev dependencies for build)
 RUN npm install
 
-# Copy source code
+# Copy all source files needed for TypeScript compilation
+COPY tsconfig.json ./
 COPY src ./src
+COPY drizzle.config.ts ./drizzle.config.ts
+COPY vitest.config.ts ./vitest.config.ts
+COPY vitest.integration.config.ts ./vitest.integration.config.ts
 
 # Build TypeScript to JavaScript
 RUN npm run build
+
+# Verify build output
+RUN ls -la dist/ && test -f dist/main.js || (echo "Build failed: main.js not found" && exit 1)
 
 # Stage 2: Production
 FROM node:24-alpine
