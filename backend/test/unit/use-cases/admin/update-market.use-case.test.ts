@@ -40,7 +40,7 @@ describe('UpdateMarketUseCase', () => {
     category: 'Crypto',
     imageUrl: 'https://example.com/image.jpg',
     status: MarketStatus.DRAFT,
-    closesAt: new Date('2025-12-31T23:59:59Z'),
+    closesAt: new Date('2030-12-31T23:59:59Z'),
     closeBehavior: 'auto',
     bufferMinutes: null,
     createdBy: 'admin-id',
