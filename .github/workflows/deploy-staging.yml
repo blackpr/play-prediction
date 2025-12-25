@@ -42,14 +42,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Backend Context
+      - name: Create Backend Artifact
         run: |
-          # Enable dotglob to match hidden files
-          shopt -s dotglob
-          # Move all backend files to root
-          mv backend/* .
-          # Remove other directories to keep context clean
-          rm -rf frontend docs
+          # Create deploy.tar from backend directory
+          tar -czf deploy.tar -C backend .
+          # Verify tar creation
+          ls -lh deploy.tar
 
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2
@@ -67,14 +65,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Frontend Context
+      - name: Create Frontend Artifact
         run: |
-          # Enable dotglob to match hidden files
-          shopt -s dotglob
-          # Move all frontend files to root
-          mv frontend/* .
-          # Remove other directories to keep context clean
-          rm -rf backend docs
+          # Create deploy.tar from frontend directory
+          tar -czf deploy.tar -C frontend .
+          # Verify tar creation
+          ls -lh deploy.tar
 
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2
