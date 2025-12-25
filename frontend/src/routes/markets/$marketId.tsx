@@ -97,11 +97,11 @@ function getDisabledIntervals(marketCreatedAt: string): Array<ChartInterval> {
   const now = new Date()
   const createdAt = new Date(marketCreatedAt)
   const ageInMs = now.getTime() - createdAt.getTime()
-  const ageInHours = ageInMs / (60 * 60 * 1000)
+  // const ageInHours = ageInMs / (60 * 60 * 1000)
   const ageInDays = ageInMs / (24 * 60 * 60 * 1000)
 
   const disabled: Array<ChartInterval> = []
-  if (ageInHours < 1) disabled.push('1H')
+  // if (ageInHours < 1) disabled.push('1H') // Enabled for all markets now to show 1m granularity
   if (ageInDays < 7) disabled.push('7D')
   if (ageInDays < 30) disabled.push('30D')
   return disabled
